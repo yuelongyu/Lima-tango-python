@@ -356,8 +356,9 @@ class LimaCCDs(PyTango.Device_4Impl) :
                 if os.access(config_file_path,os.R_OK):
                     try:
                         config.load()
-                        config.apply(config_default_name)
-                        self.__configDefaultActiveFlag = True
+                        if config_default_name in config.getAlias() :
+                            config.apply(config_default_name)
+                            self.__configDefaultActiveFlag = True
                     except Core.Exception:
                         pass
 
