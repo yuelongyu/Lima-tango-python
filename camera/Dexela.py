@@ -79,6 +79,9 @@ class Dexela(PyTango.Device_4Impl):
         self.set_state(PyTango.DevState.ON)
         self.get_device_properties(self.get_device_class())
 
+	#Full well mode
+	self.__FullWellMode = {'HIGH' : _DexelaInterface.High,
+			       'LOW' : _DexelaInterface.Low}
 #------------------------------------------------------------------
 #    getAttrStringValueList command:
 #
@@ -96,7 +99,7 @@ class Dexela(PyTango.Device_4Impl):
 #==================================================================
     def __getattr__(self,name) :
         #use AttrHelper
-        return get_attr_4u(self,name,_DexelaAcq)
+        return get_attr_4u(self,name,_DexelaInterface)
 
 
 #==================================================================
@@ -124,6 +127,10 @@ class DexelaClass(PyTango.DeviceClass):
         }
 
     attr_list = {
+	'full_well_mode':
+	[[PyTango.DevString,
+	  PyTango.SCALAR,
+	  PyTango.READ_WRITE]],
         }
 
     def __init__(self,name) :
