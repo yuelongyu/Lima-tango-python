@@ -142,10 +142,7 @@ class Roi2spectrumDeviceServer(BasePostProcess) :
     
     def __get_roi_list_from_argin(self,argin) :
         rois = []
-        for x,y,w,h in itertools.izip(itertools.islice(argin,0,len(argin),4),
-                                      itertools.islice(argin,1,len(argin),4),
-                                      itertools.islice(argin,2,len(argin),4),
-                                      itertools.islice(argin,3,len(argin),4)) :
+        for x,y,w,h in itertools.izip(*([iter(argin)] * 4)) :
             roi = Core.Roi(x,y,w,h)
             rois.append(roi)
         return rois
