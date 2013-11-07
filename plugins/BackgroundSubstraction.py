@@ -64,9 +64,8 @@ class BackgroundSubstractionDeviceServer(BasePostProcess) :
 	attr.set_value(self.__deleteDarkAfterRead)
 
     def write_delete_dark_after_read(self,attr) :
-	data = []
-	attr.get_write_value(data)
-	self.__deleteDarkAfterRead = data[0]
+	data = attr.get_write_value()
+	self.__deleteDarkAfterRead = data
 
     @Core.DEB_MEMBER_FUNCT
     def setBackgroundImage(self,filepath) :
