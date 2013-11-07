@@ -29,6 +29,11 @@ import processlib
 from Lima import Core
 from Utils import getDataFromFile,BasePostProcess
 
+def grouper(n, iterable, padvalue=None):
+    return itertools.izip(*[itertools.chain(iterable, itertools.repeat(padvalue, n-1))]*n)
+
+Roi2SpectrumTask = Core.Processlib.Tasks.Roi2SpectrumTask
+
 #==================================================================
 #   Roi2spectrum Class Description:
 #
@@ -45,7 +50,9 @@ class Roi2spectrumDeviceServer(BasePostProcess) :
 #------------------------------------------------------------------
     def __init__(self,cl, name):
 	self.__roi2spectrumMgr = None
-                
+        self.__roiName2ID = {}
+        self.__roiID2Name = {}
+        self.__currentRoiId = 0
 	BasePostProcess.__init__(self,cl,name)
 	Roi2spectrumDeviceServer.init_device(self)
 
@@ -79,9 +86,8 @@ class Roi2spectrumDeviceServer(BasePostProcess) :
 #    Write BufferSize attribute
 #------------------------------------------------------------------
     def write_BufferSize(self, attr):
-	data=[]
-	attr.get_write_value(data)
-        self.__roi2spectrumMgr.setBufferSize(data[0])
+	data = attr.get_write_value()
+        self.__roi2spectrumMgr.setBufferSize()
 
 
 #------------------------------------------------------------------
@@ -97,35 +103,90 @@ class Roi2spectrumDeviceServer(BasePostProcess) :
 #    Roi2spectrum command methods
 #
 #==================================================================
-    def add(self,argin):
-        if not len(argin) % 4:
-            self.__roi2spectrumMgr.add(self.__get_roi_list_from_argin(argin))
+    def addNames(self,argin):
+        roi_id = []
+        for roi_name in argin:
+            if not self.__roiName2ID.has_key(roi_name):
+                self.__roiName2ID[roi_name] = self.__currentRoiId
+                self.__roiID2Name[self.__currentRoiId] = roi_name
+                roi_id.append(self.__currentRoiId)
+                self.__currentRoiId += 1
+            else:
+                roi_id.append(self.__roiName2ID[roi_name])
+        return roi_id
+
+    def removeRois(self,argin):
+        if self.__roi2spectrumMgr :
+            self.__roi2spectrumMgr.removeRois(argin)
+        for roi_name in argin:
+            roi_id = self.__roiName2ID.pop(roi_name,None)
+            self.__roiID2Name.pop(roi_id,None)
+
+    def setRois(self,argin) :
+        if self.__roi2spectrumMgr is None:
+            raise RuntimeError('should start the device first')
+        
+        if not len(argin) % 5:
+            roi_list = []
+            for roi_id,x,y,width,height in grouper(5,argin):
+                roi_name = self.__roiID2Name.get(roi_id,None)
+                if roi_name is None:
+                    raise RuntimeError('should call add method before setRoi')
+                roi_list.append((roi_name,Core.Roi(x,y,width,height)))
+            self.__roi2spectrumMgr.updateRois(roi_list)
         else:
-            raise AttributeError('should be a roi vector as follow [x0,y0,width0,height0,x1,y1,width1,heigh1,...')
-    
-    def set(self,argin):
-        if not len(argin) % 4:
-            self.__roi2spectrumMgr.set(self.__get_roi_list_from_argin(argin))
-        else:
-            raise AttributeError('should be a roi vector as follow [x0,y0,width0,height0,x1,y1,width1,heigh1,...')
+            raise AttributeError('should be a vector as follow [roi_id0,x0,y0,width0,height0,...')
+        
+    def getNames(self):
+        if self.__roi2spectrumMgr is None:
+            raise RuntimeError('should start the device first')
+        return self.__roi2spectrumMgr.getNames()       
 
-    
-    def get(self):
-        returnList = []
-        for roi in self.__roi2spectrumMgr.get():
-            p = roi.getTopLeft()
-            s = roi.getSize()
-            returnList.extend((p.x,p.y,s.getWidth(),s.getHeight()))
-        return returnList
+    def getRois(self,argin):
+        if self.__roi2spectrumMgr is None:
+            raise RuntimeError('should start the device first')
+        roi_list = []
+        rois_names =  self.__roi2spectrumMgr.getRois()
+        for roi_name in argin:
+            for name, roi in rois_names:
+                if name == roi_name:
+                    break
+            else:
+                raise ValueError('Roi %s not defined yet' % roi_name)
+            roi_id = self.__roiName2ID[roi_name]
+            x, y = roi.getTopLeft().x, roi.getTopLeft().y
+            w, h = roi.getSize().getWidth(), roi.getSize().getHeight()
+            roi_list.append((roi_id, x, y, w, h))
+        return list(itertools.chain(*roi_list))
 
-    def getRoiMode(self) :
-        return self.__roi2spectrumMgr.getRoiMode()
+    def getRoiModes(self,argin) :
+        if self.__roi2spectrumMgr is None:
+            raise RuntimeError('should start the device first')
+        roi_mode_list = []
+	rois_modes = self.__roi2spectrumMgr.getRoiModes()
+        for roi_name in argin:
+            for name, roi_mode in rois_modes:
+                if name == roi_name:
+                    break
+            else:
+                raise ValueError('Roi %s not defined yet' % roi_name)
+	    roi_mode_map = {
+                Roi2SpectrumTask.COLUMN_SUM: 'COLUMN_SUM',
+                Roi2SpectrumTask.LINES_SUM:  'LINES_SUM',
+            }
+            roi_mode_list.append(roi_mode_map[roi_mode])
+        return roi_mode_list
 
-    def setRoiMode(self,argin) :
-        self.__roi2spectrumMgr.setRoiMode(*argin)
+    def setRoiModes(self,argin) :
+	roi_mode_map = {
+            'COLUMN_SUM': Roi2SpectrumTask.COLUMN_SUM,
+            'LINES_SUM':  Roi2SpectrumTask.LINES_SUM,
+        }
+        rois_modes = map(lambda n, m: (n, roi_mode_map[m]), grouper(2, argin))
+        self.__roi2spectrumMgr.setRoiModes(rois_modes)
 
-    def clearAllRoi(self):
-        self.__roi2spectrumMgr.clearAllRoi()
+    def clearAllRois(self):
+        self.__roi2spectrumMgr.clearAllRois()
 
     def setMaskFile(self,argin) :
         mask = getDataFromFile(*argin)
@@ -133,19 +194,15 @@ class Roi2spectrumDeviceServer(BasePostProcess) :
     
     def readImage(self,argin) :
         roiId,fromImageId = argin
-        startImage,data = self.__roi2spectrumMgr.createImage(roiId,fromImageId)
+        roi_name = self.__roiID2Name.get(roiId,None)
+        startImage,data = self.__roi2spectrumMgr.createImage(roi_name,
+                                                             fromImageId)
         #Overflow
         if fromImageId >= 0 and startImage != fromImageId :
             raise 'Overrun ask id %d, given id %d (no more in memory' % (fromImageId,startImage)
         self._data_cache = data         # Tango is not so beautiful
         return data.buffer.ravel()
     
-    def __get_roi_list_from_argin(self,argin) :
-        rois = []
-        for x,y,w,h in itertools.izip(*([iter(argin)] * 4)) :
-            roi = Core.Roi(x,y,w,h)
-            rois.append(roi)
-        return rois
 #==================================================================
 #
 #    Roi2spectrumClass class definition
@@ -165,23 +222,35 @@ class Roi2spectrumDeviceServerClass(PyTango.DeviceClass):
 
     #	 Command definitions
     cmd_list = {
-        'add':
-        [[PyTango.DevVarLongArray,"roi vector [x0,y0,width0,height0,x1,y1,width1,heigh1,...]"],
+        'addNames':
+        [[PyTango.DevVarStringArray,"rois alias"],
+         [PyTango.DevVarLongArray,"rois' id"]],
+        'removeRois':
+        [[PyTango.DevVarStringArray,"rois alias"],
          [PyTango.DevVoid,""]],
-        'set':
-        [[PyTango.DevVarLongArray,"roi vector [x0,y0,width0,height0,x1,y1,width1,heigh1,...]"],
-	[PyTango.DevVoid,""]],
-        'get':
+        'setRois':
+        [[PyTango.DevVarLongArray,"roi vector [roi_id0,x0,y0,width0,height0,roi_id1,x1,y1,width1,heigh1,...]"],
+         [PyTango.DevVoid,""]],
+        'getRois':
+        [[PyTango.DevVarStringArray,"rois alias"],
+	 [PyTango.DevVarLongArray,"roi vector [roi_id0,x0,y0,width0,height0,roi_id1,x1,y1,width1,heigh1,...]"]],
+        'getNames':
         [[PyTango.DevVoid,""],
-        [PyTango.DevVarLongArray,"roi vector [x0,y0,width0,height0,x1,y1,width1,heigh1,...]"]],
-        'clearAllRoi':
-        [[PyTango.DevVoid,""],
+	 [PyTango.DevVarStringArray,"rois alias"]],
+        'getRoiModes':
+        [[PyTango.DevVarStringArray,"rois alias"],
+	 [PyTango.DevVarStringArray,"rois modes"]],
+        'setRoiModes':
+        [[PyTango.DevVarStringArray,"roi mode vector [alias0,mode0,alias1,mode1,...]"],
          [PyTango.DevVoid,""]],
 ##        'setMaskFile':
 ##        [[PyTango.DevVarStringArray,"Full path of mask file"],
 ##         [PyTango.DevVoid,""]],
+        'clearAllRois':
+	[[PyTango.DevVoid,""],
+	 [PyTango.DevVoid,""]],
         'readImage':
-        [[PyTango.DevVarLongArray,"[roiId,from which frame"],
+        [[PyTango.DevVarLongArray,"[roiId,from which frame]"],
          [PyTango.DevVarLongArray,"The image"]],
 	'Start':
 	[[PyTango.DevVoid,""],
@@ -189,12 +258,6 @@ class Roi2spectrumDeviceServerClass(PyTango.DeviceClass):
 	'Stop':
 	[[PyTango.DevVoid,""],
 	 [PyTango.DevVoid,""]],
-        'getRoiMode' :
-        [[PyTango.DevVoid,""],
-         [PyTango.DevVarLongArray,"roi list mode"]],
-        'setRoiMode':
-        [[PyTango.DevVarLongArray,"roiId,mode"],
-         [PyTango.DevVoid,""]],
 	}
 
 

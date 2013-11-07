@@ -32,6 +32,8 @@ from Utils import getDataFromFile,BasePostProcess
 def grouper(n, iterable, padvalue=None):
     return itertools.izip(*[itertools.chain(iterable, itertools.repeat(padvalue, n-1))]*n)
 
+RoiCounterTask = Core.Processlib.Tasks.RoiCounterTask
+
 #==================================================================
 #   RoiCounter Class Description:
 #
@@ -119,7 +121,7 @@ class RoiCounterDeviceServer(BasePostProcess) :
 #    RoiCounter command methods
 #
 #==================================================================
-    def add(self,argin):
+    def addNames(self,argin):
         roi_id = []
         for roi_name in argin:
             if not self.__roiName2ID.has_key(roi_name):
@@ -131,14 +133,14 @@ class RoiCounterDeviceServer(BasePostProcess) :
                 roi_id.append(self.__roiName2ID[roi_name])
         return roi_id
 
-    def remove(self,argin):
+    def removeRois(self,argin):
         if self.__roiCounterMgr :
-            self.__roiCounterMgr.remove(argin)
+            self.__roiCounterMgr.removeRois(argin)
         for roi_name in argin:
             roi_id = self.__roiName2ID.pop(roi_name,None)
             self.__roiID2Name.pop(roi_id,None)
             
-    def setRoi(self,argin) :
+    def setRois(self,argin) :
         if self.__roiCounterMgr is None:
             raise RuntimeError('should start the device first')
         
@@ -149,11 +151,11 @@ class RoiCounterDeviceServer(BasePostProcess) :
                 if roi_name is None:
                     raise RuntimeError('should call add method before setRoi')
                 roi_list.append((roi_name,Core.Roi(x,y,width,height)))
-            self.__roiCounterMgr.update(roi_list)
+            self.__roiCounterMgr.updateRois(roi_list)
         else:
             raise AttributeError('should be a vector as follow [roi_id0,x0,y0,width0,height0,...')
         
-    def setArcRoi(self,argin) :
+    def setArcRois(self,argin) :
         if self.__roiCounterMgr is None:
             raise RuntimeError('should start the device first')
         
@@ -164,9 +166,72 @@ class RoiCounterDeviceServer(BasePostProcess) :
                 if roi_name is None:
                     raise RuntimeError('should call add method before setRoi')
                 arc_list.append((roi_name,Core.ArcRoi(x,y,r1,r2,start,end)))
-            self.__roiCounterMgr.update(arc_list)
+            self.__roiCounterMgr.updateArcRois(arc_list)
         else:
             raise AttributeError('should be a vector as follow [roi_id,centerX,centerY,rayon1,rayon2,angle_start,angle_end,...]')
+
+    def getNames(self):
+        if self.__roiCounterMgr is None:
+            raise RuntimeError('should start the device first')
+        return self.__roiCounterMgr.getNames()       
+
+    def getRoiTypes(self,argin):
+        if self.__roiCounterMgr is None:
+            raise RuntimeError('should start the device first')
+        roi_type_list = []
+	rois_types = self.__roiCounterMgr.getTypes()
+        for roi_name in argin:
+            for name, roi_type in rois_types:
+                if name == roi_name:
+                    break
+            else:
+                raise ValueError('Roi %s not defined yet' % roi_name)
+	    roi_type_map = {
+                RoiCounterTask.SQUARE: 'SQUARE',
+                RoiCounterTask.ARC:    'ARC',
+                RoiCounterTask.MASK:   'MASK',
+                RoiCounterTask.LUT:    'LUT',
+            }
+            roi_type_list.append(roi_type_map[roi_type])
+        return roi_type_list
+
+    def getRois(self,argin):
+        if self.__roiCounterMgr is None:
+            raise RuntimeError('should start the device first')
+        roi_list = []
+        rois_names =  self.__roiCounterMgr.getRois()
+        for roi_name in argin:
+            for name, roi in rois_names:
+                if name == roi_name:
+                    break
+            else:
+                raise ValueError('Roi %s not defined yet' % roi_name)
+            roi_id = self.__roiName2ID[roi_name]
+            x, y = roi.getTopLeft().x, roi.getTopLeft().y
+            w, h = roi.getSize().getWidth(), roi.getSize().getHeight()
+            roi_list.append((roi_id, x, y, w, h))
+        roi_list_flat = list(itertools.chain(*roi_list))
+        return numpy.array(roi_list_flat, numpy.uint32)
+
+    def getArcRois(self,argin):
+        if self.__roiCounterMgr is None:
+            raise RuntimeError('should start the device first')
+        roi_list = []
+        rois_names =  self.__roiCounterMgr.getArcRois()
+        for roi_name in argin:
+            for name, roi in rois_names:
+                if name == roi_name:
+                    break
+            else:
+                raise ValueError('Roi %s not defined yet' % roi_name)
+            roi_id = self.__roiName2ID[roi_name]
+            x, y = roi.getCenter()
+            r1, r2 = roi.getRayons()
+            start, end = roi.getAngles()
+            roi_list.append((roi_id, x, y, r1, r2, start, end))
+
+        roi_list_flat = list(itertools.chain(*roi_list))
+        return numpy.array(roi_list_flat, numpy.float64)
 
     def get_current_config(self):
         try:
@@ -181,6 +246,12 @@ class RoiCounterDeviceServer(BasePostProcess) :
                         returnDict[name] = {"type":rType,"x":x,"y":y,
                                             "width":width,
                                             "height":height}
+                    elif rType == roiTask.ARC:
+                        x,y,r1,r2,a1,a2 = roiTask.getArcRoi()
+                        returnDict[name] = {"type":rType,
+                                            "x":x,"y":y,
+                                            "r1":r1,"r2":r2,
+                                            "a1":a1,"a2":a2}
                     else:
                         if rType == roiTask.LUT:
                             x,y,data = roiTask.getLut()
@@ -208,18 +279,26 @@ class RoiCounterDeviceServer(BasePostProcess) :
                     try:
                         if isinstance(d,dict):
                             rType = d.get("type",None)
-                            if rType == Core.Processlib.Tasks.RoiCounterTask.SQUARE:
+                            if rType == RoiCounterTask.SQUARE:
                                 x = d["x"]
                                 y = d["y"]
                                 width = d["width"]
                                 height = d["height"]
                                 namedRois.append((name,Core.Roi(x,y,width,height)))
-                            elif rType == Core.Processlib.Tasks.RoiCounterTask.MASK:
+                            elif rType == RoiCounterTask.ARC:
+                                x = d["x"]
+                                y = d["y"]
+                                r1 = d["r1"]
+                                r2 = d["r2"]
+                                a1 = d["a1"]
+                                a2 = d["a2"]
+                                namedRois.append((name,Core.ArcRoi(x,y,r1,r2,a1,a2)))
+                            elif rType == RoiCounterTask.MASK:
                                 x = d["x"]
                                 y = d["y"]
                                 data = d["data"]
                                 self.__roiCounterMgr.setLutMask(name,Core.Point(x,y),data)
-                            elif rType == Core.Processlib.Tasks.RoiCounterTask.LUT:
+                            elif rType == RoiCounterTask.LUT:
                                 x = d["x"]
                                 y = d["y"]
                                 data = d["data"]
@@ -229,14 +308,14 @@ class RoiCounterDeviceServer(BasePostProcess) :
                         PyTango.Except.throw_exception('Config error',
                                                        'Missing key %s in roi named %s'%(err,name),
                                                        'RoiCounterDeviceServer Class')
-                self.__roiCounterMgr.update(namedRois)
+                self.__roiCounterMgr.updateRois(namedRois)
                 self.add(names)
         except:
             import traceback
             traceback.print_exc()
             
-    def clearAllRoi(self):
-        self.__roiCounterMgr.clearAllRoi()
+    def clearAllRois(self):
+        self.__roiCounterMgr.clearAllRois()
 
     def setMaskFile(self,argin) :
         mask = getDataFromFile(*argin)
@@ -246,7 +325,7 @@ class RoiCounterDeviceServer(BasePostProcess) :
         roiResultCounterList = self.__roiCounterMgr.readCounters(argin)
         if roiResultCounterList:
             minListSize = len(roiResultCounterList[0][1])
-            for roiId,resultList in roiResultCounterList:
+            for roiName,resultList in roiResultCounterList:
                 if minListSize > len(resultList):
                     minListSize = len(resultList)
 
@@ -288,19 +367,31 @@ class RoiCounterDeviceServerClass(PyTango.DeviceClass):
 
     #	 Command definitions
     cmd_list = {
-        'add':
+        'addNames':
         [[PyTango.DevVarStringArray,"rois alias"],
          [PyTango.DevVarLongArray,"rois' id"]],
-        'remove':
+        'removeRois':
         [[PyTango.DevVarStringArray,"rois alias"],
          [PyTango.DevVoid,""]],
-        'setRoi':
+        'setRois':
         [[PyTango.DevVarLongArray,"roi vector [roi_id0,x0,y0,width0,height0,roi_id1,x1,y1,width1,heigh1,...]"],
-	[PyTango.DevVoid,""]],
-        'setArcRoi':
+	 [PyTango.DevVoid,""]],
+        'setArcRois':
         [[PyTango.DevVarDoubleArray,"roi arc vector [roi_id,centerX,centerY,rayon1,rayon2,angle_start,angle_end,...]"],
 	[PyTango.DevVoid,""]],
-        'clearAllRoi':
+        'getNames':
+        [[PyTango.DevVoid,""],
+	 [PyTango.DevVarStringArray,"rois alias"]],
+        'getRoiTypes':
+        [[PyTango.DevVarStringArray,"rois alias"],
+	 [PyTango.DevVarStringArray,"rois types"]],
+        'getRois':
+        [[PyTango.DevVarStringArray,"rois alias"],
+	 [PyTango.DevVarLongArray,"roi vector [roi_id0,x0,y0,width0,height0,roi_id1,x1,y1,width1,heigh1,...]"]],
+        'getArcRois':
+        [[PyTango.DevVarStringArray,"rois alias"],
+	 [PyTango.DevVarDoubleArray,"roi vector [roi arc vector [roi_id,centerX,centerY,rayon1,rayon2,angle_start,angle_end,...]"]],
+        'clearAllRois':
         [[PyTango.DevVoid,""],
          [PyTango.DevVoid,""]],
         'setMaskFile':
