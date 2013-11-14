@@ -52,9 +52,10 @@ import struct
 
 # Before loading Lima.Core, must find out the version the plug-in
 # was compiled with - horrible hack ...
+LimaCameraType = None
 if 'linux' in sys.platform:
     from EnvHelper import setup_lima_env
-    setup_lima_env(sys.argv)
+    LimaCameraType = setup_lima_env(sys.argv)
 
 from AttrHelper import CallableReadEnum,CallableWriteEnum
 
@@ -1992,6 +1993,8 @@ class LimaCCDsClass(PyTango.DeviceClass) :
 def declare_camera_n_commun_to_tango_world(util) :
     for module_name in camera.__all__:
         try:
+            if LimaCameraType and (module_name != LimaCameraType):
+                continue
             m = __import__('camera.%s' % (module_name),None,None,'camera.%s' % (module_name))
         except ImportError:
             continue

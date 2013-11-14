@@ -110,6 +110,7 @@ def setup_lima_env(argv):
         if 'LIMA_' in k and '_VERSION' in k and \
                k not in ['LIMA_LINK_STRICT_VERSION']:
             print_debug('Env: %s=%s' % (k, v))
+    return output['LimaCameraType']
 
 def check_args(argv):
     global Debug
