@@ -294,7 +294,9 @@ class LimaTacoCCDs(PyTango.Device_4Impl, object):
         data = control.ReadImage(int(frame_nb))
         self._data_cache = numpy.array(data.buffer.ravel())
 	self._data_cache.dtype = numpy.uint8
-        #data.releaseBuffer()
+        release = getattr(data, 'releaseBuffer', None)
+        if release:
+            release()
         if self._data_cache.shape[0] != frame_size:
             raise Core.Exception, ('Client expects %d bytes, frame has %d' % 
                                    (frame_size, self._data_cache.shape[0]))
@@ -375,7 +377,9 @@ class LimaTacoCCDs(PyTango.Device_4Impl, object):
         concat_frames = control.ReadImage(0, nb_frames)
         self._concat_data_cache = data_header + concat_frames.buffer.tostring()
         da_len = len(self._concat_data_cache) - header_len
-        #concat_frames.releaseBuffer()
+        release = getattr(concat_frames, 'releaseBuffer', None)
+        if release:
+            release()
         if da_len != frame_size:
             raise Core.Exception, ('Client expects %d bytes, frame has %d' % 
                                    (frame_size, da_len))
@@ -913,7 +917,9 @@ class LimaTacoCCDs(PyTango.Device_4Impl, object):
         control = _control_ref()
         img_data = control.ReadImage(-1)
         self.__bpm_task.process(img_data)
-        img_data.releaseBuffer()
+        release = getattr(img_data, 'releaseBuffer', None)
+        if release:
+            release()
         bpm_pars = self.__bpm_mgr.getResult(1)
         if bpm_pars.errorCode != self.__bpm_mgr.OK:
             raise Core.Exception,'Error calculating beam params: %d' % bpm_pars.errorCode
