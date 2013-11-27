@@ -325,6 +325,13 @@ class Xspress3(PyTango.Device_4Impl):
         data=attr.get_write_value()
         _Xspress3Camera.setUseDtc(data)
 
+    def read_useHw(self, attr):
+        attr.set_value(_Xspress3Camera.getUseHw())
+
+    def write_useHw(self, attr):
+        data=attr.get_write_value()
+        _Xspress3Camera.setUseHw(data)
+
     def write_setTiming(self, attr):
         data=attr.get_write_value()
         _Xspress3Camera.setTiming(*data);
@@ -548,6 +555,11 @@ class Xspress3Class(PyTango.DeviceClass):
               PyTango.WRITE, 25]],
 
           'useDtc':
+            [[PyTango.DevBoolean,
+              PyTango.SCALAR,
+              PyTango.READ_WRITE]],
+
+          'useHw':
             [[PyTango.DevBoolean,
               PyTango.SCALAR,
               PyTango.READ_WRITE]],
