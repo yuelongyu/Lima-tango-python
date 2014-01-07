@@ -208,13 +208,14 @@ Configuration device
 .. toctree::
   :maxdepth: 2
 
+  andor
   basler
   frelon
   maxipix
+  pco
   pilatus
   prosilica 
-  andor
-  pco
+  simulator
 
 Calculation devices
 -------------------
