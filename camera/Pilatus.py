@@ -155,6 +155,7 @@ class Pilatus(PyTango.Device_4Impl):
     def read_energy_threshold(self, attr) :
         energy = _PilatusCamera.energy()
         attr.set_value(energy)
+
 #------------------------------------------------------------------
 #    Write energy_threshold attribute
 #------------------------------------------------------------------
@@ -162,33 +163,7 @@ class Pilatus(PyTango.Device_4Impl):
         energy = attr.get_write_value()
 
         _PilatusCamera.setEnergy(energy)
-#------------------------------------------------------------------
-#    Read Working_energy attribute
-#------------------------------------------------------------------
-    def read_working_energy(self, attr):
-        threshold = _PilatusCamera.threshold()
-        if threshold < 0:           # Not set
-            energy = -1
-        else:
-            energy = threshold / 600.    # threshold is 60% of working energy
-        attr.set_value(energy)
 
-#------------------------------------------------------------------
-#    Write working_energy attribute
-#------------------------------------------------------------------
-    def write_working_energy(self, attr):
-        energy = attr.get_write_value()
-        threshold = energy * 600  # 60% of working energy
-        if energy > 12 :
-            gain = 1                    # Low gain
-        elif energy > 8 and energy <= 12 :
-            gain = 2                    # Mid gain
-        elif energy >= 6 and energy <= 8:
-            gain = 3                    # high gain
-        else:
-            gain = 4                    # Ultra high gain
-        
-        _PilatusCamera.setThresholdGain(threshold,gain)
 #----------------------------------------------------------------------------
 #     Read delay attribute
 #----------------------------------------------------------------------------
@@ -281,10 +256,6 @@ class PilatusClass(PyTango.DeviceClass):
             PyTango.READ_WRITE]],
         'threshold':
             [[PyTango.DevLong,
-            PyTango.SCALAR,
-            PyTango.READ_WRITE]],
-        "working_energy":
-         [[PyTango.DevFloat,
             PyTango.SCALAR,
             PyTango.READ_WRITE]],
         'energy_threshold':
