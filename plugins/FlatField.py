@@ -29,6 +29,8 @@ class FlatfieldDeviceServer(BasePostProcess) :
 
     def __init__(self,cl,name) :
         self.__flatFieldTask = None
+        self.__normalize = True
+
         self.__flatFieldImage = Core.Processlib.Data()
         
         BasePostProcess.__init__(self,cl,name)
@@ -48,7 +50,7 @@ class FlatfieldDeviceServer(BasePostProcess) :
                 self.__flatFieldTask = extOpt.addOp(Core.FLATFIELDCORRECTION,
                                                     self.FLATFIELD_TASK_NAME,
                                                     self._runLevel)
-                self.__flatFieldTask.setFlatFieldImage(self.__flatFieldImage)
+                self.__flatFieldTask.setFlatFieldImage(self.__flatFieldImage, self.__normalize)
 	PyTango.Device_4Impl.set_state(self,state)
 
     def setFlatFieldImage(self,filepath) :
@@ -56,6 +58,27 @@ class FlatfieldDeviceServer(BasePostProcess) :
         if(self.__flatFieldTask) :
             self.__flatFieldTask.setFlatFieldImage(self.__flatFieldImage)
 
+
+#==================================================================
+#
+#    FlatfieldDeviceServer read/write attribute methods
+#
+#==================================================================
+#------------------------------------------------------------------
+
+    def read_normalize(self,attr) :
+        attr.set_value(self.__normalize)
+
+    def write_normalize(self,attr) :
+        data = attr.get_write_value()
+        self.__normalize = data
+
+
+    def is_normalize_allowed(self,mode) :
+        if(PyTango.AttReqType.READ_REQ == mode) :
+            return True
+        else:
+            return self.get_state() == PyTango.DevState.OFF
 
 class FlatfieldDeviceServerClass(PyTango.DeviceClass) :
         #	 Class Properties
@@ -86,6 +109,10 @@ class FlatfieldDeviceServerClass(PyTango.DeviceClass) :
     attr_list = {
 	'RunLevel':
 	    [[PyTango.DevLong,
+	    PyTango.SCALAR,
+	    PyTango.READ_WRITE]],
+	'normalize':
+	    [[PyTango.DevBoolean,
 	    PyTango.SCALAR,
 	    PyTango.READ_WRITE]],
 	}
