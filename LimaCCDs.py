@@ -306,11 +306,11 @@ class LimaCCDs(PyTango.Device_4Impl) :
             traceback.print_exc()
 	#INIT display shared memory
 	try:
-	    self.__shared_memory_names = ['LimaCCds',self.LimaCameraType]
+	    shared_memory_names = ['LimaCCds',self.LimaCameraType]
 	    shared_memory = self.__control.display()
-	    shared_memory.setNames(*self.__shared_memory_names)
+	    shared_memory.setNames(*shared_memory_names)
 	except AttributeError:
-	    self.__shared_memory_names = ['','']
+	    pass
 
         
     def __getattr__(self,name) :
@@ -981,13 +981,7 @@ class LimaCCDs(PyTango.Device_4Impl) :
     def write_saving_directory(self,attr) :
         data = attr.get_write_value()
         saving = self.__control.saving()
-        newDirectory = data
-        if os.access(newDirectory,os.W_OK|os.X_OK) :
-            saving.setDirectory(newDirectory)
-        else:
-            PyTango.Except.throw_exception('Access Error',\
-                                           'Directory %s is not writtable'%(newDirectory),\
-                                           'LimaCCD Class')
+        saving.setDirectory(data)
 
     @Core.DEB_MEMBER_FUNCT
     def read_saving_prefix(self,attr) :
@@ -1232,7 +1226,12 @@ class LimaCCDs(PyTango.Device_4Impl) :
         attr.set_value(returnList)
 
     def read_shared_memory_names(self,attr) :
-        attr.set_value(self.__shared_memory_names)
+        try:
+            shared_memory = self.__control.display()
+	    shared_memory_names= shared_memory.getNames()
+        except:
+            shared_memory_names = ['', '']
+        attr.set_value(shared_memory_names)
 
     def write_shared_memory_names(self,attr) :
         self.__shared_memory_names = attr.get_write_value()
@@ -1240,7 +1239,11 @@ class LimaCCDs(PyTango.Device_4Impl) :
         shared_memory.setNames(*self.__shared_memory_names)
 
     def read_shared_memory_active(self,attr):
-        attr.set_value(self.__control.display().isActive())
+        try:
+             shared_memory = self.__control.display().isActive()
+        except:
+             shared_memory = False
+        attr.set_value(shared_memory)
 
     def write_shared_memory_active(self,attr):
         data = attr.get_write_value()
@@ -1278,6 +1281,13 @@ class LimaCCDs(PyTango.Device_4Impl) :
             video = self.__control.video()
             values = video.getSupportedVideoMode()
             valueList = [_getDictKey(self.__VideoMode,val) for val in values]
+        elif attr_name == 'acq_trigger_mode':
+            acq = self.__control.acquisition()
+            try:
+                values = acq.getTriggerModeList()
+                valueList = [_getDictKey(self.__AcqTriggerMode,val) for val in values]
+            except:
+                valueList = self.__AcqTriggerMode.keys()
         else:
             dict_name = '_' + self.__class__.__name__ + '__' + ''.join([x.title() for x in attr_name.split('_')])
             d = getattr(self,dict_name,None)
