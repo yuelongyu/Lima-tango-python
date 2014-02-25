@@ -27,7 +27,7 @@
 #                The class is derived from Device. It represents the
 #                CORBA servant object which will be accessed from the
 #                network. All commands which can be executed on the
-#                Pilatus are implemented in this file.
+#                Frelon are implemented in this file.
 #
 # project :     TANGO Device Server
 #
@@ -134,6 +134,10 @@ class Frelon(PyTango.Device_4Impl):
         roi_bin_offset = Core.Point(0, attr.get_write_value())
         _FrelonAcq.setRoiBinOffset(roi_bin_offset)
 
+    def read_seq_status(self,attr) :
+        seq_status = _FrelonAcq.getCcdStatus()
+        attr.set_value(seq_status)
+
 
 class FrelonClass(PyTango.DeviceClass):
 
@@ -186,6 +190,10 @@ class FrelonClass(PyTango.DeviceClass):
         [[PyTango.DevString,
           PyTango.SCALAR,
           PyTango.READ_WRITE]],
+        'seq_status' :
+        [[PyTango.DevLong,
+          PyTango.SCALAR,
+          PyTango.READ]],
         }
 
     def __init__(self,name) :
