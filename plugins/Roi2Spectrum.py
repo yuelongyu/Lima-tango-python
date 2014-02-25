@@ -87,7 +87,7 @@ class Roi2spectrumDeviceServer(BasePostProcess) :
 #------------------------------------------------------------------
     def write_BufferSize(self, attr):
 	data = attr.get_write_value()
-        self.__roi2spectrumMgr.setBufferSize()
+        self.__roi2spectrumMgr.setBufferSize(data)
 
 
 #------------------------------------------------------------------
