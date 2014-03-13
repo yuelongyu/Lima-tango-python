@@ -76,8 +76,8 @@ class MyImageAttr(PyTango.ImageAttr):
 class LiveViewer (PyTango.Device_4Impl):
     Core.DEB_CLASS(Core.DebModApplication, 'LimaCCDs')
 
-    attr_Exposure_Time = 0.01
-    attr_Nb_Frame = 0
+    attr_Exposure_Time = 1 
+    attr_Nb_Frame = 1
     attr_Frame_Rate = 20
     attr_JPeg_Quality = 50
     
@@ -116,9 +116,6 @@ class LiveViewer (PyTango.Device_4Impl):
         except:
 	    self.warn_stream("Failed to initialize dynamic attributes")
 	    
-	#set default acquisition params 
-	self.acquisition.setAcqExpoTime(self.attr_Exposure_Time)
-        self.acquisition.setAcqNbFrames(self.attr_Nb_Frame)
         try:
             self.interface.setFrameRate(self.attr_Frame_Rate)
         except:
