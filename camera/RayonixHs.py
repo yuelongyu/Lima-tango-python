@@ -71,18 +71,17 @@ class RayonixHs(PyTango.Device_4Impl):
         PyTango.Device_4Impl.__init__(self,cl,name)
         self.init_device()
         # dictionnaries to be used with AttrHelper.get_attr_4u
-        self.__FastTrigger = {'ON':True,
-                           'OFF':False}
-        self.__Cooler = {'ON': True,
-                             'OFF': False}
-        self.__ShutterLevel = {'LOW':0,
-                                   'HIGH':1}       
-        self.__Attribute2FunctionBase = {'fast_trigger': 'FastExtTrigger',
-                                         'shutter_level': 'ShutterLevel',
-                                         'temperature': 'Temperature',
-                                         'temperature_sp': 'TemperatureSP',
-                                         'cooler': 'Cooler',
-                                         'cooling_status': 'CoolingStatus',
+        self.__FrameMode = {'SINGLE':RayonixHsAcq.SINGLE,
+                           'FAST_TRANSFER':RayonixHsAcq.FAST_TRANSFER}
+        self.__TriggerSignalType = {'OPTO': RayonixHsAcq.OPTO,
+                                    'OPTO_INVERTED': RayonixHsAcq.OPTO_INVERTED,
+                                    'CMOS': RayonixHsAcq.CMOS,
+                                    'CMOS_PULLDOWN': RayonixHsAcq.CMOS_PULLDOWN,
+                                    'CMOS_PULLUP': RayonixHsAcq.CMOS_PULLUP,
+                                    'CMOS_PULLDOWN_INVERTED': RayonixHsAcq.CMOS_PULLDOWN_INVERTED,
+                                    'CMOS_PULLUP_INVERTED': RayonixHsAcq.CMOS_PULLUP_INVERTED}
+        self.__Attribute2FunctionBase = {'frame_mode': 'FrameMode',
+                                         'trigger_signal_type': 'TriggerSignalType',
                                          }
                                                
 #------------------------------------------------------------------
@@ -177,16 +176,23 @@ class RayonixHsClass(PyTango.DeviceClass):
 
     #    Attribute definitions
     attr_list = {
-        'fast_trigger':
+        'frame_mode':
         [[PyTango.DevString,
           PyTango.SCALAR,
           PyTango.READ_WRITE],
          {
-             'label':'Fast trigger mode, see manual for usage',
-             'unit': 'N/A',
-             'format': '',
-             'description': 'OFF or ON',
+             'label':'To switch from std to fast-transfer mode',
+             'unit': 'SINGLE/FAST_TRANSFER',
              }],
+        'trigger_signal_type':
+        [[PyTango.DevString,
+          PyTango.SCALAR,
+          PyTango.READ_WRITE],
+         {
+             'label':'Set frame trigger input signal type',
+             'unit': 'OPTO/OPTO_INVERTED/CMOS/CMOS_PULLDOWN/CMOS_PULLUP/CMOS_PULLDOWN_INVERTED/CMOS_PULLUP_INVERTED',
+             }],
+                
         }
 
 #------------------------------------------------------------------
