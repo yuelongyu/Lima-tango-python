@@ -1,5 +1,16 @@
-Prosilica
-=========
+Ueye Tango device
+=======
+
+This is the reference documentation of the Simulator Tango device.
+
+you can also find some useful information about the camera models/prerequisite/installation/configuration/compilation in the :ref:`Ueye camera plugin <camera-ueye>` section.
+
+Properties
+----------
+This device has no property neither attribute.
+
+Attributes
+----------
 
 Commands
 --------
@@ -15,11 +26,7 @@ getAttrStringValueList	DevString:	DevVarStringArray:	Return the authorized strin
 =======================	=============== =======================	===========================================
 
 
-Properties
-----------
 
-=============== =============== =============== ==============================================================
-Property name	Mandatory	Default value	Description
-=============== =============== =============== ==============================================================
-cam_ip_address	Yes		N/A		The camera's ip or hostname 
-=============== =============== =============== ==============================================================
+
+
+
