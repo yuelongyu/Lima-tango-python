@@ -155,20 +155,15 @@ class imXPADClass(PyTango.DeviceClass):
 _imXPADCam = None
 _imXPADInterface = None
 
-def get_control(cam_ip_address = "0",port=3456,model="XPAD_S70",
-                usb_device_id = 0,**keys) :
-    print cam_ip_address,port,model,usb_device_id
+def get_control(cam_ip_address = "0",port=3456,model="XPAD_S70",**keys) :
+    print cam_ip_address,port,model
     global _imXPADCam
     global _imXPADInterface
     port = int(port)
-    usb_device_id = int(usb_device_id)
     if _imXPADCam is None:
 	_imXPADCam = XpadAcq.Camera(cam_ip_address,port,model)
         _imXPADCam.setImageType(Core.Bpp32)
         _imXPADCam.init()
-        _imXPADCam.getUSBDeviceList()
-        _imXPADCam.setUSBDevice(usb_device_id)
-        _imXPADCam.askReady()
 	_imXPADInterface = XpadAcq.Interface(_imXPADCam)
     return Core.CtControl(_imXPADInterface)
 
