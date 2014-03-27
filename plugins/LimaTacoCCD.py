@@ -178,6 +178,7 @@ class LimaTacoCCDs(PyTango.Device_4Impl, object):
 	self.__entry_header_delimiter = '\n'
         self.__image_number_header_delimiter = ';'
 
+        self.__last_exp_time= None
 
 #------------------------------------------------------------------
 #    Device destructor
@@ -427,6 +428,7 @@ class LimaTacoCCDs(PyTango.Device_4Impl, object):
         if exp_time > 0. :
 	    acq.setAcqExpoTime(exp_time)
 
+        self.__last_exp_time= exp_time
 
 #------------------------------------------------------------------
 #    DevCcdGetExposure command:
@@ -876,6 +878,9 @@ class LimaTacoCCDs(PyTango.Device_4Impl, object):
             triggerMode = Core.IntTrig
         elif argin == 1:
             triggerMode = Core.ExtTrigSingle
+            if self.__last_exp_time is not None:
+                if self.__last_exp_time == 0:
+                    triggerMode = Core.ExtGate
         elif argin == 2:
             triggerMode = Core.ExtTrigMult
         elif argin == 3:
