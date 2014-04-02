@@ -19,7 +19,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, see <http://www.gnu.org/licenses/>.
 ############################################################################
-
+import time
 import os, tempfile, re, imp
 from subprocess import Popen, PIPE
 
@@ -31,7 +31,6 @@ class LimaCCDs(PyTango.Device_4Impl):
         PyTango.Device_4Impl.__init__(self,*args)
         self.get_device_properties(self.get_device_class())
         print 'LimaCameraType=%s' % self.LimaCameraType
-        sys.exit(0)
 
 class LimaCCDsClass(PyTango.DeviceClass):
     device_property_list = {
@@ -48,7 +47,6 @@ tango_util = PyTango.Util(sys.argv)
 tango_util.add_TgClass(LimaCCDsClass, LimaCCDs, 'LimaCCDs')
 tango_util_inst = PyTango.Util.instance()
 tango_util_inst.server_init()
-tango_util_inst.server_run()
 """
 
 ModDepend = ['Core', 'Espia']
@@ -79,7 +77,8 @@ def setup_lima_env(argv):
         for l in pobj.stdout.readlines():
             key, val = l.strip().split('=')
             output[key] = val
-        pobj.wait()
+        while pobj.poll() is None:
+          time.sleep(0.1) 
         print_debug('Retry %d - got from TANGO database: %s' % (r, output))
         if 'LimaCameraType' in output.keys():
             break
