@@ -113,10 +113,10 @@ class LimaCCDs(PyTango.Device_4Impl) :
         self.init_device()
         self.__lima_control = None
 
- 	self.__key_header_delimiter = '='
+        self.__key_header_delimiter = '='
         self.__entry_header_delimiter = '\n'
         self.__image_number_header_delimiter = ';'
-	self.__readImage_frame_number = 0
+        self.__readImage_frame_number = 0
         self.__configInit = False
        
 #------------------------------------------------------------------
@@ -144,7 +144,7 @@ class LimaCCDs(PyTango.Device_4Impl) :
         dataBase = PyTango.Database()
 
         TacoSpecificName.append(self.LimaCameraType)
-        
+
         try:
             m = __import__('camera.%s' % (self.LimaCameraType),None,None,'camera.%s' % (self.LimaCameraType))
         except ImportError:
@@ -154,7 +154,7 @@ class LimaCCDs(PyTango.Device_4Impl) :
         else:
             properties = {}
             try:
-                specificClass,specificDevice = m.get_tango_specific_class_n_device()
+                _, specificDevice = m.get_tango_specific_class_n_device()
             except AttributeError: pass
             else:
                 typeFlagsNameList = []
@@ -183,11 +183,11 @@ class LimaCCDs(PyTango.Device_4Impl) :
             Core.Processlib.PoolThreadMgr.get().setNumberOfThread(nb_thread)
 
         self.__accThresholdCallback = None
-	
-	accThresholdCallbackModule = self.AccThresholdCallbackModule
-	if not accThresholdCallbackModule:
-	# if NO property accThresholdCallbackModule has been set the member var. is set to []
-	    pass
+
+        accThresholdCallbackModule = self.AccThresholdCallbackModule
+        if not accThresholdCallbackModule:
+        # if NO property accThresholdCallbackModule has been set the member var. is set to []
+            pass
         else:
             try:
                 m = __import__('plugins.%s' % (accThresholdCallbackModule),None,None,
@@ -235,24 +235,25 @@ class LimaCCDs(PyTango.Device_4Impl) :
         self.__SavingFormat = {'RAW' : Core.CtSaving.RAW,
                                'EDF' : Core.CtSaving.EDF,
                                'CBF' : Core.CtSaving.CBFFormat}
-	try:
-	    self.__SavingFormat['TIFF'] = Core.CtSaving.TIFFFormat
-	except AttributeError:
-	    pass
+        try:
+            self.__SavingFormat['TIFF'] = Core.CtSaving.TIFFFormat
+        except AttributeError:
+            pass
 
-	try:
-	     self.__SavingFormat['EDFGZ'] = Core.CtSaving.EDFGZ
-             self.__SavingFormatDefaultSuffix[Core.CtSaving.EDFGZ] = '.edfgz'
-	except AttributeError:
-	     pass
+        try:
+            self.__SavingFormat['EDFGZ'] = Core.CtSaving.EDFGZ
+            self.__SavingFormatDefaultSuffix[Core.CtSaving.EDFGZ] = '.edfgz'
+        except AttributeError:
+            pass
 
         self.__SavingFormatDefaultSuffix = {Core.CtSaving.RAW : '.raw',
                                             Core.CtSaving.EDF : '.edf',
                                             Core.CtSaving.CBFFormat : '.cbf'}
-	try:
-	    self.__SavingFormatDefaultSuffix[Core.CtSaving.TIFFFormat] = '.tiff'
-	except AttributeError:
-	    pass
+
+        try:
+            self.__SavingFormatDefaultSuffix[Core.CtSaving.TIFFFormat] = '.tiff'
+        except AttributeError:
+            pass
 
         self.__SavingMode = {'MANUAL' : Core.CtSaving.Manual,
                              'AUTO_FRAME' : Core.CtSaving.AutoFrame,
@@ -267,14 +268,16 @@ class LimaCCDs(PyTango.Device_4Impl) :
                                  'EXTERNAL_TRIGGER_MULTI' : Core.ExtTrigMult,
                                  'EXTERNAL_GATE' : Core.ExtGate,
                                  'EXTERNAL_START_STOP' : Core.ExtStartStop}
-	try:
-	    self.__AcqTriggerMode['INTERNAL_TRIGGER_MULTI'] = Core.IntTrigMult
-	except AttributeError:
-	    pass
-	try:
-	    self.__AcqTriggerMode['EXTERNAL_TRIGGER_READOUT'] = Core.ExtTrigReadout
-	except AttributeError:
-	    pass
+
+        try:
+            self.__AcqTriggerMode['INTERNAL_TRIGGER_MULTI'] = Core.IntTrigMult
+        except AttributeError:
+            pass
+
+        try:
+            self.__AcqTriggerMode['EXTERNAL_TRIGGER_READOUT'] = Core.ExtTrigReadout
+        except AttributeError:
+            pass
 
         try:
             self.__ImageRotation = {'NONE' : Core.Rotation_0,
@@ -390,27 +393,27 @@ class LimaCCDs(PyTango.Device_4Impl) :
     @Core.DEB_MEMBER_FUNCT
     def read_camera_type(self,attr) :        
         interface = self.__control.hwInterface()
-	det_info = interface.getHwCtrlObj(Core.HwCap.DetInfo)
-	value = det_info.getDetectorType()
+        det_info = interface.getHwCtrlObj(Core.HwCap.DetInfo)
+        value = det_info.getDetectorType()
         attr.set_value(value)
 
     ## @brief Read the Camera Model
     #
     @Core.DEB_MEMBER_FUNCT
     def read_camera_model(self,attr) :        
-	interface = self.__control.hwInterface()
-	det_info = interface.getHwCtrlObj(Core.HwCap.DetInfo)
-	value = det_info.getDetectorModel() 
-	attr.set_value(value)
+        interface = self.__control.hwInterface()
+        det_info = interface.getHwCtrlObj(Core.HwCap.DetInfo)
+        value = det_info.getDetectorModel()
+        attr.set_value(value)
         
     ## @brief Read the Camera pixelsize
     #
     @Core.DEB_MEMBER_FUNCT
     def read_camera_pixelsize(self,attr) :        
-	interface = self.__control.hwInterface()
-	det_info = interface.getHwCtrlObj(Core.HwCap.DetInfo)
-	value = det_info.getPixelSize() 
-	attr.set_value(value)
+        interface = self.__control.hwInterface()
+        det_info = interface.getHwCtrlObj(Core.HwCap.DetInfo)
+        value = det_info.getPixelSize()
+        attr.set_value(value)
         
     ## @brief get the status of the acquisition
     #
@@ -479,10 +482,10 @@ class LimaCCDs(PyTango.Device_4Impl) :
     #
     @Core.DEB_MEMBER_FUNCT
     def read_acc_max_expo_time(self,attr) :        
-	acq = self.__control.acquisition()
+        acq = self.__control.acquisition()
 
         value = acq.getAccMaxExpoTime()
-	if value is None: value = -1
+        if value is None: value = -1
 	
         attr.set_value(value)
 
@@ -491,14 +494,14 @@ class LimaCCDs(PyTango.Device_4Impl) :
     @Core.DEB_MEMBER_FUNCT
     def write_acc_max_expo_time(self,attr) :
         data = attr.get_write_value()
-	acq = self.__control.acquisition()
+        acq = self.__control.acquisition()
         acq.setAccMaxExpoTime(data)
 
     ## @brief Read maximum accumulation exposure time
     #
     @Core.DEB_MEMBER_FUNCT
     def read_concat_nb_frames(self,attr) :        
-	acq = self.__control.acquisition()
+        acq = self.__control.acquisition()
         value = acq.getConcatNbFrames()
         attr.set_value(value)
 
@@ -507,17 +510,17 @@ class LimaCCDs(PyTango.Device_4Impl) :
     @Core.DEB_MEMBER_FUNCT
     def write_concat_nb_frames(self,attr) :
         data = attr.get_write_value()
-	acq = self.__control.acquisition()
+        acq = self.__control.acquisition()
         acq.setConcatNbFrames(data)
 
     ## @brief Read calculated accumulation exposure time
     #
     @Core.DEB_MEMBER_FUNCT
     def read_acc_expo_time(self,attr) :        
-	acq = self.__control.acquisition()
+        acq = self.__control.acquisition()
 
         value = acq.getAccExpoTime()
-	if value is None: value = -1
+        if value is None: value = -1
 	
         attr.set_value(value)
 	
@@ -525,9 +528,9 @@ class LimaCCDs(PyTango.Device_4Impl) :
     #
     @Core.DEB_MEMBER_FUNCT
     def read_acc_nb_frames(self,attr) :        
-	acq = self.__control.acquisition()
+        acq = self.__control.acquisition()
         value = acq.getAccNbFrames()
-	if value is None: value = -1
+        if value is None: value = -1
 	
         attr.set_value(value)
 
@@ -535,7 +538,7 @@ class LimaCCDs(PyTango.Device_4Impl) :
     #
     @Core.DEB_MEMBER_FUNCT
     def read_acc_dead_time(self,attr) :        
-	acq = self.__control.acquisition()
+        acq = self.__control.acquisition()
         value = acq.getAccDeadTime()
 
         attr.set_value(value)
@@ -544,7 +547,7 @@ class LimaCCDs(PyTango.Device_4Impl) :
     #
     @Core.DEB_MEMBER_FUNCT
     def read_acc_live_time(self,attr) :        
-	acq = self.__control.acquisition()
+        acq = self.__control.acquisition()
         value = acq.getAccLiveTime()
 	
         attr.set_value(value)
@@ -553,7 +556,7 @@ class LimaCCDs(PyTango.Device_4Impl) :
     #
     @Core.DEB_MEMBER_FUNCT
     def read_acc_saturated_active(self,attr) :        
-	acc = self.__control.accumulation()
+        acc = self.__control.accumulation()
         value = acc.getActive()
 	
         attr.set_value(value)
@@ -564,14 +567,14 @@ class LimaCCDs(PyTango.Device_4Impl) :
     def write_acc_saturated_active(self,attr) :            
         data = attr.get_write_value()
 
-	acc = self.__control.accumulation()
+        acc = self.__control.accumulation()
         acc.setActive(data)
 
     ## @brief Read saturated threshold
     #
     @Core.DEB_MEMBER_FUNCT
     def read_acc_saturated_threshold(self,attr) :        
-	acc = self.__control.accumulation()
+        acc = self.__control.accumulation()
         value = acc.getPixelThresholdValue()
 	
         attr.set_value(value)
@@ -582,7 +585,7 @@ class LimaCCDs(PyTango.Device_4Impl) :
     def write_acc_saturated_threshold(self,attr) :        
         data = attr.get_write_value()
 
-	acc = self.__control.accumulation()
+        acc = self.__control.accumulation()
         acc.setPixelThresholdValue(data)
 
     ## @brief Read if saturated calculation is active
@@ -606,7 +609,7 @@ class LimaCCDs(PyTango.Device_4Impl) :
         else:
             msg = "Accumulation threshold plugins not loaded"
             deb.Error(msg)
-            raise Exception, msg
+            raise Exception(msg)
         
     ## @brief Read latency time 
     #
@@ -633,8 +636,8 @@ class LimaCCDs(PyTango.Device_4Impl) :
     @Core.DEB_MEMBER_FUNCT
     def read_valid_ranges(self,attr) :        
         interface = self.__control.hwInterface()
-	sync = interface.getHwCtrlObj(Core.HwCap.Sync)
-	ranges = sync.getValidRanges()
+        sync = interface.getHwCtrlObj(Core.HwCap.Sync)
+        ranges = sync.getValidRanges()
         attr.set_value([ranges.min_exp_time,ranges.max_exp_time,ranges.min_lat_time,ranges.max_lat_time])
 
 
@@ -714,7 +717,7 @@ class LimaCCDs(PyTango.Device_4Impl) :
     @Core.DEB_MEMBER_FUNCT
     def read_image_width(self,attr) :
         image = self.__control.image()
- 	dim = image.getImageDim()
+        dim = image.getImageDim()
                         
         attr.set_value(dim.getSize().getWidth())
 
@@ -723,7 +726,7 @@ class LimaCCDs(PyTango.Device_4Impl) :
     @Core.DEB_MEMBER_FUNCT
     def read_image_height(self,attr) :
         image = self.__control.image()
- 	dim = image.getImageDim()
+        dim = image.getImageDim()
                         
         attr.set_value(dim.getSize().getHeight())
 
@@ -800,16 +803,16 @@ class LimaCCDs(PyTango.Device_4Impl) :
         self.__image_number_header_delimiter = data[2]
 
     def read_saving_index_format(self,attr) :
-	saving = self.__control.saving()
-	params = saving.getParameters()
-	attr.set_value(params.indexFormat)
+        saving = self.__control.saving()
+        params = saving.getParameters()
+        attr.set_value(params.indexFormat)
 
     def write_saving_index_format(self,attr) :
-	data = attr.get_write_value()
-	saving = self.__control.saving()
-	params = saving.getParameters()
-	params.indexFormat = data
-	saving.setParameters(params)
+        data = attr.get_write_value()
+        saving = self.__control.saving()
+        params = saving.getParameters()
+        params.indexFormat = data
+        saving.setParameters(params)
 
     ## @brief last image acquired
     #
@@ -837,7 +840,7 @@ class LimaCCDs(PyTango.Device_4Impl) :
     @Core.DEB_MEMBER_FUNCT
     def read_last_image_ready(self,attr) :
         status = self.__control.getStatus()
-	img_counters= status.ImageCounters
+        img_counters= status.ImageCounters
 
         value = img_counters.LastImageReady
 
@@ -848,7 +851,7 @@ class LimaCCDs(PyTango.Device_4Impl) :
     @Core.DEB_MEMBER_FUNCT
     def read_last_counter_ready(self,attr) :
         status = self.__control.getStatus()
-	img_counters= status.ImageCounters
+        img_counters= status.ImageCounters
 
         value = img_counters.LastCounterReady
 
@@ -903,17 +906,17 @@ class LimaCCDs(PyTango.Device_4Impl) :
     def write_shutter_manual_state(self,attr) :
         state = attr.get_write_value()
         if state not in ["OPEN", "CLOSE", "NO_MANUAL_MODE"]:
-            raise Exception, "Invalid shutter state"
+            raise Exception("Invalid shutter state")
 
         shutter = self.__control.shutter()
-	if (shutter.hasCapability() and 
+        if (shutter.hasCapability() and 
             shutter.getModeList().count(Core.ShutterManual) and
             shutter.getMode() == Core.ShutterManual and
             state in ["OPEN", "CLOSE"]):
             if shutter.getState(): state = "OPEN"
             else: state = "CLOSED"
-	else:
-            raise Exception, "Shutter not in manual mode"
+        else:
+            raise Exception("Shutter not in manual mode")
 
     ## @brief Read current shutter state if in manual mode
     # True-Open, False-Close
@@ -921,12 +924,12 @@ class LimaCCDs(PyTango.Device_4Impl) :
     def read_shutter_manual_state(self,attr) :
         shutter = self.__control.shutter()
 
-	if (shutter.hasCapability() and 
+        if (shutter.hasCapability() and 
             shutter.getModeList().count(Core.ShutterManual) and
             shutter.getMode() == Core.ShutterManual):
             if shutter.getState(): state = "OPEN"
             else: state = "CLOSED"
-	else:
+        else:
             state = "NO_MANUAL_MODE"
 			
         attr.set_value(state)
@@ -1053,7 +1056,7 @@ class LimaCCDs(PyTango.Device_4Impl) :
         saving = self.__control.saving()
 
         value = _getDictValue(self.__SavingFormat,data.upper())
-	if value is None:
+        if value is None:
             PyTango.Except.throw_exception('WrongData',\
                                            'Wrong value %s: %s'%('saving_format',data.upper()),\
                                            'LimaCCD Class')
@@ -1518,7 +1521,7 @@ class LimaCCDs(PyTango.Device_4Impl) :
 
         shutter = self.__control.shutter()
         
-	if shutter.hasCapability() and shutter.getModeList().count(Core.ShutterManual):
+        if shutter.hasCapability() and shutter.getModeList().count(Core.ShutterManual):
             shutter.setState(False)
             
 #------------------------------------------------------------------
@@ -1532,7 +1535,7 @@ class LimaCCDs(PyTango.Device_4Impl) :
 
         shutter = self.__control.shutter()
         
-	if shutter.hasCapability() and shutter.getModeList().count(Core.ShutterManual):
+        if shutter.hasCapability() and shutter.getModeList().count(Core.ShutterManual):
             shutter.setState(True)
 
 
@@ -2010,7 +2013,7 @@ def declare_camera_n_commun_to_tango_world(util) :
             continue
         else:
             try:
-		func = getattr(m,'get_tango_specific_class_n_device')
+                func = getattr(m,'get_tango_specific_class_n_device')
                 specificClass,specificDevice = func()
             except AttributeError:
                 pass
@@ -2043,12 +2046,12 @@ def declare_camera_n_commun_to_tango_world(util) :
                 except AttributeError:
                     pass
             try:
-		func = getattr(m,'get_tango_specific_class_n_device')
+                func = getattr(m,'get_tango_specific_class_n_device')
             except AttributeError:
                 continue
             else:
                 specificClass,specificDevice = func()
-		util.add_TgClass(specificClass,specificDevice,specificDevice.__name__)
+                util.add_TgClass(specificClass,specificDevice,specificDevice.__name__)
     if warningFlag and verboseLevel < 4:
         print "For more pulgins dependency  information start server with -v4"
         
@@ -2088,12 +2091,12 @@ def _set_control_ref(ctrl_ref) :
             m = __import__('plugins.%s' % (module_name),None,None,'plugins.%s' % (module_name))
         except ImportError:
             continue
-	else:
-	    try:
-	        func = getattr(m,"set_control_ref")
-		func(ctrl_ref)
-	    except AttributeError:
-		continue
+        else:
+            try:
+                func = getattr(m,"set_control_ref")
+                func(ctrl_ref)
+            except AttributeError:
+                continue
 
 #============================================================================
 #                                TOOLS
@@ -2168,18 +2171,18 @@ def main() :
     try:
         py = PyTango.Util(sys.argv)
         py.add_TgClass(LimaCCDsClass,LimaCCDs,'LimaCCDs')
-	try:
+        try:
             declare_camera_n_commun_to_tango_world(py)
-	except:
+        except:
             print 'SEB_EXP'
             import traceback
             traceback.print_exc()
         
         U = PyTango.Util.instance()
         U.server_init()
-	try:
+        try:
             export_default_plugins()
-	except:
+        except:
             print 'SEB_EXP'
             import traceback
             traceback.print_exc()
