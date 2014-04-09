@@ -48,6 +48,7 @@ import weakref
 import itertools
 import numpy
 import struct
+import time
 
 
 # Before loading Lima.Core, must find out the version the plug-in
@@ -307,14 +308,27 @@ class LimaCCDs(PyTango.Device_4Impl) :
         except AttributeError:
             import traceback
             traceback.print_exc()
-	#INIT display shared memory
-	try:
-	    shared_memory_names = ['LimaCCds',self.LimaCameraType]
-	    shared_memory = self.__control.display()
-	    shared_memory.setNames(*shared_memory_names)
-	except AttributeError:
-	    pass
 
+        #INIT display shared memory
+        try:
+            shared_memory_names = ['LimaCCds',self.LimaCameraType]
+            shared_memory = self.__control.display()
+            shared_memory.setNames(*self.__shared_memory_names)
+        except AttributeError:
+            pass
+
+        # INIT events on video_last_image
+        attrs = self.get_device_attr()
+        video_last_image_attr = attrs.get_attr_by_name("video_last_image")
+        video_last_image_attr.set_change_event(True, False)
+        video_last_image_counter_attr = attrs.get_attr_by_name("video_last_image_counter")
+        video_last_image_counter_attr.set_change_event(True, False)
+        class VideoImageCallback(Core.CtVideo.ImageCallback):
+            def newImage(cb, image):
+                self._onVideoImageChanged(image)
+        self.__video_image_cbk = VideoImageCallback()
+        self.__video_last_image_timestamp = 0
+        self.__control.video().registerImageCallback(self.__video_image_cbk)
         
     def __getattr__(self,name) :
         if name.startswith('is_') and name.endswith('_allowed') :
@@ -374,6 +388,15 @@ class LimaCCDs(PyTango.Device_4Impl) :
                     except Core.Exception:
                         pass
 
+    def _onVideoImageChanged(self, image):
+        ts = time.time()
+        dt = ts - self.__video_last_image_timestamp
+        if self.MaxVideoFPS <= 0 or dt >= 1.0 / self.MaxVideoFPS:
+            self.__video_last_image_timestamp = ts
+            self.push_change_event("video_last_image_counter",
+                                   image.frameNumber())
+            self.push_change_event("video_last_image", "VIDEO_IMAGE",
+                                   _image_2_struct(image))
 
 #==================================================================
 #
@@ -1196,22 +1219,8 @@ class LimaCCDs(PyTango.Device_4Impl) :
 
     def read_video_last_image(self,attr) :
         video = self.__control.video()
-        lastImage = video.getLastImage()
-        VIDEO_HEADER_FORMAT = '!IHHqiiHHHH'
-        videoheader = struct.pack(
-            VIDEO_HEADER_FORMAT,
-            0x5644454f,                           # Magic
-            1,                                    # header version
-            lastImage.mode(),                     # image mode (Y8,Y16...)
-            lastImage.frameNumber(),              # frame number
-            lastImage.width(),                    # width
-            lastImage.height(),                   # height
-            ord(struct.pack('=H',1)[-1]),         # endianness
-            struct.calcsize(VIDEO_HEADER_FORMAT), # header size
-            0,0)                                  # padding
-
-        self._videoStr = videoheader + lastImage.buffer()
-        attr.set_value("VIDEO_IMAGE",self._videoStr)
+        self._videoStr = _image_2_struct(video.getLastImage())
+        attr.set_value("VIDEO_IMAGE", self._videoStr)
 
     def read_video_last_image_counter(self,attr) :
         video = self.__control.video()
@@ -1606,6 +1615,9 @@ class LimaCCDsClass(PyTango.DeviceClass) :
         'ConfigurationDefaultName' :
         [PyTango.DevString,
          "Default configuration name",["default"]],
+        'MaxVideoFPS' :
+        [PyTango.DevDouble,
+         "Maximum number of FPS for video",[30.0]],
         }
 
     #    Command definitions
@@ -2138,6 +2150,21 @@ def _allowed(*args) :
 def _not_allowed(*args) :
     return False
 
+def _image_2_struct(image):
+    VIDEO_HEADER_FORMAT = '!IHHqiiHHHH'
+    videoheader = struct.pack(
+            VIDEO_HEADER_FORMAT,
+            0x5644454f,                           # Magic
+            1,                                    # header version
+            image.mode(),                         # image mode (Y8,Y16...)
+            image.frameNumber(),                  # frame number
+            image.width(),                        # width
+            image.height(),                       # height
+            ord(struct.pack('=H',1)[-1]),         # endianness
+            struct.calcsize(VIDEO_HEADER_FORMAT), # header size
+            0,0)                                  # padding
+    return videoheader + image.buffer()
+ 
 def get_sub_devices() :
     className2deviceName = {}
     #get sub devices
@@ -2153,7 +2180,6 @@ def get_sub_devices() :
         className2deviceName[deviceName] = class_name
     return className2deviceName
 
-            
      
 #==================================================================
 #
