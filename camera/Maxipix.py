@@ -1,8 +1,7 @@
-
 ############################################################################
 # This file is part of LImA, a Library for Image Acquisition
 #
-# Copyright (C) : 2009-2011
+# Copyright (C) : 2009-2014
 # European Synchrotron Radiation Facility
 # BP 220, Grenoble 38043
 # FRANCE
@@ -45,6 +44,10 @@ import sys, types, os, time
 
 from Lima import Core
 from Lima.Maxipix.MpxCommon import MpxError
+# import some useful helpers to create direct mapping between tango attributes
+# and Lima interfaces.
+from AttrHelper import get_attr_4u, get_attr_string_value_list
+import AttrHelper
 
 class Maxipix(PyTango.Device_4Impl):
 
@@ -57,6 +60,31 @@ class Maxipix(PyTango.Device_4Impl):
     def __init__(self,*args) :
         PyTango.Device_4Impl.__init__(self,*args)
 
+	_PriamAcq = _MaxipixAcq.getPriamAcq()
+        self.__SignalLevel = {'LOW_FALL': _PriamAcq.LOW_FALL,\
+                              'HIGH_RISE': _PriamAcq.HIGH_RISE}
+        self.__ReadyLevel = self.__SignalLevel
+        self.__GateLevel = self.__SignalLevel
+        self.__TriggerLevel = self.__SignalLevel
+        self.__ShutterLevel = self.__SignalLevel
+        
+        self.__ReadyMode =   {'EXPOSURE': _PriamAcq.EXPOSURE,\
+                              'EXPOSURE_READOUT': _PriamAcq.EXPOSURE_READOUT}
+        self.__GateMode =    {'INACTIVE': _PriamAcq.INACTIVE,\
+                              'ACTIVE': _PriamAcq.ACTIVE}
+        self.__FillMode =    _MaxipixAcq.mpxFillModes
+        
+        self.__dacname = "thl"
+        
+        self.__Attribute2FunctionBase = {'signal_level': 'SignalLevel',
+                                         'ready_level': 'ReadyLevel',
+                                         'gate_level': 'GateLevel',
+                                         'shutter_level': 'ShutterLevel',
+                                         'trigger_level': 'TriggerLevel',
+                                         'ready_mode': 'ReadyMode',
+                                         'gate_mode': 'GateMode',
+                                         'fill_mode': 'FillMode'
+                                         }
 
         self.init_device()
 
@@ -72,136 +100,38 @@ class Maxipix(PyTango.Device_4Impl):
     @Core.DEB_MEMBER_FUNCT
     def init_device(self):
         self.set_state(PyTango.DevState.ON)
+        # Load the properties
         self.get_device_properties(self.get_device_class())
-        
-	_PriamAcq = _MaxipixAcq.getPriamAcq()
-        self.__SignalLevel = {'LOW_FALL': _PriamAcq.LOW_FALL,\
-                              'HIGH_RISE': _PriamAcq.HIGH_RISE}
-        self.__ReadyMode =   {'EXPOSURE': _PriamAcq.EXPOSURE,\
-                              'EXPOSURE_READOUT': _PriamAcq.EXPOSURE_READOUT}
-        self.__GateMode =    {'INACTIVE': _PriamAcq.INACTIVE,\
-                              'ACTIVE': _PriamAcq.ACTIVE}
-	self.__FillMode =    _MaxipixAcq.mpxFillModes
 
-        self.__dacname = "thl"
-        
-        #Init default Path
-        if self.config_path:
-            try:
-                _MaxipixAcq.setPath(self.config_path)
-            except MpxError as error:
-                PyTango.Except.throw_exception('DevFailed',\
-                                               'MpxError: %s'%(error),\
-                                               'Maxipix Class') 
+        # Apply property to the attributes
 
-
-        #Load default config
-        if self.config_name:
-            try:
-                _MaxipixAcq.loadConfig(self.config_name)
-            except MpxError as error:
-                PyTango.Except.throw_exception('DevFailed',\
-                                               'MpxError: %s'%(error),\
-                                               'Maxipix Class') 
-	    
-	#set the priamAcq attributes with properties if any 
-        for attName in ['fill_mode','ready_mode','ready_level','gate_mode','gate_level','shutter_level','trigger_level'] :
-            self.__setMaxipixAttr(attName,None)
-
-
+        for attr_name in ['fill_mode','ready_mode','ready_level','gate_mode','gate_level','shutter_level','trigger_level'] :       
+            self.applyNewPropery(attr_name ,None)
+                                         
+	
 #==================================================================
 # 
 # Some Utils
 #
 #==================================================================
 
-    def __getDictKey(self,dict, value):
-        try:
-            ind = dict.values().index(value)                            
-        except ValueError:
-            return None
-        return dict.keys()[ind]
+    @Core.DEB_MEMBER_FUNCT
+    def applyNewPropery(self, prop_name, extra=None):
+        if extra is not None: name = self.__OtherAttribute2FunctionBase[prop_name]
+        else: name = self.__Attribute2FunctionBase[prop_name]
+        key = getattr(self, prop_name)
+        if not key: return # property is not set
+        
+        dict = getattr(self, '_'+self.__class__.__name__+'__'+name)
+        func = getattr(_MaxipixAcq, 'set'+name)
+        deb.Always('Setting property '+prop_name) 
 
-    def __getDictValue(self,dict, key):
-        try:
-            value = dict[key.upper()]
-        except KeyError:
-            return None
-        return value
-
-    def __getMaxipixAttr(self,attr_name):
-
-        _PriamAcq = _MaxipixAcq.getPriamAcq()
-	name = ''.join([name.capitalize() for name in attr_name.split('_')])
-        attr = getattr(self,attr_name)
-        if attr_name.count('level'):
-           dictInstance = self.__SignalLevel
+        val = AttrHelper._getDictValue(dict, key.upper())
+        if  val is None:
+            deb.Error('Wrong value for property %s :%s' % (prop_name, val))
         else:
-           dictInstance = getattr(self,'_Maxipix__%s' % name)
-        if attr_name.count('fill_mode'): getMethod = getattr(_MaxipixAcq,'get%s' % name)
-        else: getMethod = getattr(_PriamAcq,'get%s' % name)
-        setattr(self,attr_name, self.__getDictKey(dictInstance,getMethod()))
-        return getattr(self,attr_name)
-
-    def __getValueList(self, attr_name):
-	name = ''.join([name.capitalize() for name in attr_name.split('_')])
-        if attr_name.count('level'):
-            valueList = self.__SignalLevel.keys()
-        elif attr_name.count('mode'):
-            valueList = getattr(self,'_Maxipix__%s' % name).keys()
-        elif attr_name.count('config_name'):
-            valueList = self.__getConfigNameList()
-        else:
-            valueList = []
-
-        return valueList
-
-    def __setMaxipixAttr(self,attr_name, key=None):
-
-        _PriamAcq = _MaxipixAcq.getPriamAcq()
-	name = ''.join([name.capitalize() for name in attr_name.split('_')])
-        attr = getattr(self,attr_name)
-        if attr_name.count('level'):
-            dictInstance = self.__SignalLevel
-        else:
-            dictInstance = getattr(self,'_Maxipix__%s' % name)
-        if attr_name.count('fill_mode'):
-            getMethod = getattr(_MaxipixAcq,'get%s' % name)
-            setMethod = getattr(_MaxipixAcq,'set%s' % name)
-        else:
-            getMethod = getattr(_PriamAcq,'get%s' % name)
-            setMethod = getattr(_PriamAcq,'set%s' % name)
-            
-        if key != None:
-            # just set a new value for this attribute
-            attrValue = self.__getDictValue(dictInstance,key)
-            if attrValue == None:
-                PyTango.Except.throw_exception('DevFailed',\
-                                               'Wrong value %s: %s'%(attr_name,key),\
-                                               'Maxipix Class')
-            else:
-                setMethod(attrValue)
-                attrNewKey = key     
-        else:
-            # here set attribute from the property value
-            # if the property is missing (=[]) then initialize the attribute by reading the hardware
-            if attr == []:
-	        attrNewKey = self.__getDictKey(dictInstance,getMethod())
-            elif type(attr) is not types.StringType:
-	        PyTango.Except.throw_exception('WrongData',\
-                                               'Wrong value %s: %s'%(attr_name,attr),\
-                'Maxipix Class')
-            else:
-                attrValue = self.__getDictValue(dictInstance,attr)
-                if attrValue == None:
-                    PyTango.Except.throw_exception('WrongData',\
-                                                   'Wrong value %s: %s'%(attr_name,attr),\
-                                                   'Maxipix Class')
-                else:
-                    setMethod(attrValue)
-                    attrNewKey = attr
-        # set the new attribute value as upper string
-        setattr(self,attr_name, attrNewKey.upper())
+            if extra is not None: func(extra,val)
+            else: func(val)
 
     def __getConfigNameList(self):
         spath= os.path.normpath(self.config_path)
@@ -233,6 +163,15 @@ class Maxipix(PyTango.Device_4Impl):
 #    Maxipix read/write attribute methods
 #
 #==================================================================
+
+    def __getattr__(self,name) :
+        _PriamAcq = _MaxipixAcq.getPriamAcq()
+        if name.count('fill_mode'):
+            return get_attr_4u(self, name, _MaxipixAcq)
+        else:
+            return get_attr_4u(self, name, _PriamAcq)
+            
+
 	            
     ## @brief Read the current dac name
     #
@@ -382,19 +321,6 @@ class Maxipix(PyTango.Device_4Impl):
         _MaxipixAcq.setPath(data)
         self.config_path = data
 
-    ## @brief read the fill mode
-    #
-    def read_fill_mode(self,attr) :
-        fill_mode  = self.__getMaxipixAttr('fill_mode')
-        attr.set_value(fill_mode)
-
-    ## @brief Write the gap fill mode
-    #
-    def write_fill_mode(self,attr) :
-        data = attr.get_write_value()
-        self.__setMaxipixAttr('fill_mode',data)
-
-
     ## @brief read the board id
     #
     def read_espia_dev_nb(self,attr) :
@@ -403,78 +329,6 @@ class Maxipix(PyTango.Device_4Impl):
             espia_dev_nb = self.espia_dev_nb
         attr.set_value(espia_dev_nb)
 
-
-    ## @brief read the ready_mode
-    # EXPOSURE-0, EXPOSURE_READOUT-1
-    def read_ready_mode(self,attr) :
-        ready_mode  = self.__getMaxipixAttr('ready_mode')
-        attr.set_value(ready_mode)
-
-    ## @brief Write the ready_mode
-    # EXPOSURE-0, EXPOSURE_READOUT-1
-    def write_ready_mode(self,attr) :
-        data = attr.get_write_value()
-        self.__setMaxipixAttr('ready_mode',data)
-
-    ## @brief read the ready_level
-    # LOW_FALL-0, HIGH_RISE-1
-    def read_ready_level(self,attr) :
-        ready_level  = self.__getMaxipixAttr('ready_level')
-        attr.set_value(ready_level)
-
-    ## @brief Write the ready_level
-    # LOW_FALL-0, HIGH_RISE-1
-    def write_ready_level(self,attr) :
-        data = attr.get_write_value()
-        self.__setMaxipixAttr('ready_level',data)
-
-    ## @brief read the shutter_level
-    # LOW_FALL-0, HIGH_RISE-1
-    def read_shutter_level(self,attr) :
-        shutter_level  = self.__getMaxipixAttr('shutter_level')
-        attr.set_value(shutter_level)
-
-    ## @brief Write the shutter_level
-    # LOW_FALL-0, HIGH_RISE-1
-    def write_shutter_level(self,attr) :
-        data = attr.get_write_value()
-        self.__setMaxipixAttr('shutter_level',data)
-
-    ## @brief read the gate_mode
-    # FRAME-0, SEQUENCE-1
-    def read_gate_mode(self,attr) :
-        gate_mode  = self.__getMaxipixAttr('gate_mode')
-        attr.set_value(gate_mode)
-
-    ## @brief Write the gate_mode
-    # FRAME-0, SEQUENCE-1
-    def write_gate_mode(self,attr) :
-        data = attr.get_write_value()
-        self.__setMaxipixAttr('gate_mode',data)
-	
-    ## @brief read the gate_level
-    # LOW_FALL-0, HIGH_RISE-1
-    def read_gate_level(self,attr) :
-        gate_level  = self.__getMaxipixAttr('gate_level')
-        attr.set_value(gate_level)
-
-    ## @brief Write the gate_level
-    # LOW_FALL-0, HIGH_RISE-1
-    def write_gate_level(self,attr) :
-        data = attr.get_write_value()
-        self.__setMaxipixAttr('gate_level',data)
-	
-    ## @brief read the trigger_level
-    # LOW_FALL-0, HIGH_RISE-1
-    def read_trigger_level(self,attr) :
-        trigger_level  = self.__getMaxipixAttr('trigger_level')
-        attr.set_value(trigger_level)
-
-    ## @brief Write the trigger_level
-    # LOW_FALL-0, HIGH_RISE-1
-    def write_trigger_level(self,attr) :
-        data = attr.get_write_value()
-        self.__setMaxipixAttr('trigger_level',data)
 
 #==================================================================
 #
@@ -489,9 +343,7 @@ class Maxipix(PyTango.Device_4Impl):
 #------------------------------------------------------------------
     @Core.DEB_MEMBER_FUNCT
     def getAttrStringValueList(self, attr_name):
-
-        valueList = self.__getValueList(attr_name)
-        return valueList
+        return get_attr_string_value_list(self, attr_name)
 
 #------------------------------------------------------------------
 #    setDebugFlags command:
@@ -542,6 +394,9 @@ class MaxipixClass(PyTango.DeviceClass):
         'config_name':
         [PyTango.DevString,
          "The default configuration loaded",[]],
+        'reconstruction_active':
+        [PyTango.DevBoolean,
+         "Set active or inactive the image reconstruction",[]],
         'fill_mode':
         [PyTango.DevString,
          "The default configuration loaded",[]],	 
@@ -763,17 +618,20 @@ from Lima.Maxipix.MpxAcq import MpxAcq
 
 _MaxipixAcq = None
 
-def get_control(espia_dev_nb = '0',**keys) :
+def get_control(espia_dev_nb = '0',config_path='', config_name='', reconstruction_active='true', **keys) :
     #properties are passed here as string
     global _MaxipixAcq
-    if _MaxipixAcq is None:
-        _MaxipixAcq = MpxAcq(int(espia_dev_nb))
-    return _MaxipixAcq.getControl()
+    global _MaxipixInterface
 
-def close_interface() :
-    global _MaxipixAcq
-    _MaxipixAcq = None
+    print "reconstruction_active = ",  reconstruction_active
+    if reconstruction_active.lower() == 'true': active = True
+    else: active  = False
+    if _MaxipixAcq is None:
+        _MaxipixAcq = MpxAcq(int(espia_dev_nb), config_path, config_name, active)
+        _MaxipixInterface = _MaxipixAcq.getInterface()
+        
+    return Core.CtControl(_MaxipixInterface)
+
     
 def get_tango_specific_class_n_device():
     return MaxipixClass,Maxipix
-
