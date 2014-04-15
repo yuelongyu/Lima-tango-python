@@ -299,8 +299,8 @@ class LimaCCDs(PyTango.Device_4Impl) :
                                 'RGB32'      : Core.RGB32,
                                 'BGR24'      : Core.BGR24,
                                 'BGR32'      : Core.BGR32,
-                                'BAYER RG8'  : Core.BAYER_RG8,
-                                'BAYER RG16' : Core.BAYER_RG16,
+                                'BAYER_RG8'  : Core.BAYER_RG8,
+                                'BAYER_RG16' : Core.BAYER_RG16,
                                 'I420'       : Core.I420,
                                 'YUV411'     : Core.YUV411,
                                 'YUV422'     : Core.YUV422,
@@ -308,6 +308,12 @@ class LimaCCDs(PyTango.Device_4Impl) :
         except AttributeError:
             import traceback
             traceback.print_exc()
+
+	try:
+	    self.__VideoMode['BAYER_BG8'] = Core.BAYER_BG8
+	    self.__VideoMode['BAYER_BG16'] = Core.BAYER_BG16
+	except AttributeError:
+	    pass
 
         #INIT display shared memory
         try:
