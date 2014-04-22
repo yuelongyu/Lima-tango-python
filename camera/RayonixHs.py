@@ -112,6 +112,7 @@ class RayonixHs(PyTango.Device_4Impl):
                                          'electronic_shutter_enabled': 'ElectronicShutterEnabled',
                                          'cooler_temperature_setpoint': 'CoolerTemperatureSetpoint',
                                          'sensor_temperature_setpoint': 'SensorTemperatureSetpoint',
+                                         'sensor_temperature': 'SensorTemperature',
                                          'cooler': 'Cooler',
                                          'vacuum_valve': 'VacuumValve',
                                          }
@@ -174,7 +175,7 @@ class RayonixHs(PyTango.Device_4Impl):
         if self.output1_id:
             self.applyNewPropery('output1_id', RayonixHsAcq.CHANNEL_1)
 
-        if self.output1_id:
+        if self.output2_id:
             self.applyNewPropery('output1_id', RayonixHsAcq.CHANNEL_2)
 
                 
@@ -401,10 +402,18 @@ class RayonixHsClass(PyTango.DeviceClass):
              'label':'Sensor temperature setpoint',
              'unit': 'deg. Celcius',
              }],
+        'sensor_temperature':
+        [[PyTango.DevDouble,
+          PyTango.SCALAR,
+          PyTango.READ],
+         {
+             'label':'Detector Sensor temperature',
+             'unit': 'deg. Celcius',
+             }],
         'cooler':
         [[PyTango.DevString,
           PyTango.SCALAR,
-          PyTango.WRITE],
+          PyTango.READ_WRITE],
          {
              'label':'Detector cooling',
              'unit': 'START/STOP',
@@ -412,7 +421,7 @@ class RayonixHsClass(PyTango.DeviceClass):
         'vacuum_valve':
         [[PyTango.DevString,
           PyTango.SCALAR,
-          PyTango.WRITE],
+          PyTango.READ_WRITE],
          {
              'label':'Vacuum valve',
              'unit': 'OPEN/CLOSE',
