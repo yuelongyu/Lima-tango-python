@@ -32,6 +32,8 @@ from Utils import getDataFromFile,BasePostProcess
 def grouper(n, iterable, padvalue=None):
     return itertools.izip(*[itertools.chain(iterable, itertools.repeat(padvalue, n-1))]*n)
 
+computing_modes_list = ["MAXIMUM", "CM"]
+
 #PeakFinderTask = Core.Processlib.Tasks.PeakFinderTask
 
 #==================================================================
@@ -50,9 +52,10 @@ class PeakFinderDeviceServer(BasePostProcess) :
 #------------------------------------------------------------------
     def __init__(self,cl, name):
 	self.__peakFinderMgr = None
-#        self.__roiName2ID = {}
-#        self.__roiID2Name = {}
-        self.__currentRoiId = 0
+        
+        self.__ComputingMode = {'MAXIMUM' : 0,
+                                'CM' : 1}
+
 	BasePostProcess.__init__(self,cl,name)
 	PeakFinderDeviceServer.init_device(self)
 
@@ -88,7 +91,22 @@ class PeakFinderDeviceServer(BasePostProcess) :
 	data = attr.get_write_value()
         self.__peakFinderMgr.setBufferSize(data)
 
+#------------------------------------------------------------------
+#    Read ComputingMode attribute
+#------------------------------------------------------------------
+    def read_ComputingMode(self, attr):
+	value_read = self.__peakFinderMgr.getComputingMode()
+        attr.set_value(_getDictKey(self.__ComputingMode,value_read))
 
+
+#------------------------------------------------------------------
+#    Write ComputingMode attribute
+#------------------------------------------------------------------
+    def write_ComputingMode(self, attr):
+	data = attr.get_write_value()
+        t = _getDictValue(self.__ComputingMode,data)
+        self.__peakFinderMgr.setComputingMode(t)
+            
 #------------------------------------------------------------------
 #    Read CounterStatus attribute
 #------------------------------------------------------------------
@@ -170,6 +188,10 @@ class PeakFinderDeviceServerClass(PyTango.DeviceClass):
 	    [[PyTango.DevLong,
 	    PyTango.SCALAR,
 	    PyTango.READ_WRITE]],
+	'ComputingMode':
+	    [[PyTango.DevString,
+	    PyTango.SCALAR,
+	    PyTango.READ_WRITE]],
 	}
 
 
@@ -189,3 +211,17 @@ def set_control_ref(control_class_ref) :
 
 def get_tango_specific_class_n_device() :
    return PeakFinderDeviceServerClass,PeakFinderDeviceServer
+
+def _getDictKey(dict, value):
+    try:
+        ind = dict.values().index(value)                            
+    except ValueError:
+        return None
+    return dict.keys()[ind]
+
+def _getDictValue(dict, key):
+    try:
+        value = dict[key.upper()]
+    except KeyError:
+        return None
+    return value
