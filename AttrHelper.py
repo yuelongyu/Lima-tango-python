@@ -133,8 +133,9 @@ def get_attr_4u(obj,name,interface) :
         d = getattr(obj,dict_name,None)
         dict_name = '_' + obj.__class__.__name__ + '__Attribute2FunctionBase'
         dict_name = getattr(obj,dict_name,None)
+        if dict_name:
+            attr_name = dict_name.get('_'.join(split_name),attr_name)
         
-        attr_name = dict_name.get('_'.join(split_name),attr_name)
         if d:
             if name.startswith('read_') :
                 functionName = 'get' + attr_name

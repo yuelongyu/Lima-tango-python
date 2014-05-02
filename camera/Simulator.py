@@ -55,15 +55,6 @@ class Simulator(PyTango.Device_4Impl):
             'DIFFRACTION': SimuMod.FrameBuilder.Diffraction,
 	}
 
-        self.__Attribute2FunctionBase = {
-            'fill_type' :         'FillType',
-            'grow_factor' :       'GrowFactor',
-            'rotation_axis' :     'RotationAxis',
-            'rotation_speed' :    'RotationSpeed',
-            'diffraction_pos' :   'DiffractionPos',
-            'diffraction_speed' : 'DiffractionSpeed',
-        }
-
         self.init_device()
 
 #------------------------------------------------------------------
