@@ -23,6 +23,7 @@ import PyTango
 
 from Lima import Core
 from Utils import getDataFromFile,BasePostProcess
+from AttrHelper import get_attr_4u, get_attr_string_value_list
 
 class MaskDeviceServer(BasePostProcess) :
     MASK_TASK_NAME = 'MaskTask'
@@ -66,21 +67,14 @@ class MaskDeviceServer(BasePostProcess) :
 #    argout: DevVarStringArray   
 #------------------------------------------------------------------
     def getAttrStringValueList(self, attr_name):
-        valueList = []
-        dict_name = '_' + self.__class__.__name__ + '__' + ''.join([x.title() for x in attr_name.split('_')])
-        d = getattr(self,dict_name,None)
-        if d:
-            valueList = d.keys()
-        return valueList
+        return get_attr_string_value_list(self, attr_name)
 
-    def write_type(self,attr) :
-        data = attr.get_write_value()
-        t = _getDictValue(self.__Type,data)
-        self.__maskTask.setType(t)
+    def __getattr__(self,name) :
+        try:
+            return BasePostProcess.__getattr__(self,name)
+        except AttributeError:
+            return get_attr_4u(self,name,self.__maskTask)
 
-    def read_type(self,attr) :
-        t = self.__maskTask.getType()
-        attr.set_value(_getDictKey(self.__Type,t))
         
 def _getDictKey(dict, value):
     try:
