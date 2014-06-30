@@ -502,6 +502,7 @@ class LimaTacoCCDs(PyTango.Device_4Impl, object):
         pars.suffix     = par_arr[2]
         pars.nextNumber = int(par_arr[3])
         index_format    = par_arr[4]
+
         if par_arr[5] in ['y', 'yes']:
             pars.overwritePolicy = Core.CtSaving.Overwrite
         else:
@@ -514,6 +515,10 @@ class LimaTacoCCDs(PyTango.Device_4Impl, object):
             pars.fileFormat = Core.CtSaving.EDFGZ
         elif pars.suffix.lower()[-4:] == '.cbf':
             pars.fileFormat = Core.CtSaving.CBFFormat
+        elif pars.suffix.lower()[-3:] == '.h5':
+            pars.fileFormat = Core.CtSaving.HDF5
+        elif pars.suffix.lower()[-5:] == '.hdf5':
+            pars.fileFormat = Core.CtSaving.HDF5
         else:
             pars.fileFormat = Core.CtSaving.RAW
         saving.setParameters(pars)

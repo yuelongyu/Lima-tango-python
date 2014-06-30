@@ -235,6 +235,7 @@ class LimaCCDs(PyTango.Device_4Impl) :
         
         self.__SavingFormat = {'RAW' : Core.CtSaving.RAW,
                                'EDF' : Core.CtSaving.EDF,
+                               'HDF5' : Core.CtSaving.HDF5,
                                'CBF' : Core.CtSaving.CBFFormat}
         try:
             self.__SavingFormat['TIFF'] = Core.CtSaving.TIFFFormat
@@ -249,6 +250,7 @@ class LimaCCDs(PyTango.Device_4Impl) :
 
         self.__SavingFormatDefaultSuffix = {Core.CtSaving.RAW : '.raw',
                                             Core.CtSaving.EDF : '.edf',
+                                            Core.CtSaving.HDF5 : '.h5',
                                             Core.CtSaving.CBFFormat : '.cbf'}
 
         try:
@@ -262,7 +264,8 @@ class LimaCCDs(PyTango.Device_4Impl) :
 
         self.__SavingOverwritePolicy = {'ABORT' : Core.CtSaving.Abort,
                                         'OVERWRITE' : Core.CtSaving.Overwrite,
-                                        'APPEND' : Core.CtSaving.Append}
+                                        'APPEND' : Core.CtSaving.Append,
+                                        'MULTISET' : Core.CtSaving.MultiSet}
 
         self.__AcqTriggerMode = {'INTERNAL_TRIGGER' : Core.IntTrig,
                                  'EXTERNAL_TRIGGER' : Core.ExtTrigSingle,
@@ -336,6 +339,16 @@ class LimaCCDs(PyTango.Device_4Impl) :
         self.__video_last_image_timestamp = 0
         self.__control.video().registerImageCallback(self.__video_image_cbk)
         
+        # Setup a user-defined detector name if it exists
+        if self.UserDetectorName:
+            try:
+                interface = self.__control.hwInterface()
+                det_info = interface.getHwCtrlObj(Core.HwCap.DetInfo)
+                det_info.setUserDetectorName(self.UserDetectorName)
+            except AttributeError:
+                pass
+               
+                
     def __getattr__(self,name) :
         if name.startswith('is_') and name.endswith('_allowed') :
             split_name = name.split('_')[1:-1]
@@ -434,6 +447,24 @@ class LimaCCDs(PyTango.Device_4Impl) :
         det_info = interface.getHwCtrlObj(Core.HwCap.DetInfo)
         value = det_info.getDetectorModel()
         attr.set_value(value)
+        
+    ## @brief Read the User-defined Camera name
+    #
+    @Core.DEB_MEMBER_FUNCT
+    def read_user_detector_name(self,attr) :        
+	interface = self.__control.hwInterface()
+	det_info = interface.getHwCtrlObj(Core.HwCap.DetInfo)
+	value = det_info.getUserDetectorName() 
+	attr.set_value(value)
+
+    ## @brief Write the User-defined Camera name
+    #
+    @Core.DEB_MEMBER_FUNCT
+    def write_user_detector_name(self,attr) :
+        data = attr.get_write_value()
+	interface = self.__control.hwInterface()
+	det_info = interface.getHwCtrlObj(Core.HwCap.DetInfo)
+        det_info.setUserDetectorName(data)
         
     ## @brief Read the Camera pixelsize
     #
@@ -811,7 +842,7 @@ class LimaCCDs(PyTango.Device_4Impl) :
     @Core.DEB_MEMBER_FUNCT
     def write_saving_common_header(self,attr) :
         data = attr.get_write_value()
-        header = dict([x.split(self.__key_header_delimiter) for x in data])
+        header = dict([x.split(self.__key_header_delimiter,1) for x in data])
         saving = self.__control.saving()
         saving.setCommonHeader(header)
 
@@ -1566,7 +1597,7 @@ class LimaCCDs(PyTango.Device_4Impl) :
     def configStore(self,args):
         config_name = args.pop(0)
         config = self.__control.config()
-        config.store(config_name,args)
+        config.store(config_name,*args)
 
     @Core.DEB_MEMBER_FUNCT
     def configApply(self,config_name):
@@ -1624,6 +1655,9 @@ class LimaCCDsClass(PyTango.DeviceClass) :
         'MaxVideoFPS' :
         [PyTango.DevDouble,
          "Maximum number of FPS for video",[30.0]],
+        'UserDetectorName' :
+        [PyTango.DevString,
+         "A user detector identifier, e.g ID02_frelon_saxs",[]],
         }
 
     #    Command definitions
@@ -1710,6 +1744,14 @@ class LimaCCDsClass(PyTango.DeviceClass) :
         [[PyTango.DevString,
           PyTango.SCALAR,
           PyTango.READ]],
+        'user_detector_name':
+        [[PyTango.DevString,
+          PyTango.SCALAR,
+          PyTango.READ_WRITE],
+	  {
+             'label': "user detector name",
+             'description':"A user defined detector name, will be saved in the saved file header",
+         }],
         'camera_pixelsize':
         [[PyTango.DevDouble,
           PyTango.SPECTRUM,
