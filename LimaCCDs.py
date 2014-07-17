@@ -338,6 +338,15 @@ class LimaCCDs(PyTango.Device_4Impl) :
         self.__video_image_cbk = VideoImageCallback()
         self.__video_last_image_timestamp = 0
         self.__control.video().registerImageCallback(self.__video_image_cbk)
+
+        # Setup a user-defined detector name if it exists
+        if self.InstrumentName:
+            try:
+                interface = self.__control.hwInterface()
+                det_info = interface.getHwCtrlObj(Core.HwCap.DetInfo)
+                det_info.setInstrumentName(self.InstrumentName)
+            except AttributeError:
+                pass
         
         # Setup a user-defined detector name if it exists
         if self.UserDetectorName:
@@ -466,6 +475,24 @@ class LimaCCDs(PyTango.Device_4Impl) :
 	det_info = interface.getHwCtrlObj(Core.HwCap.DetInfo)
         det_info.setUserDetectorName(data)
         
+    ## @brief Read the instrument name
+    #
+    @Core.DEB_MEMBER_FUNCT
+    def read_instrument_name(self,attr) :        
+	interface = self.__control.hwInterface()
+	det_info = interface.getHwCtrlObj(Core.HwCap.DetInfo)
+	value = det_info.getInstrumentName() 
+	attr.set_value(value)
+
+    ## @brief Write the instrument name
+    #
+    @Core.DEB_MEMBER_FUNCT
+    def write_instrument_name(self,attr) :
+        data = attr.get_write_value()
+	interface = self.__control.hwInterface()
+	det_info = interface.getHwCtrlObj(Core.HwCap.DetInfo)
+        det_info.setInstrumentName(data)
+
     ## @brief Read the Camera pixelsize
     #
     @Core.DEB_MEMBER_FUNCT
@@ -1657,7 +1684,10 @@ class LimaCCDsClass(PyTango.DeviceClass) :
          "Maximum number of FPS for video",[30.0]],
         'UserDetectorName' :
         [PyTango.DevString,
-         "A user detector identifier, e.g ID02_frelon_saxs",[]],
+         "A user detector identifier, e.g frelon-saxs",[]],
+        'InstrumentName' :
+        [PyTango.DevString,
+         "The instrument name, ESRF-ID02",[]],
         }
 
     #    Command definitions
@@ -1751,6 +1781,14 @@ class LimaCCDsClass(PyTango.DeviceClass) :
 	  {
              'label': "user detector name",
              'description':"A user defined detector name, will be saved in the saved file header",
+         }],
+        'instrument_name':
+        [[PyTango.DevString,
+          PyTango.SCALAR,
+          PyTango.READ_WRITE],
+	  {
+             'label': "instrument/beamline name",
+             'description':"the instrument/beamline name, will be saved in the saved file header",
          }],
         'camera_pixelsize':
         [[PyTango.DevDouble,
