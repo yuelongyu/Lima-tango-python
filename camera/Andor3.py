@@ -70,28 +70,43 @@ class Andor3(PyTango.Device_4Impl):
     def __init__(self,cl, name):
         PyTango.Device_4Impl.__init__(self,cl,name)
         # dictionnaries to be used with AttrHelper.get_attr_4u
-        self.__AdcGain = {'Gain1':   _Andor3Camera.Gain1,
-                          'Gain2':   _Andor3Camera.Gain2,
-                          'Gain3':   _Andor3Camera.Gain3,
-                          'Gain4':   _Andor3Camera.Gain4,
-                          'Gain1_3': _Andor3Camera.Gain1_Gain3,
-                          'Gain1_4': _Andor3Camera.Gain1_Gain4,
-                          'Gain2_3': _Andor3Camera.Gain2_Gain3,
-                          'Gain3_4': _Andor3Camera.Gain2_Gain4,
+        self.__AdcGain = {'GAIN1':   _Andor3Camera.Gain1,
+                          'GAIN2':   _Andor3Camera.Gain2,
+                          'GAIN3':   _Andor3Camera.Gain3,
+                          'GAIN4':   _Andor3Camera.Gain4,
+                          'GAIN1_3': _Andor3Camera.Gain1_Gain3,
+                          'GAIN1_4': _Andor3Camera.Gain1_Gain4,
+                          'GAIN2_3': _Andor3Camera.Gain2_Gain3,
+                          'GAIN3_4': _Andor3Camera.Gain2_Gain4,
                           }
-        self.__AdcRate = {'Mhz10':  _Andor3Camera.MHz10,
-                          'Mhz100': _Andor3Camera.MHz100,
-                          'Mhz200': _Andor3Camera.MHz200,
-                          'Mhz280': _Andor3Camera.MHz280,
+        self.__AdcRate = {'MHZ10':  _Andor3Camera.MHz10,
+                          'MHZ100': _Andor3Camera.MHz100,
+                          'MHZ200': _Andor3Camera.MHz200,
+                          'MHZ280': _Andor3Camera.MHz280,
                           }
-        self.__Cooler = {'ON': True,
-                             'OFF': False}
+        self.__Cooler = {'ON':  True,
+                         'OFF': False}
+        self.__FanSpeed = {'OFF':  _Andor3Camera.Off,
+                           'LOW':  _Andor3Camera.Low,
+                           'HIGH': _Andor3Camera.On,
+                           }
+        self.__ElectronicShutterMode = {'ROLLING': _Andor3Camera.Rolling,
+                                        'GLOBAL': _Andor3Camera.Global,
+                                        }
+        self.__DestrideActive = {'YES': True,
+                                 'NO':  False}
         self.__Attribute2FunctionBase = {'adc_gain': 'AdcGain',
                                          'adc_rate': 'AdcRate',
                                          'temperature': 'Temperature',
                                          'temperature_sp': 'TemperatureSP',
                                          'cooler': 'Cooler',
                                          'cooling_status': 'CoolingStatus',
+                                         'fan_speed': 'FanSpeed',
+                                         'electronic_shutter_mode': 'ElectronicShutterMode',
+                                         'destride_active': 'DestrideActive',
+                                         'frame_rate': 'FrameRate',
+                                         'max_frame_rate_transfer': 'MaxFrameRateTransfer',
+                                         'readout_time': 'ReadoutTime',
                                          }
         self.init_device()
                                                
@@ -120,10 +135,10 @@ class Andor3(PyTango.Device_4Impl):
             _Andor3Interface.setAdcRate(self.__AdcRate[self.adc_rate])
             
         if self.temperature_sp:            
-            _Andor3Interface.setTemperatureSP(self.temperature_sp)
+            _Andor3Camera.setTemperatureSP(self.temperature_sp)
             
         if self.cooler:
-            _Andor3Interface.setCooler(self.__Cooler[self.cooler])
+            _Andor3Camera.setCooler(self.__Cooler[self.cooler])
             
 
 #==================================================================
@@ -205,23 +220,23 @@ class Andor3Class(PyTango.DeviceClass):
     #    Attribute definitions
     attr_list = {
        'temperature_sp':
-        [[PyTango.DevShort,
+        [[PyTango.DevDouble,
           PyTango.SCALAR,
           PyTango.READ_WRITE],
          {
              'label':'Set/get the temperature set-point',
              'unit': 'C',
-             'format': '%1d',
+             'format': '%f',
              'description': 'in Celsius',
              }],
         'temperature':
-        [[PyTango.DevShort,
+        [[PyTango.DevDouble,
           PyTango.SCALAR,
           PyTango.READ],
          {
              'label':'get the current temperature sensor',
              'unit': 'C',
-             'format': '%1d',
+             'format': '%f',
              'description': 'in Celsius',
              }],
         'cooler':
@@ -241,7 +256,7 @@ class Andor3Class(PyTango.DeviceClass):
          {
              'label':'Fast trigger mode, see manual for usage',
              'unit': 'N/A',
-             'format': '%1d',
+             'format': '',
              'description': '0-OFF / 1-ON',
              }],
         'adc_gain':
@@ -251,8 +266,8 @@ class Andor3Class(PyTango.DeviceClass):
          {
              'label':'ADC Gain',
              'unit': 'N/A',
-             'format': '%d',
-             'description': 'ADC Gain which can be apply to the readout, from 0-N, check the camera documentation for the valid range',
+             'format': '',
+             'description': 'ADC Gain which can be apply to the preamplifier',
              }],
         'adc_rate':
         [[PyTango.DevString,
@@ -272,7 +287,57 @@ class Andor3Class(PyTango.DeviceClass):
              'label':'Electronic Shutter Mode',
              'unit': 'N/A',
              'format': '',
-             'description': '',
+             'description': 'Electronic shutter mode, Rolling or Global',
+             }],
+       'fan_speed':
+       [[PyTango.DevString,
+         PyTango.SCALAR,
+         PyTango.READ_WRITE],
+        {
+            'label':'Fan speed',
+            'unit': 'N/A',
+            'format': '',
+            'description': 'Fan speed, off, low or High',
+            }],
+        'destride_active':
+        [[PyTango.DevString,
+          PyTango.SCALAR,
+          PyTango.READ_WRITE],
+         {
+             'label':'Activate destride image reconstruction',
+             'unit': 'N/A',
+             'format': '',
+             'description': 'YES or NO',
+             }],
+        'frame_rate':
+        [[PyTango.DevDouble,
+          PyTango.SCALAR,
+          PyTango.READ],
+         {
+             'label':'Frame rate',
+             'unit': 'Hz',
+             'format': '%f',
+             'description': 'the rate at which frames are delivered to the use',
+             }],
+        'max_frame_rate_transfer':
+        [[PyTango.DevDouble,
+          PyTango.SCALAR,
+          PyTango.READ],
+         {
+             'label':'Maximum frame rate transfer',
+             'unit': 'byte per sec.',
+             'format': '%f',
+             'description': 'Returns the maximum sustainable transfer rate of the interface for the current shutter mode and ROI',
+             }],
+        'readout_time':
+        [[PyTango.DevDouble,
+          PyTango.SCALAR,
+          PyTango.READ],
+         {
+             'label':'Readout time',
+             'unit': 'sec',
+             'format': '%f',
+             'description': 'return the time to readout data from the sensor',
              }],
 
         }
