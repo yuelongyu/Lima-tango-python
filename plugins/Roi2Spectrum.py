@@ -182,7 +182,7 @@ class Roi2spectrumDeviceServer(BasePostProcess) :
             'COLUMN_SUM': Roi2SpectrumTask.COLUMN_SUM,
             'LINES_SUM':  Roi2SpectrumTask.LINES_SUM,
         }
-        rois_modes = map(lambda n, m: (n, roi_mode_map[m]), grouper(2, argin))
+        rois_modes = [(n, roi_mode_map[m]) for n,m in  grouper(2, argin)]
         self.__roi2spectrumMgr.setRoiModes(rois_modes)
 
     def clearAllRois(self):
