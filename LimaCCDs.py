@@ -136,6 +136,17 @@ class LimaCCDs(PyTango.Device_4Impl) :
         }
 
     # DATA_ARRAY DevEncoded 
+    #enum DataArrayCategory {
+        #ScalarStack = 0;
+        #Spectrum;
+        #Image;
+        #SpectrumStack;
+        #ImageStack;
+    #};
+
+    class DataArrayCategory:
+        ScalarStack, Spectrum, Image, SpectrumStack, ImageStack = range(5)
+
     #enum DataArrayType{
       #DARRAY_UINT8 = 0;
       #DARRAY_UINT16;
@@ -181,16 +192,72 @@ class LimaCCDs(PyTango.Device_4Impl) :
     DataArrayMagic = 0x44544159			# 'DTAY'
     DataArrayHeaderLen = 64
     
-    #enum DataArrayCategory {
-        #ScalarStack = 0;
-        #Spectrum;
-        #Image;
-        #SpectrumStack;
-        #ImageStack;
-    #};
+    def DataArrayUser(klass, DataArrayCategory=DataArrayCategory):
+        klass.DataArrayCategory = DataArrayCategory
+        return klass
 
-    class DataArrayCategory:
-        ScalarStack, Spectrum, Image, SpectrumStack, ImageStack = range(5)
+    # INIT events on video_last_image
+    class VideoImageCallback(Core.CtVideo.ImageCallback):
+        def __init__(self, device):
+            Core.CtVideo.ImageCallback.__init__(self)
+            self.__device = weakref.ref(device)
+            self.__video_last_image_timestamp = 0
+        
+        def newImage(self, image):
+            ts = time.time()
+            device = self.__device()
+            dt = ts - self.__video_last_image_timestamp
+            if device.MaxVideoFPS <= 0 or dt >= 1.0 / device.MaxVideoFPS:
+                self.__video_last_image_timestamp = ts
+                device.push_change_event("video_last_image_counter",
+                                         image.frameNumber())
+                device.push_change_event("video_last_image", "VIDEO_IMAGE",
+                                         _video_image_2_struct(image))          
+
+    @DataArrayUser
+    class ImageStatusCallback(Core.CtControl.ImageStatusCallback):
+        def __init__(self, device, control):
+            Core.CtControl.ImageStatusCallback.__init__(self)
+            self.__device = weakref.ref(device)
+            self.__control = weakref.ref(control)
+            self.__last_base_image_ready = None
+            self.__last_counter_ready = None
+            self.__last_image_acquired = None
+            self.__last_image_ready = None
+            self.__last_image_saved = None
+
+        def imageStatusChanged(self, image_status):
+            last_base_image_ready = image_status.LastBaseImageReady
+            last_counter_ready = image_status.LastCounterReady
+            last_image_acquired = image_status.LastImageAcquired
+            last_image_ready = image_status.LastImageReady
+            last_image_saved = image_status.LastImageSaved
+            device = self.__device()
+            if self.__last_base_image_ready != last_base_image_ready:
+                device.push_change_event("last_base_image_ready",
+                                         last_base_image_ready)
+                self.__last_base_image_ready = last_base_image_ready
+            if self.__last_counter_ready != last_counter_ready:
+                device.push_change_event("last_counter_ready",
+                                         last_counter_ready)
+            if self.__last_image_acquired != last_image_acquired:
+                device.push_change_event("last_image_acquired",
+                                         last_image_acquired)
+                self.__last_image_acquired = last_image_acquired
+            if self.__last_image_ready != last_image_ready:
+                device.push_change_event("last_image_ready", last_image_ready)
+                self.__last_image_ready = last_image_ready
+                if last_image_ready >= 0:
+                    control = self.__control()
+                    image = control.ReadImage(last_image_ready)
+                    category = self.DataArrayCategory.Image
+                    data = device._image_2_data_array(image, category)
+                    device.push_change_event("last_image", 'DATA_ARRAY', data)
+            if self.__last_image_saved != last_image_saved:
+                device.push_change_event("last_image_saved",
+                                         last_image_saved)
+                self.__last_image_saved = last_image_saved                
+
     
 #------------------------------------------------------------------
 #    Device constructor
@@ -405,6 +472,7 @@ class LimaCCDs(PyTango.Device_4Impl) :
 	except AttributeError:
 	    pass
 
+
         #INIT display shared memory
         try:
             shared_memory_names = ['LimaCCds',self.LimaCameraType]
@@ -413,18 +481,21 @@ class LimaCCDs(PyTango.Device_4Impl) :
         except AttributeError:
             pass
 
-        # INIT events on video_last_image
-        attrs = self.get_device_attr()
-        video_last_image_attr = attrs.get_attr_by_name("video_last_image")
-        video_last_image_attr.set_change_event(True, False)
-        video_last_image_counter_attr = attrs.get_attr_by_name("video_last_image_counter")
-        video_last_image_counter_attr.set_change_event(True, False)
-        class VideoImageCallback(Core.CtVideo.ImageCallback):
-            def newImage(cb, image):
-                self._onVideoImageChanged(image)
-        self.__video_image_cbk = VideoImageCallback()
-        self.__video_last_image_timestamp = 0
+        # INIT events on attributes
+        attr_list = self.get_device_attr()
+        for attr_name in ["last_image", "last_base_image_ready",
+                          "last_counter_ready", "last_image_acquired",
+                          "last_image_ready", "last_image_saved",
+                          "video_last_image", "video_last_image_counter"]:
+            attr = attr_list.get_attr_by_name(attr_name)
+            attr.set_change_event(True, False)
+                        
+        self.__video_image_cbk = self.VideoImageCallback(self)
         self.__control.video().registerImageCallback(self.__video_image_cbk)
+
+        # INIT events on last_image_ready
+        self.__image_status_cbk = self.ImageStatusCallback(self, self.__control)
+        self.__control.registerImageStatusCallback(self.__image_status_cbk)
 
         # Setup a user-defined detector name if it exists
         if self.InstrumentName:
@@ -480,6 +551,10 @@ class LimaCCDs(PyTango.Device_4Impl) :
         
         raise AttributeError('LimaCCDs has no attribute %s' % name)
 
+    def gc(self):
+    	import gc
+	gc.collect()
+
     def always_executed_hook(self) :
         if not self.__configInit:
             self.__configInit = True
@@ -502,16 +577,6 @@ class LimaCCDs(PyTango.Device_4Impl) :
                             self.__configDefaultActiveFlag = True
                     except Core.Exception:
                         pass
-
-    def _onVideoImageChanged(self, image):
-        ts = time.time()
-        dt = ts - self.__video_last_image_timestamp
-        if self.MaxVideoFPS <= 0 or dt >= 1.0 / self.MaxVideoFPS:
-            self.__video_last_image_timestamp = ts
-            self.push_change_event("video_last_image_counter",
-                                   image.frameNumber())
-            self.push_change_event("video_last_image", "VIDEO_IMAGE",
-                                   _image_2_struct(image))
 
 #==================================================================
 #
@@ -895,7 +960,6 @@ class LimaCCDs(PyTango.Device_4Impl) :
         image = self.__control.image()
         binValue = Core.Bin(*data)
         image.setBin(binValue)
-    
 
     ## @brief Read image flip
     #
@@ -959,6 +1023,16 @@ class LimaCCDs(PyTango.Device_4Impl) :
         params = saving.getParameters()
         params.indexFormat = data
         saving.setParameters(params)
+
+    ## @brief last image
+    #
+    @Core.DEB_MEMBER_FUNCT
+    def read_last_image(self,attr) :
+        status = self.__control.getStatus()
+        last_img_ready = status.ImageCounters.LastImageReady
+        image = self.__control.ReadImage(last_img_ready)
+        data = self._image_2_data_array(image, self.DataArrayCategory.Image)
+        attr.set_value('DATA_ARRAY', data)
 
     ## @brief last image acquired
     #
@@ -1342,7 +1416,7 @@ class LimaCCDs(PyTango.Device_4Impl) :
 
     def read_video_last_image(self,attr) :
         video = self.__control.video()
-        self._videoStr = _image_2_struct(video.getLastImage())
+        self._videoStr = _video_image_2_struct(video.getLastImage())
         attr.set_value("VIDEO_IMAGE", self._videoStr)
 
     def read_video_last_image_counter(self,attr) :
@@ -1501,7 +1575,7 @@ class LimaCCDs(PyTango.Device_4Impl) :
     ##@brief get a DATA_ARRAY from a Data object
     #
     @Core.DEB_MEMBER_FUNCT
-    def getDataArray(self, data, category):
+    def _image_2_data_array(self, data, category):
         d = data.buffer
         s = [d.shape[i] for i in xrange(len(d.shape) - 1, -1, -1)]
         if (category == self.DataArrayCategory.ImageStack) and (len(s) == 2):
@@ -1554,17 +1628,17 @@ class LimaCCDs(PyTango.Device_4Impl) :
     #
     @Core.DEB_MEMBER_FUNCT
     def readImage(self,frame_number):
-        deb.Param('readImage: frame_number=' % frame_number)
+        deb.Param('readImage: frame_number=%d' % frame_number)
         image = self.__control.ReadImage(frame_number)
-        self._datacache = self.getDataArray(image,
-                                            self.DataArrayCategory.Image)
+        category = self.DataArrayCategory.Image
+        self._datacache = self._image_2_data_array(image, category)
         return ('DATA_ARRAY',  self._datacache)  
   
-
-    ##@brief get image data
+    ##@brief get the data for an image sequence 
     #
     @Core.DEB_MEMBER_FUNCT
     def readImageSeq(self, frame_seq):
+        deb.Param('frame_seq=%s' % frame_seq)
         frame_seq = map(int, frame_seq)
         start, end = frame_seq[:2]
         step = 1
@@ -1577,8 +1651,8 @@ class LimaCCDs(PyTango.Device_4Impl) :
 
                   (start, end, step, nbFrames))
         imageStack = self.__control.ReadImage(start, nbFrames)
-        self._dataseqcache = self.getDataArray(imageStack,
-                                               self.DataArrayCategory.ImageStack)
+        category = self.DataArrayCategory.ImageStack
+        self._dataseqcache = self._image_2_data_array(imageStack, category)
         return ('DATA_ARRAY',  self._dataseqcache)  
   
 
@@ -1750,6 +1824,9 @@ class LimaCCDsClass(PyTango.DeviceClass) :
 
     #    Command definitions
     cmd_list = {
+        'gc':
+        [[PyTango.DevVoid, ""],
+         [PyTango.DevVoid, ""]],
         'openShutterManual':
         [[PyTango.DevVoid, ""],
          [PyTango.DevVoid, ""]],
@@ -1993,6 +2070,10 @@ class LimaCCDsClass(PyTango.DeviceClass) :
           PyTango.READ]],
         'last_image_ready':
         [[PyTango.DevLong,
+          PyTango.SCALAR,
+          PyTango.READ]],
+        'last_image':
+        [[PyTango.DevEncoded,
           PyTango.SCALAR,
           PyTango.READ]],
         'last_image_saved':
@@ -2297,7 +2378,7 @@ def _allowed(*args) :
 def _not_allowed(*args) :
     return False
 
-def _image_2_struct(image):
+def _video_image_2_struct(image):
     VIDEO_HEADER_FORMAT = '!IHHqiiHHHH'
     videoheader = struct.pack(
             VIDEO_HEADER_FORMAT,
@@ -2311,6 +2392,7 @@ def _image_2_struct(image):
             struct.calcsize(VIDEO_HEADER_FORMAT), # header size
             0,0)                                  # padding
     return videoheader + image.buffer()
+
  
 def get_sub_devices() :
     className2deviceName = {}
@@ -2327,7 +2409,6 @@ def get_sub_devices() :
         className2deviceName[deviceName] = class_name
     return className2deviceName
 
-     
 #==================================================================
 #
 #    LimaCCDs class main method
