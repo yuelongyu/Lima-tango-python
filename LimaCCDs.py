@@ -105,6 +105,93 @@ class LimaCCDs(PyTango.Device_4Impl) :
                       "Return",
                       "Always"]
     
+    ImageType2NbBytes = {
+        Core.Bpp8 : (1,0) ,
+        Core.Bpp8S : (1,1) ,
+        Core.Bpp10 : (2,0) ,
+        Core.Bpp10S : (2,1) ,
+        Core.Bpp12 : (2,0) ,
+        Core.Bpp12S : (2,1) ,
+        Core.Bpp14 : (2,0) ,
+        Core.Bpp14S : (2,1) , 
+        Core.Bpp16 : (2,0),
+        Core.Bpp16S : (2,1),
+        Core.Bpp32 : (4,0) ,
+        Core.Bpp32S : (4,1)
+        }        
+
+    ImageType2String = {
+        Core.Bpp8 : "Bpp8" ,
+        Core.Bpp8S : "Bpp8S" ,
+        Core.Bpp10 : "Bpp10" ,
+        Core.Bpp10S : "Bpp10S" ,
+        Core.Bpp12 : "Bpp12" ,
+        Core.Bpp12S : "Bpp12S" ,
+        Core.Bpp14 : "Bpp14" ,
+        Core.Bpp14S : "Bpp14S" , 
+        Core.Bpp16 : "Bpp16" ,
+        Core.Bpp16S : "Bpp16S" ,
+        Core.Bpp32 : "Bpp32" ,
+        Core.Bpp32S : "Bpp32S"
+        }
+
+    # DATA_ARRAY DevEncoded 
+    #enum DataArrayType{
+      #DARRAY_UINT8 = 0;
+      #DARRAY_UINT16;
+      #DARRAY_UINT32;
+      #DARRAY_UINT64;
+      #DARRAY_INT8;
+      #DARRAY_INT16;
+      #DARRAY_INT32;
+      #DARRAY_INT64;
+      #DARRAY_FLOAT32;
+      #DARRAY_FLOAT64;
+    #};
+
+    ImageType2DataArrayType = {
+        Core.Bpp8 : 0 ,
+        Core.Bpp10 : 1 ,
+        Core.Bpp12 : 1 ,
+        Core.Bpp14 : 1 ,
+        Core.Bpp16 : 1,
+        Core.Bpp32 : 2 ,
+        Core.Bpp8S : 4 ,
+        Core.Bpp10S : 5 ,
+        Core.Bpp12S : 5 ,
+        Core.Bpp14S : 5 ,
+        Core.Bpp16S : 5,
+        Core.Bpp32S : 6 ,
+        }        
+
+    # The DATA_ARRAY definition
+    #struct {
+      #unsigned int Magic= 0x44544159;
+      #unsigned short Version;
+      #unsigned  short HeaderLength;
+      #DataArrayCategory Category;
+      #DataArrayType DataType;
+      #unsigned short DataEndianness;
+      #unsigned short NbDim;
+      #unsigned short Dim[8]
+      #unsigned int DimStep[8]
+    #} DataArrayHeaderStruct;
+
+    DataArrayPackStr = '<IHHIIHHHHHHHHHHHHHHHHHHIII'
+    DataArrayMagic = 0x44544159			# 'DTAY'
+    DataArrayHeaderLen = 64
+    
+    #enum DataArrayCategory {
+        #ScalarStack = 0;
+        #Spectrum;
+        #Image;
+        #SpectrumStack;
+        #ImageStack;
+    #};
+
+    class DataArrayCategory:
+        ScalarStack, Spectrum, Image, SpectrumStack, ImageStack = range(5)
+    
 #------------------------------------------------------------------
 #    Device constructor
 #------------------------------------------------------------------
@@ -753,24 +840,10 @@ class LimaCCDs(PyTango.Device_4Impl) :
     #
     @Core.DEB_MEMBER_FUNCT
     def read_image_sizes(self,attr) :
-        imageType2NbBytes = {
-            Core.Bpp8 : (1,0) ,
-            Core.Bpp8S : (1,1) ,
-            Core.Bpp10 : (2,0) ,
-            Core.Bpp10S : (2,1) ,
-            Core.Bpp12 : (2,0) ,
-            Core.Bpp12S : (2,1) ,
-            Core.Bpp14 : (2,0) ,
-            Core.Bpp14S : (2,1) , 
-            Core.Bpp16 : (2,0),
-            Core.Bpp16S : (2,1),
-            Core.Bpp32 : (4,0) ,
-            Core.Bpp32S : (4,1)
-            }        
         image = self.__control.image()
         imageType = image.getImageType()
         dim = image.getImageDim()
-        depth, signed = imageType2NbBytes.get(imageType,(0,0))
+        depth, signed = self.ImageType2NbBytes.get(imageType,(0,0))
         sizes = [signed, depth, dim.getSize().getWidth(), dim.getSize().getHeight()]
         
         attr.set_value(sizes)
@@ -779,23 +852,9 @@ class LimaCCDs(PyTango.Device_4Impl) :
     #
     @Core.DEB_MEMBER_FUNCT
     def read_image_type(self,attr) :
-        imageType2String = {
-            Core.Bpp8 : "Bpp8" ,
-            Core.Bpp8S : "Bpp8S" ,
-            Core.Bpp10 : "Bpp10" ,
-            Core.Bpp10S : "Bpp10S" ,
-            Core.Bpp12 : "Bpp12" ,
-            Core.Bpp12S : "Bpp12S" ,
-            Core.Bpp14 : "Bpp14" ,
-            Core.Bpp14S : "Bpp14S" , 
-            Core.Bpp16 : "Bpp16" ,
-            Core.Bpp16S : "Bpp16S" ,
-            Core.Bpp32 : "Bpp32" ,
-            Core.Bpp32S : "Bpp32S"
-            }
         image = self.__control.image()
         imageType = image.getImageType()
-        stringType = imageType2String.get(imageType,"?")
+        stringType = self.ImageType2String.get(imageType,"?")
                 
         attr.set_value(stringType)
 
@@ -1439,89 +1498,88 @@ class LimaCCDs(PyTango.Device_4Impl) :
             release()
         return self.__dataflat_cache
 
+    ##@brief get a DATA_ARRAY from a Data object
+    #
+    @Core.DEB_MEMBER_FUNCT
+    def getDataArray(self, data, category):
+        d = data.buffer
+        s = [d.shape[i] for i in xrange(len(d.shape) - 1, -1, -1)]
+        if (category == self.DataArrayCategory.ImageStack) and (len(s) == 2):
+            s += [1]
+        nbDim = len(s)
+        
+        image = self.__control.image()
+        imageType = image.getImageType()
+        dataType = self.ImageType2DataArrayType.get(imageType, -1)
+        
+        def steps_gen(s):
+            size = 1
+            for x in s:
+                yield size
+                size *= x
+        t = [i for i in steps_gen(s)]
+
+        s += [0] * (8 - nbDim)
+        t += [0] * (8 - nbDim)
+
+        #prepare the structure
+        dataheader = struct.pack(
+          self.DataArrayPackStr,
+          self.DataArrayMagic,			# 4bytes I  - magic number
+          1,           				# 2bytes H  - version
+          self.DataArrayHeaderLen,		# 2 bytes H - header length, this header
+          category,				# 4 bytes I - category (enum)
+          dataType,   				# 4 bytes I - data type (enum)
+          0,           				# 2 bytes H - endianness
+          nbDim, 				# 2 bytes H - nb of dims
+          s[0],s[1],s[2],s[3],s[4],s[5],s[6],s[7], # 16 bytes Hx8 - dims
+          t[0],t[1],t[2],t[3],t[4],t[5],t[6],t[7], # 16 bytes H x 8 - dimsteps
+          0,0,0)    				# padding 3 x 4 bytes
+        if len(dataheader) != self.DataArrayHeaderLen:
+            raise RuntimeError, 'Invalid header len: %d (expected %d)' % \
+                  (len(dataheader), self.DataArrayHeaderLen)
+
+        flatData = d.ravel()
+        flatData.dtype = numpy.uint8
+        
+        dataStr = dataheader + flatData.tostring()        
+        release = getattr(data, 'releaseBuffer', None)
+        if release:
+            release()
+        
+        return dataStr
+  
+
     ##@brief get image data
     #
     @Core.DEB_MEMBER_FUNCT
     def readImage(self,frame_number):
-
-        imageType2DataArrayType = {
-            Core.Bpp8 : 0 ,
-            Core.Bpp10 : 1 ,
-            Core.Bpp12 : 1 ,
-            Core.Bpp14 : 1 ,
-            Core.Bpp16 : 1,
-            Core.Bpp32 : 2 ,
-            Core.Bpp8S : 4 ,
-            Core.Bpp10S : 5 ,
-            Core.Bpp12S : 5 ,
-            Core.Bpp14S : 5 ,
-            Core.Bpp16S : 5,
-            Core.Bpp32S : 6 ,
-            }        
-        image = self.__control.image()
-        imageType = image.getImageType()
-        dim = image.getImageDim()    
-        sizes = [imageType2DataArrayType.get(imageType,"?"), dim.getSize().getWidth(), dim.getSize().getHeight()]
-    
-        # The DATA_ARRAY definition
-        #struct {
-          #unsigned int Magic= 0x44544159;
-          #unsigned short Version;
-          #unsigned  short HeaderLength;
-          #DataArrayCategory Category;
-          #DataArrayType DataType;
-          #unsigned short DataEndianness;
-          #unsigned short NbDim;
-          #unsigned short Dim[8]
-          #unsigned int DimStep[8]
-        #} DataArrayHeaderStruct;
-
-        #enum DataArrayCategory {
-            #ScalarStack = 0;
-            #Spectrum;
-            #Image;
-            #SpectrumStack;
-            #ImageStack;
-        #};
-
-        #enum DataArrayType{
-          #DARRAY_UINT8 = 0;
-          #DARRAY_UINT16;
-          #DARRAY_UINT32;
-          #DARRAY_UINT64;
-          #DARRAY_INT8;
-          #DARRAY_INT16;
-          #DARRAY_INT32;
-          #DARRAY_INT64;
-          #DARRAY_FLOAT32;
-          #DARRAY_FLOAT64;
-        #};
-
-        #prepare the structure
-        #  '>IHHHHHHHHHHHHHHIIIIIIII',
-        dataheader = struct.pack(
-          '<IHHIIHHHHHHHHHHHHHHHHHHIII',
-          0x44544159,  				# 4bytes I  - magic number
-          1,           				# 2bytes H  - version
-          64,          				# 2 bytes H - header length, this header
-          2,           				# 4 bytes I - category (enum)
-          sizes[0],    				# 4 bytes I - data type (enum)
-          0,           				# 2 bytes H - endianness
-          2,           				# 2 bytes H - nb of dims
-          sizes[1],sizes[2],0,0,0,0,0,0,	# 16 bytes Hx8 - dims
-          1,sizes[2],0,0,0,0,0,0,    		# 16 bytes H x 8 - dimsteps
-          0,0,0)    				# padding 3 x 4 bytes
-        print 'readImage: frame_number = ', frame_number
+        deb.Param('readImage: frame_number=' % frame_number)
         image = self.__control.ReadImage(frame_number)
-        flatimage = image.buffer.ravel()
-        flatimage.dtype = numpy.uint8
-        
-        self._datacache = dataheader+flatimage.tostring()        
-        release = getattr(image, 'releaseBuffer', None)
-        if release:
-            release()
-        
+        self._datacache = self.getDataArray(image,
+                                            self.DataArrayCategory.Image)
         return ('DATA_ARRAY',  self._datacache)  
+  
+
+    ##@brief get image data
+    #
+    @Core.DEB_MEMBER_FUNCT
+    def readImageSeq(self, frame_seq):
+        frame_seq = map(int, frame_seq)
+        start, end = frame_seq[:2]
+        step = 1
+        if len(frame_seq) > 2:
+            step = frame_seq[2]
+            if step != 1:
+                raise ValueError, 'Discontiguous sequences not supported yet'
+        nbFrames = end - start
+        deb.Param('readImageSeq:start,end,step = %d,%d,%d (%d frames)' % \
+
+                  (start, end, step, nbFrames))
+        imageStack = self.__control.ReadImage(start, nbFrames)
+        self._dataseqcache = self.getDataArray(imageStack,
+                                               self.DataArrayCategory.ImageStack)
+        return ('DATA_ARRAY',  self._dataseqcache)  
   
 
     ##@brief get base image data
@@ -1736,7 +1794,10 @@ class LimaCCDsClass(PyTango.DeviceClass) :
          [PyTango.DevVoid,""]],
         'readImage':
         [[PyTango.DevLong,"Image id"],
-         [PyTango.DevEncoded, ""]],
+         [PyTango.DevEncoded, "DATA_ARRAY with requested image"]],
+        'readImageSeq':
+        [[PyTango.DevVarLongArray,"Image id seq: start,end[,step]"],
+         [PyTango.DevEncoded, "DATA_ARRAY with requested images"]],
         'getPluginDeviceNameFromType':
         [[PyTango.DevString,"plugin type"],
          [PyTango.DevString,"device name"]],
