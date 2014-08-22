@@ -109,6 +109,12 @@ class RayonixHs(PyTango.Device_4Impl):
         self.__FrameTriggerSignalType = self.__SignalType
         self.__SequenceGateSignalType = self.__SignalType
         self.__OutputSignalType = self.__SignalType
+        self.__ReadoutMode = {'READOUT_MODE_STANDARD': RayonixHsAcq.READOUT_MODE_STANDARD,
+                              'READOUT_MODE_HIGH_GAIN': RayonixHsAcq.READOUT_MODE_HIGH_GAIN,
+                              'READOUT_MODE_LOW_NOISE': RayonixHsAcq.READOUT_MODE_LOW_NOISE,
+                              'READOUT_MODE_HDR': RayonixHsAcq.READOUT_MODE_HDR,
+                              'READOUT_MODE_TURBO': RayonixHsAcq.READOUT_MODE_TURBO,
+                              }
         self.__Attribute2FunctionBase = {'frame_mode': 'FrameMode',
                                          'frame_trigger_signal_type': 'FrameTriggerSignalType',
                                          'sequence_gate_signal_type': 'SequenceGateSignalType',
@@ -119,6 +125,7 @@ class RayonixHs(PyTango.Device_4Impl):
                                          'cooler': 'Cooler',
                                          'vacuum_valve': 'VacuumValve',
                                          'new_background_needed': 'NewBackgroundNeeded',
+                                         'readout_mode': 'ReadoutMode',
                                          }
         self.__OtherAttribute2FunctionBase = {'output1_signal_type': 'OutputSignalType',
                                               'output2_signal_type': 'OutputSignalType',
@@ -475,7 +482,15 @@ class RayonixHsClass(PyTango.DeviceClass):
      	 {
 	     'label':'background is needed',
 	     'unit': 'True or False', 
-	 }],
+         }],
+        'readout_mode':
+         [[PyTango.DevString,
+           PyTango.SCALAR,
+           PyTango.READ_WRITE],
+          {
+                'label': 'Readout mode',
+                'unit': 'READOUT_MODE_STANDARD/READOUT_MODE_HIGH_GAIN/READOUT_MODE_LOW_NOISE/READOUT_MODE_HDR/READOUT_MODE_TURBO',
+           }],
         }
 
 #------------------------------------------------------------------
