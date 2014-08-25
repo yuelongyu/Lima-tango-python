@@ -49,6 +49,7 @@ import itertools
 import numpy
 import struct
 import time
+import re
 
 
 # Before loading Lima.Core, must find out the version the plug-in
@@ -79,6 +80,47 @@ VerboseLevel2TypeFlags = {
     3: ['Trace'],
     4: ['Funct', 'Param', 'Return']
     }
+
+SystemFeatures = {}
+
+def SystemHasFeature(feature):
+    global SystemFeatures
+
+    if feature in SystemFeatures:
+        return SystemFeatures[feature]
+
+    ok = True
+    for i, name in enumerate(feature.split('.')):
+        try:
+            if i == 0:
+                obj = globals()[name]
+            else:
+                obj = getattr(obj, name)
+        except AttributeError:
+            ok = False
+            break
+
+    SystemFeatures[feature] = ok
+    return ok
+
+def RequiresSystemFeature(feature):
+    def method_decorator(f):
+        def unsupported_method(*args, **kws):
+            if SystemHasFeature(feature):
+                return f(*args, **kws)
+            re_obj = re.compile('(?P<op>(read|write))_(?P<attr>.+)')
+            m = re_obj.match(f.__name__)
+            if m:
+                head = 'attr. %s [%s]' % (m.group('attr'), m.group('op'))
+            else:
+                head = 'method %s' % f.__name__
+            op = re.compile
+            msg = ('Error: %s cannot be called because %s is not supported ' \
+                   'in this (detector-required) version of LIMA' % 
+                    (head, feature))
+            raise RuntimeError(msg)
+        return unsupported_method
+    return method_decorator
 
 class LimaCCDs(PyTango.Device_4Impl) :
 
@@ -343,6 +385,9 @@ class LimaCCDs(PyTango.Device_4Impl) :
         else:
             Core.Processlib.PoolThreadMgr.get().setNumberOfThread(nb_thread)
 
+        interface = self.__control.hwInterface()
+        self.__detinfo = interface.getHwCtrlObj(Core.HwCap.DetInfo)
+
         self.__accThresholdCallback = None
 
         accThresholdCallbackModule = self.AccThresholdCallbackModule
@@ -387,36 +432,29 @@ class LimaCCDs(PyTango.Device_4Impl) :
                           'CONCATENATION': Core.Concatenation,
                           'ACCUMULATION': Core.Accumulation}
 
-        try:
+        if SystemHasFeature('Core.CtAcquisition.Live'):
             self.__AccTimeMode = {'LIVE' : Core.CtAcquisition.Live,
                                   'REAL' : Core.CtAcquisition.Real}
-        except AttributeError:          # Core too Old
+        else:                           # Core too Old
             self.__AccTimeMode = {}
         
         self.__SavingFormat = {'RAW' : Core.CtSaving.RAW,
                                'EDF' : Core.CtSaving.EDF,
-                               'HDF5' : Core.CtSaving.HDF5,
                                'CBF' : Core.CtSaving.CBFFormat}
-        try:
-            self.__SavingFormat['TIFF'] = Core.CtSaving.TIFFFormat
-        except AttributeError:
-            pass
-
-        try:
-            self.__SavingFormat['EDFGZ'] = Core.CtSaving.EDFGZ
-            self.__SavingFormatDefaultSuffix[Core.CtSaving.EDFGZ] = '.edfgz'
-        except AttributeError:
-            pass
 
         self.__SavingFormatDefaultSuffix = {Core.CtSaving.RAW : '.raw',
                                             Core.CtSaving.EDF : '.edf',
-                                            Core.CtSaving.HDF5 : '.h5',
                                             Core.CtSaving.CBFFormat : '.cbf'}
 
-        try:
+        if SystemHasFeature('Core.CtSaving.TIFFFormat'):
+            self.__SavingFormat['TIFF'] = Core.CtSaving.TIFFFormat
             self.__SavingFormatDefaultSuffix[Core.CtSaving.TIFFFormat] = '.tiff'
-        except AttributeError:
-            pass
+        if SystemHasFeature('Core.CtSaving.EDFGZ'):
+            self.__SavingFormat['EDFGZ'] = Core.CtSaving.EDFGZ
+            self.__SavingFormatDefaultSuffix[Core.CtSaving.EDFGZ] = '.edfgz'
+        if SystemHasFeature('Core.CtSaving.HDF5'):
+            self.__SavingFormat['HDF5'] = Core.CtSaving.HDF5
+            self.__SavingFormatDefaultSuffix[Core.CtSaving.HDF5] = '.h5'
 
         self.__SavingMode = {'MANUAL' : Core.CtSaving.Manual,
                              'AUTO_FRAME' : Core.CtSaving.AutoFrame,
@@ -424,8 +462,10 @@ class LimaCCDs(PyTango.Device_4Impl) :
 
         self.__SavingOverwritePolicy = {'ABORT' : Core.CtSaving.Abort,
                                         'OVERWRITE' : Core.CtSaving.Overwrite,
-                                        'APPEND' : Core.CtSaving.Append,
-                                        'MULTISET' : Core.CtSaving.MultiSet}
+                                        'APPEND' : Core.CtSaving.Append}
+
+        if SystemHasFeature('Core.CtSaving.MultiSet'):
+            self.__SavingOverwritePolicy['MULTISET'] = Core.CtSaving.MultiSet
 
         self.__AcqTriggerMode = {'INTERNAL_TRIGGER' : Core.IntTrig,
                                  'EXTERNAL_TRIGGER' : Core.ExtTrigSingle,
@@ -433,23 +473,17 @@ class LimaCCDs(PyTango.Device_4Impl) :
                                  'EXTERNAL_GATE' : Core.ExtGate,
                                  'EXTERNAL_START_STOP' : Core.ExtStartStop}
 
-        try:
+        if SystemHasFeature('Core.IntTrigMult'):
             self.__AcqTriggerMode['INTERNAL_TRIGGER_MULTI'] = Core.IntTrigMult
-        except AttributeError:
-            pass
 
-        try:
+        if SystemHasFeature('Core.ExtTrigReadout'):
             self.__AcqTriggerMode['EXTERNAL_TRIGGER_READOUT'] = Core.ExtTrigReadout
-        except AttributeError:
-            pass
 
-        try:
+        if SystemHasFeature('Core.Rotation_0'):
             self.__ImageRotation = {'NONE' : Core.Rotation_0,
                                     '90' : Core.Rotation_90,
                                     '180' : Core.Rotation_180,
                                     '270' : Core.Rotation_270}
-        except AttributeError:
-            pass
 
         try:
             self.__VideoMode = {'Y8'         : Core.Y8,
@@ -472,11 +506,9 @@ class LimaCCDs(PyTango.Device_4Impl) :
             import traceback
             traceback.print_exc()
 
-	try:
+	if SystemHasFeature('Core.BAYER_BG8'):
 	    self.__VideoMode['BAYER_BG8'] = Core.BAYER_BG8
 	    self.__VideoMode['BAYER_BG16'] = Core.BAYER_BG16
-	except AttributeError:
-	    pass
 
 
         #INIT display shared memory
@@ -505,22 +537,25 @@ class LimaCCDs(PyTango.Device_4Impl) :
 
         # Setup a user-defined detector name if it exists
         if self.InstrumentName:
-            try:
-                interface = self.__control.hwInterface()
-                det_info = interface.getHwCtrlObj(Core.HwCap.DetInfo)
-                det_info.setInstrumentName(self.InstrumentName)
-            except AttributeError:
-                pass
-        
+            if SystemHasFeature('Core.HwDetInfoCtrlObj.setInstrumentName'):
+                self.__detinfo.setInstrumentName(self.InstrumentName)
+            else:
+                deb.Warning('InstrumentName not supported in this version')
+
         # Setup a user-defined detector name if it exists
         if self.UserDetectorName:
-            try:
-                interface = self.__control.hwInterface()
-                det_info = interface.getHwCtrlObj(Core.HwCap.DetInfo)
-                det_info.setUserDetectorName(self.UserDetectorName)
-            except AttributeError:
-                pass
-               
+            if SystemHasFeature('Core.HwDetInfoCtrlObj.setUserDetectorName'):
+                self.__detinfo.setUserDetectorName(self.UserDetectorName)
+            else:
+                deb.Warning('UserDetectorName not supported in this version')
+
+        unsupported_feature = 'Core.Never.Unsupported.Feature'
+        if SystemHasFeature(unsupported_feature):
+            deb.Error('System reports having %s' % unsupported_feature)
+
+        for feature in SystemFeatures:
+            is_not = (SystemHasFeature(feature) and 'is') or 'is not'
+            deb.Trace('Feature %s %s present' % (feature, is_not))
                 
     def __getattr__(self,name) :
         if name.startswith('is_') and name.endswith('_allowed') :
@@ -569,11 +604,8 @@ class LimaCCDs(PyTango.Device_4Impl) :
             config_default_name = self.ConfigurationDefaultName
 
             self.__configDefaultActiveFlag = False
-            try:
+            if SystemHasFeature('Core.CtConfig'):
                 config = self.__control.config()
-            except AttributeError:
-                pass
-            else:
                 config.setFilename(config_file_path)
                 if os.access(config_file_path,os.R_OK):
                     try:
@@ -601,63 +633,53 @@ class LimaCCDs(PyTango.Device_4Impl) :
     #
     @Core.DEB_MEMBER_FUNCT
     def read_camera_type(self,attr) :        
-        interface = self.__control.hwInterface()
-        det_info = interface.getHwCtrlObj(Core.HwCap.DetInfo)
-        value = det_info.getDetectorType()
+        value = self.__detinfo.getDetectorType()
         attr.set_value(value)
 
     ## @brief Read the Camera Model
     #
     @Core.DEB_MEMBER_FUNCT
     def read_camera_model(self,attr) :        
-        interface = self.__control.hwInterface()
-        det_info = interface.getHwCtrlObj(Core.HwCap.DetInfo)
-        value = det_info.getDetectorModel()
+        value = self.__detinfo.getDetectorModel()
         attr.set_value(value)
         
     ## @brief Read the User-defined Camera name
     #
+    @RequiresSystemFeature('Core.HwDetInfoCtrlObj.getUserDetectorName')
     @Core.DEB_MEMBER_FUNCT
     def read_user_detector_name(self,attr) :        
-	interface = self.__control.hwInterface()
-	det_info = interface.getHwCtrlObj(Core.HwCap.DetInfo)
-	value = det_info.getUserDetectorName() 
+	value = self.__detinfo.getUserDetectorName() 
 	attr.set_value(value)
 
     ## @brief Write the User-defined Camera name
     #
+    @RequiresSystemFeature('Core.HwDetInfoCtrlObj.setUserDetectorName')
     @Core.DEB_MEMBER_FUNCT
     def write_user_detector_name(self,attr) :
         data = attr.get_write_value()
-	interface = self.__control.hwInterface()
-	det_info = interface.getHwCtrlObj(Core.HwCap.DetInfo)
-        det_info.setUserDetectorName(data)
+        self.__detinfo.setUserDetectorName(data)
         
     ## @brief Read the instrument name
     #
+    @RequiresSystemFeature('Core.HwDetInfoCtrlObj.getInstrumentName')
     @Core.DEB_MEMBER_FUNCT
     def read_instrument_name(self,attr) :        
-	interface = self.__control.hwInterface()
-	det_info = interface.getHwCtrlObj(Core.HwCap.DetInfo)
-	value = det_info.getInstrumentName() 
+	value = self.__detinfo.getInstrumentName() 
 	attr.set_value(value)
 
     ## @brief Write the instrument name
     #
+    @RequiresSystemFeature('Core.HwDetInfoCtrlObj.setInstrumentName')
     @Core.DEB_MEMBER_FUNCT
     def write_instrument_name(self,attr) :
         data = attr.get_write_value()
-	interface = self.__control.hwInterface()
-	det_info = interface.getHwCtrlObj(Core.HwCap.DetInfo)
-        det_info.setInstrumentName(data)
+        self.__detinfo.setInstrumentName(data)
 
     ## @brief Read the Camera pixelsize
     #
     @Core.DEB_MEMBER_FUNCT
     def read_camera_pixelsize(self,attr) :        
-        interface = self.__control.hwInterface()
-        det_info = interface.getHwCtrlObj(Core.HwCap.DetInfo)
-        value = det_info.getPixelSize()
+        value = self.__detinfo.getPixelSize()
         attr.set_value(value)
         
     ## @brief get the status of the acquisition
@@ -668,10 +690,8 @@ class LimaCCDs(PyTango.Device_4Impl) :
         state2string = {Core.AcqReady : "Ready",
                         Core.AcqRunning : "Running",
                         Core.AcqFault : "Fault"}
-        try:
+        if SystemHasFeature('Core.AcqConfig'):
             state2string[Core.AcqConfig] = "Configuration"
-        except AttributeError:
-            pass
 
         attr.set_value(state2string.get(status.AcquisitionStatus,"?"))
     ## @brief get the errir message when acq_status is in Fault stat
