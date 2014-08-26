@@ -260,6 +260,9 @@ class LimaCCDs(PyTango.Device_4Impl) :
 
     @DataArrayUser
     class ImageStatusCallback(Core.CtControl.ImageStatusCallback):
+
+        DefaultMaxEventRate = 25
+
         def __init__(self, device, control):
             Core.CtControl.ImageStatusCallback.__init__(self)
             self.__device = weakref.ref(device)
@@ -269,7 +272,9 @@ class LimaCCDs(PyTango.Device_4Impl) :
             self.__last_image_acquired = None
             self.__last_image_ready = None
             self.__last_image_saved = None
-            self.__last_image_pushes_events = False
+            self.__image_events_push_data = False
+            self.__last_event_time = 0
+            self.__image_events_max_rate = self.DefaultMaxEventRate
 
         def imageStatusChanged(self, image_status):
             last_base_image_ready = image_status.LastBaseImageReady
@@ -277,6 +282,7 @@ class LimaCCDs(PyTango.Device_4Impl) :
             last_image_acquired = image_status.LastImageAcquired
             last_image_ready = image_status.LastImageReady
             last_image_saved = image_status.LastImageSaved
+
             device = self.__device()
             if self.__last_base_image_ready != last_base_image_ready:
                 device.push_change_event("last_base_image_ready",
@@ -292,7 +298,7 @@ class LimaCCDs(PyTango.Device_4Impl) :
             if self.__last_image_ready != last_image_ready:
                 device.push_change_event("last_image_ready", last_image_ready)
                 self.__last_image_ready = last_image_ready
-                if (last_image_ready >= 0) and self.__last_image_pushes_events:
+                if (last_image_ready >= 0) and self.__image_events_push_data:
                     control = self.__control()
                     image = control.ReadImage(last_image_ready)
                     category = self.DataArrayCategory.Image
@@ -303,11 +309,23 @@ class LimaCCDs(PyTango.Device_4Impl) :
                                          last_image_saved)
                 self.__last_image_saved = last_image_saved                
 
-        def getLastImagePushesEvents(self):
-            return self.__last_image_pushes_events
+            tn = time.time()
+            te = self.__last_event_time + 1.0 / self.__image_events_max_rate
+            if tn < te:
+                time.sleep(te - tn)
+            self.__last_event_time = tn
 
-        def setLastImagePushesEvents(self, push_events):
-            self.__last_image_pushes_events = push_events
+        def getImageEventsPushData(self):
+            return self.__image_events_push_data
+
+        def setImageEventsPushData(self, events):
+            self.__image_events_push_data = events
+
+        def getImageEventsMaxRate(self):
+            return self.__image_events_max_rate
+
+        def setImageEventsMaxRate(self, max_rate):
+            self.__image_events_max_rate = max_rate
 
 #------------------------------------------------------------------
 #    Device constructor
@@ -1062,20 +1080,6 @@ class LimaCCDs(PyTango.Device_4Impl) :
         data = self._image_2_data_array(image, self.DataArrayCategory.Image)
         attr.set_value('DATA_ARRAY', data)
 
-    ## @brief get if last_image attr pushes events
-    #
-    @Core.DEB_MEMBER_FUNCT
-    def read_last_image_pushes_events(self,attr) :
-        pushes_events = self.__image_status_cbk.getLastImagePushesEvents()
-        attr.set_value(pushes_events)
-
-    ## @brief set if last_image attr pushes events
-    #
-    @Core.DEB_MEMBER_FUNCT
-    def write_last_image_pushes_events(self,attr) :
-        pushes_events = attr.get_write_value()
-        self.__image_status_cbk.setLastImagePushesEvents(pushes_events)
-
     ## @brief last image acquired
     #
     @Core.DEB_MEMBER_FUNCT
@@ -1130,6 +1134,34 @@ class LimaCCDs(PyTango.Device_4Impl) :
         if value is None: value = -1
 
         attr.set_value(value)
+
+    ## @brief get if last_image attr pushes events
+    #
+    @Core.DEB_MEMBER_FUNCT
+    def read_image_events_push_data(self,attr) :
+        image_events = self.__image_status_cbk.getImageEventsPushData()
+        attr.set_value(image_events)
+
+    ## @brief set if last_image attr pushes events
+    #
+    @Core.DEB_MEMBER_FUNCT
+    def write_image_events_push_data(self,attr) :
+        image_events = attr.get_write_value()
+        self.__image_status_cbk.setImageEventsPushData(image_events)
+
+    ## @brief get the max event generation rate
+    #
+    @Core.DEB_MEMBER_FUNCT
+    def read_image_events_max_rate(self,attr) :
+        event_rate = self.__image_status_cbk.getImageEventsMaxRate()
+        attr.set_value(event_rate)
+
+    ## @brief set the max event generation rate
+    #
+    @Core.DEB_MEMBER_FUNCT
+    def write_image_events_max_rate(self,attr) :
+        event_rate = attr.get_write_value()
+        self.__image_status_cbk.setImageEventsMaxRate(event_rate)
 
     ## @brief this flag is true just after
     #  the detector readout.
@@ -2122,10 +2154,6 @@ class LimaCCDsClass(PyTango.DeviceClass) :
         [[PyTango.DevEncoded,
           PyTango.SCALAR,
           PyTango.READ]],
-        'last_image_pushes_events':
-        [[PyTango.DevBoolean,
-          PyTango.SCALAR,
-          PyTango.READ_WRITE]],
         'last_image_saved':
         [[PyTango.DevLong,
           PyTango.SCALAR,
@@ -2134,6 +2162,14 @@ class LimaCCDsClass(PyTango.DeviceClass) :
         [[PyTango.DevLong,
           PyTango.SCALAR,
           PyTango.READ]],
+        'image_events_push_data':
+        [[PyTango.DevBoolean,
+          PyTango.SCALAR,
+          PyTango.READ_WRITE]],
+        'image_events_max_rate':
+        [[PyTango.DevFloat,
+          PyTango.SCALAR,
+          PyTango.READ_WRITE]],
         'ready_for_next_image':
         [[PyTango.DevBoolean,
           PyTango.SCALAR,
