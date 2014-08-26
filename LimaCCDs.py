@@ -230,10 +230,12 @@ class LimaCCDs(PyTango.Device_4Impl) :
       #unsigned int DimStep[8]
     #} DataArrayHeaderStruct;
 
-    DataArrayPackStr = '<IHHIIHHHHHHHHHHHHHHHHHHIII'
-    DataArrayMagic = 0x44544159			# 'DTAY'
+    DataArrayVersion = 2
+    DataArrayPackStr = '<IHHIIHHHHHHHHIIIIIIII'
+    DataArrayMagic = struct.unpack('>I', 'DTAY')[0]	# 0x44544159
     DataArrayHeaderLen = 64
-    
+    DataArrayMaxNbDim = 6
+
     def DataArrayUser(klass, DataArrayCategory=DataArrayCategory):
         klass.DataArrayCategory = DataArrayCategory
         return klass
@@ -1621,34 +1623,38 @@ class LimaCCDs(PyTango.Device_4Impl) :
         if (category == self.DataArrayCategory.ImageStack) and (len(s) == 2):
             s += [1]
         nbDim = len(s)
-        
+        maxNbDim = self.DataArrayMaxNbDim
+        if nbDim > maxNbDim:
+            raise ValueError, 'Invalid nb of dimensions: max is %d' % maxNbDim
+
         image = self.__control.image()
         imageType = image.getImageType()
         dataType = self.ImageType2DataArrayType.get(imageType, -1)
-        
+        bigEndian = numpy.dtype(d.dtype.byteorder + 'i4') == numpy.dtype('>i4')
+
         def steps_gen(s):
-            size = 1
+            size = self.ImageType2NbBytes.get(imageType, (1, 0))[0]
             for x in s:
                 yield size
                 size *= x
         t = [i for i in steps_gen(s)]
 
-        s += [0] * (8 - nbDim)
-        t += [0] * (8 - nbDim)
+        s += [0] * (maxNbDim - nbDim)
+        t += [0] * (maxNbDim - nbDim)
 
         #prepare the structure
         dataheader = struct.pack(
           self.DataArrayPackStr,
-          self.DataArrayMagic,			# 4bytes I  - magic number
-          1,           				# 2bytes H  - version
-          self.DataArrayHeaderLen,		# 2 bytes H - header length, this header
+          self.DataArrayMagic,			# 4 bytes I - magic number
+          self.DataArrayVersion,		# 2 bytes H - version
+          self.DataArrayHeaderLen,		# 2 bytes H - this header length
           category,				# 4 bytes I - category (enum)
           dataType,   				# 4 bytes I - data type (enum)
-          0,           				# 2 bytes H - endianness
+          bigEndian,   				# 2 bytes H - endianness
           nbDim, 				# 2 bytes H - nb of dims
-          s[0],s[1],s[2],s[3],s[4],s[5],s[6],s[7], # 16 bytes Hx8 - dims
-          t[0],t[1],t[2],t[3],t[4],t[5],t[6],t[7], # 16 bytes H x 8 - dimsteps
-          0,0,0)    				# padding 3 x 4 bytes
+          s[0],s[1],s[2],s[3],s[4],s[5],        # 12 bytes H x 6 - dims
+          t[0],t[1],t[2],t[3],t[4],t[5],        # 24 bytes I x 6 - stepsbytes
+          0, 0)    				# padding 2 x 4 bytes
         if len(dataheader) != self.DataArrayHeaderLen:
             raise RuntimeError, 'Invalid header len: %d (expected %d)' % \
                   (len(dataheader), self.DataArrayHeaderLen)
