@@ -59,7 +59,7 @@ if 'linux' in sys.platform:
     from EnvHelper import setup_lima_env
     LimaCameraType = setup_lima_env(sys.argv)
 
-from AttrHelper import CallableReadEnum,CallableWriteEnum
+from AttrHelper import get_attr_4u
 
 from Lima import Core
 
@@ -435,14 +435,16 @@ class LimaCCDs(PyTango.Device_4Impl) :
                                   'shutter' : self.__control.shutter,
                                   'saving' : self.__control.saving,
                                   'image' : self.__control.image,
-                                  'video' : self.__control.video}
+                                  'video' : self.__control.video,
+                                  'buffer' : self.__control.buffer}
 
         self.__Attribute2FunctionBase = {'acq_trigger_mode':'TriggerMode',
                                          'saving_overwrite_policy' : 'OverwritePolicy',
                                          'saving_format' : 'Format',
                                          'shutter_mode' : 'Mode',
 					 'image_rotation':'Rotation',
-                                         'video_mode':'Mode'}
+                                         'video_mode':'Mode',
+                                         'buffer_max_memory': 'MaxMemory'}
             
         self.__ShutterMode = {'MANUAL': Core.ShutterManual,
                               'AUTO_FRAME': Core.ShutterAutoFrame,
@@ -569,6 +571,10 @@ class LimaCCDs(PyTango.Device_4Impl) :
             else:
                 deb.Warning('UserDetectorName not supported in this version')
 
+        # Setup the max memory usage (%)
+        if self.BufferMaxMemory:
+            self.__control.buffer().setMaxMemory(int(self.BufferMaxMemory))
+
         unsupported_feature = 'Core.Never.Unsupported.Feature'
         if SystemHasFeature(unsupported_feature):
             deb.Error('System reports having %s' % unsupported_feature)
@@ -589,26 +595,12 @@ class LimaCCDs(PyTango.Device_4Impl) :
                     func = _not_allowed
             self.__dict__[name] = func
             return func
-        elif name.startswith('read_') or name.startswith('write_') :
-            split_name = name.split('_')[1:]
-            attr_name = ''.join([x.title() for x in split_name])
-            dict_name = '_' + self.__class__.__name__ + '__' + attr_name
-            d = getattr(self,dict_name,None)
-            getObjectFunc = self.__Prefix2SubClass.get(split_name[0],None)
-            attr_name = self.__Attribute2FunctionBase.get('_'.join(split_name),attr_name)
-            if d and getObjectFunc:
-                obj = getObjectFunc()
-                if name.startswith('read_') :
-                    functionName = 'get' + attr_name
-                    function2Call = getattr(obj,functionName)
-                    callable_obj = CallableReadEnum(d,function2Call)
-                else:
-                    functionName = 'set' + attr_name
-                    function2Call = getattr(obj,functionName)
-                    callable_obj = CallableWriteEnum('_'.join(split_name),
-                                                     d,function2Call)
-                self.__dict__[name] = callable_obj
-                return callable_obj
+        else :
+             split_name = name.split('_')[1:]
+             subClass = self.__Prefix2SubClass.get(split_name[0],None)
+             if subClass:
+                 obj = subClass()
+                 return get_attr_4u(self,name, obj)
         
         raise AttributeError('LimaCCDs has no attribute %s' % name)
 
@@ -1898,6 +1890,9 @@ class LimaCCDsClass(PyTango.DeviceClass) :
         'InstrumentName' :
         [PyTango.DevString,
          "The instrument name, ESRF-ID02",[]],
+        'BufferMaxMemory' :
+         [PyTango.DevString,
+          "The maximum among of memory (RAM) Lima should use to allocate the frame buffers, e.g 50 %, default is 70%",[]],
         }
 
     #    Command definitions
@@ -2326,6 +2321,10 @@ class LimaCCDsClass(PyTango.DeviceClass) :
         [[PyTango.DevString,
           PyTango.SPECTRUM,
           PyTango.READ,1024]],
+        'buffer_max_memory':
+        [[PyTango.DevShort,
+          PyTango.SCALAR,
+          PyTango.READ_WRITE]],
         }
 
 
