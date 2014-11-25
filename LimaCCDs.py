@@ -535,7 +535,7 @@ class LimaCCDs(PyTango.Device_4Impl) :
 
         #INIT display shared memory
         try:
-            shared_memory_names = ['LimaCCds',self.LimaCameraType]
+            shared_memory_names = ['LimaCCds',sys.argv[1]]
             shared_memory = self.__control.display()
             shared_memory.setNames(*self.__shared_memory_names)
         except AttributeError:

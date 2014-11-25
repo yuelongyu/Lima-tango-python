@@ -735,11 +735,6 @@ class LimaTacoCCDs(PyTango.Device_4Impl, object):
 	    display = control.display()
 	except AttributeError:
 	    return
-	try:
-	    if livedisplay_act:
-	        display.setNames('_ccd_ds_', 'limaccd_live')
-	except Core.Exception:
-	    pass
 	display.setActive(livedisplay_act)
 
     @Core.DEB_MEMBER_FUNCT
