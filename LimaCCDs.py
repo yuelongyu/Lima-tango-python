@@ -429,6 +429,12 @@ class LimaCCDs(PyTango.Device_4Impl) :
                 except AttributeError:
                     deb.Error("Accumulation threshold plugins module don't have get_acc_threshold_callback function")
 
+        #ImageType Bpp32F (Float 32)
+        if SystemHasFeature('Core.Bpp32F'):
+            self.ImageType2NbBytes[Core.Bpp32F] = (4,1)
+            self.ImageType2String[Core.Bpp32F] = 'Bpp32F'
+            self.ImageType2DataArrayType[Core.Bpp32F] = 8
+
         #Tango Enum to Lima Enum
         self.__Prefix2SubClass = {'acc' : self.__control.acquisition,
                                   'acq' : self.__control.acquisition,

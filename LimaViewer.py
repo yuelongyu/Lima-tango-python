@@ -72,7 +72,21 @@ class LimaViewer (PyTango.Device_4Impl):
         self.debug_stream("In __init__()")
         LimaViewer.init_device(self)
         #----- PROTECTED REGION ID(LimaViewer.__init__) ENABLED START -----#
-        
+            self.ImageType2NumpyType = {
+                'Bpp8' : numpy.uint8,
+                'Bpp8S' : numpy.int8,
+                'Bpp10' : numpy.uint16,
+                'Bpp10S' : numpy.int16,
+                'Bpp12' : numpy.uint16,
+                'Bpp12S' : numpy.int16,
+                'Bpp14' : numpy.uint16,
+                'Bpp14S' : numpy.int16,
+                'Bpp16' : numpy.uint16,
+                'Bpp16S' : numpy.int16,
+                'Bpp32' :  numpy.uint32,
+                'Bpp32S' : numpy.int32,
+                'Bpp32F' : numpy.float32,
+            }
         #----- PROTECTED REGION END -----#  //  LimaViewer.__init__
         
     def delete_device(self):
@@ -92,7 +106,7 @@ class LimaViewer (PyTango.Device_4Impl):
         self.DevCcd = PyTango.DeviceProxy(self.Dev_Ccd_name)
         self.shape_ccd = self.DevCcd.read_attribute('image_sizes').value[::-1]
         self.image_type = self.DevCcd.read_attribute('image_type').value
-        if self.image_type != ("Bpp8" or "Bpp8S" or "Bpp16" or "Bpp16S" or "Bpp32" or "Bpp32S"):
+        if self.image_type not in self.ImageType2NumpyType :
             self.set_state(PyTango.DevState.FAULT)
             self.set_status("Format "+self.image_type+" unsupported")
         self.DevCcd.write_attribute('acq_expo_time',self.attr_Exposure_Time)
@@ -142,18 +156,8 @@ class LimaViewer (PyTango.Device_4Impl):
         if self.get_state() != PyTango.DevState.FAULT:
             data = self.DevCcd.getImage(-1).data
             self.data = data
-            if self.image_type == "Bpp8":
-                self.attr_Image_ccd_read = numpy.frombuffer(data, dtype=numpy.uint8).reshape(self.shape_ccd[:2])
-            if self.image_type == "Bpp8S":
-                self.attr_Image_ccd_read = numpy.frombuffer(data, dtype=numpy.int8).reshape(self.shape_ccd[:2])            
-            elif self.image_type == "Bpp16":
-                self.attr_Image_ccd_read = numpy.frombuffer(data, dtype=numpy.uint16).reshape(self.shape_ccd[:2])
-            elif self.image_type == "Bpp16S":
-                self.attr_Image_ccd_read = numpy.frombuffer(data, dtype=numpy.int16).reshape(self.shape_ccd[:2])
-            elif self.image_type == "Bpp32":
-                self.attr_Image_ccd_read = numpy.frombuffer(data, dtype=numpy.uint32).reshape(self.shape_ccd[:2])
-            elif self.image_type == "Bpp32S":
-                self.attr_Image_ccd_read = numpy.frombuffer(data, dtype=numpy.int32).reshape(self.shape_ccd[:2])
+            numpyType = self.ImageType2NumpyType[self.image_type]
+            self.attr_Image_ccd_read = numpy.frombuffer(data, dtype=numpyType).reshape(self.shape_ccd[:2])
         
         attr.set_value(self.attr_Image_ccd_read,self.shape_ccd[1], self.shape_ccd[0])
         

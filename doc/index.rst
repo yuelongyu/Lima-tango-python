@@ -234,7 +234,7 @@ saving_header_delimiter  rw	 DevString[]		 The header delimiters, [0] = key head
 \                        \       **IMAGE**               \
 image_type		 ro	 DevString		 Return the current image data type, bit per pixel signed or unsigned:
 							  - Bpp8, Bpp8S, Bpp10, Bpp10S, Bpp12, Bpp12S, Bpp14,
-							  - Bpp14S, Bpp16, Bpp16S, Bpp32, Bpp32S.
+							  - Bpp14S, Bpp16, Bpp16S, Bpp32, Bpp32S , Bpp32F.
 image_width		 ro	 DevLong	         Width size of the detector in pixel
 image_height		 ro	 DevLong		 Height size of the detector in pixel
 image_sizes              ro      DevULong[4]             Signed(0-unsigned,1-signed), depth(nb bytes), width and height

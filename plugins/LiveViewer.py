@@ -145,7 +145,11 @@ class LiveViewer (PyTango.Device_4Impl):
             Core.Bpp16S : (2,1, PyTango.DevShort),
             Core.Bpp32  : (4,0, PyTango.DevULong),
             Core.Bpp32S : (4,1, PyTango.DevLong)
-            }        
+            }
+        try:
+            imageType2NbBytes[Core.Bpp32F] = (4,1,PyTango.DevFloat)
+        except AttributeError: pass
+
         imageType = self.image.getImageType()
         return imageType2NbBytes.get(imageType,(0,0))
 

@@ -197,6 +197,11 @@ class LimaTacoCCDs(PyTango.Device_4Impl, object):
         except:
             self.ManualAsynchronousWrite = 0
 
+        #ImageType Bpp32F (Float 32)
+        try:
+            self.ImageType2DataArrayType[Core.Bpp32F] = 8
+        except AttributeError: pass
+
 #==================================================================
 #
 #    LimaTacoCCDs read/write attribute methods
