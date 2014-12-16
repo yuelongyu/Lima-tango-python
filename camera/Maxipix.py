@@ -123,7 +123,11 @@ class Maxipix(PyTango.Device_4Impl):
         if not key: return # property is not set
         
         dict = getattr(self, '_'+self.__class__.__name__+'__'+name)
-        func = getattr(_MaxipixAcq, 'set'+name)
+        _PriamAcq = _MaxipixAcq.getPriamAcq()
+        if prop_name.count('fill_mode'):
+            func = getattr(_MaxipixAcq, 'set'+name)
+        else:
+            func = getattr(_PriamAcq, 'set'+name)
         deb.Always('Setting property '+prop_name) 
 
         val = AttrHelper._getDictValue(dict, key.upper())
@@ -217,78 +221,23 @@ class Maxipix(PyTango.Device_4Impl):
         dacs.setOneDac(0,self.__dacname, data)
         dacs.applyChipDacs(0)
     
-    ## @brief Read threshold noise of a maxipix chips
+    ## @brief Read the energy threshold 
     #
-    def read_threshold_noise(self,attr) :
-        dac = _MaxipixAcq.mpxDacs
-        thlNoises = dac.getThlNoise(0)
-
-        attr.set_value(thlNoises,len(thlNoises))
-        
-    ## @brief Write threshold noise of a maxipix chips
-    #
-    def write_threshold_noise(self,attr) :
-        data = attr.get_write_value()
-
-        dacs = _MaxipixAcq.mpxDacs
-        dacs.setThlNoise(0,data)
-        dacs.applyChipDacs(0)
-
-
-    ## @brief Read the global threshold
-    #
-    def read_threshold(self,attr) :
-        dacs = _MaxipixAcq.mpxDacs
-        thl = dacs.getThl()
-	if thl is None: thl = -1
-
-        attr.set_value(thl)
-
-    ## @brief Write the global threshold
-    #
-    def write_threshold(self,attr) :
-        data = attr.get_write_value()
-        
-        dacs = _MaxipixAcq.mpxDacs
-        dacs.setThl(data)
-        dacs.applyChipDacs(0)
-
-    ## @brief Read the energy step
-    #
-    # energy step is the coef which link the global threshold with energy
-    # threshold
-    # 
-    def read_energy_calibration(self,attr) :
-        dacs = _MaxipixAcq.mpxDacs
-        values = dacs .getECalibration()
-        
-        attr.set_value(values,len(values))
-        
-    ## @brief Write the energy step
-    #
-    def write_energy_calibration(self,attr) :
-        data = attr.get_write_value()
-
-        dacs  = _MaxipixAcq.mpxDacs
-        dacs.setECalibration(data)
-
-    ## @brief Read the energy threshold
-    #
-    # energy_threshold = energy_step * threshold (global)
+    # energy threshold
     def read_energy_threshold(self,attr) :
         dacs= _MaxipixAcq.mpxDacs
-        value = dacs.getEThl()
+        value = dacs.getEnergy()
 	if value is None: value = -1
 	
         attr.set_value(value)
 
-    ## @brief Write the energy threshold
+    ## @brief Write the energy calibration
     #
     def write_energy_threshold(self,attr) :
         data = attr.get_write_value()
         
         dacs = _MaxipixAcq.mpxDacs
-        dacs.setEThl(data)
+        dacs.setEnergy(data)
         dacs.applyChipDacs(0)
         
     ## @brief read the config name
@@ -436,45 +385,15 @@ class MaxipixClass(PyTango.DeviceClass):
         }
 
     attr_list = {
-        'threshold_noise':
-        [[PyTango.DevLong,
-          PyTango.SPECTRUM,
-          PyTango.READ_WRITE,5],
-         {
-             'label':"Threshold (thlow) noise of chips",
-             'unit':"N/A",
-             'format':"%6d",
-             'description':"Threshold (thlow) noise of the chip(s)",
-         }],
-        'threshold':
-        [[PyTango.DevLong,
-          PyTango.SCALAR,
-          PyTango.READ_WRITE],
-         {
-             'label':"Global Threshold ",
-             'unit':"N/A",
-             'format':"%6d",
-             'description':"The global threshold, apply the same offset on all the chips",
-         }],
-        'energy_calibration':
-        [[PyTango.DevDouble,
-          PyTango.SPECTRUM,
-          PyTango.READ_WRITE,2],
-         {
-             'label':"Energy calibration",
-             'unit':"N/A",
-             'format':"%5.2f",
-             'description':"[0] = e0thl, [1] = estep: ethl=(thl-e0thl)*estep",
-         }],
         'energy_threshold':
         [[PyTango.DevDouble,
           PyTango.SCALAR,
           PyTango.READ_WRITE],
          {
-             'label':"Energy thresholds",
-             'unit':"keV",
+             'label':"Energy threshold",
+             'unit':"KeV",
              'format':"%5.2f",
-             'description':"Threshold in energy (keV)",
+             'description':"Energy threshold (KeV)",
          }],
         'config_name':
         [[PyTango.DevString,
