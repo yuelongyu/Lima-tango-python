@@ -458,6 +458,9 @@ class LimaCCDs(PyTango.Device_4Impl) :
         if SystemHasFeature('Core.CtSaving.HDF5'):
             self.__SavingFormat['HDF5'] = Core.CtSaving.HDF5
             self.__SavingFormatDefaultSuffix[Core.CtSaving.HDF5] = '.h5'
+        if SystemHasFeature('Core.CtSaving.EDFConcat'):
+            self.__SavingFormat['EDFCONCAT'] = Core.CtSaving.EDFConcat
+            self.__SavingFormatDefaultSuffix[Core.CtSaving.EDFConcat] = '.edf'
 
         self.__SavingMode = {'MANUAL' : Core.CtSaving.Manual,
                              'AUTO_FRAME' : Core.CtSaving.AutoFrame,
