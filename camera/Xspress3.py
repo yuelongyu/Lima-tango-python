@@ -57,7 +57,6 @@ class Xspress3(PyTango.Device_4Impl):
 
     Core.DEB_CLASS(Core.DebModApplication, 'LimaCCDs')
 
-
 #------------------------------------------------------------------
 # Device constructor
 #------------------------------------------------------------------
@@ -82,6 +81,13 @@ class Xspress3(PyTango.Device_4Impl):
         self.attr_clocks_read = [-1,-1, 0]
         self.attr_scaling_read = [-1.,-1.,-1.,-1.,-1.,-1.,-1.,-1.]
         self.attr_playback_file_read = ""
+        self.attr_channel = 0;
+
+        self.PyDataSrc = {'Normal' : _Xspress3Camera.Normal,
+                          'Alternate' :_Xspress3Camera.Alternate,
+                          'Multiplexer' : _Xspress3Camera.Multiplexer,
+                          'PlaybackStream0' : _Xspress3Camera.PlaybackStream0,
+                          'PlaybackStream1' : _Xspress3Camera.PlaybackStream1}
 
 #------------------------------------------------------------------
 # getAttrStringValueList command:
@@ -168,8 +174,7 @@ class Xspress3(PyTango.Device_4Impl):
             __dataflat_cache.dtype = numpy.uint32
         data.releaseBuffer()
         return __dataflat_cache
-        data.releaseBuffer()
-        return __dataflat_cache
+
 
     @Core.DEB_MEMBER_FUNCT
     def ReadScalers(self, argin):
@@ -222,6 +227,12 @@ class Xspress3(PyTango.Device_4Impl):
         card=attr.get_write_value()
         _Xspress3Camera.setCard(card)
         
+    def read_channel(self, attr):
+        attr.set_value(self.attr_channel)
+
+    def write_channel(self, attr):
+        self.attr_channel=attr.get_write_value()
+
     def read_windows(self, attr):
         returnList = []
         for i in range(_Xspress3Camera.getNumChan()):
@@ -243,18 +254,9 @@ class Xspress3(PyTango.Device_4Impl):
     def read_runMode(self, attr):
         attr.set_value(_Xspress3Camera.getRunMode())
 
-    def read_clocks(self, attr):
-        attr.set_value(self.attr_clocks_read)
-
-    def write_clocks(self, attr):
-        data=attr.get_write_value()
-        _Xspress3Camera.setupClocks(*data)
-        for i in range(len(data)):
-            self.attr_clocks_read[i] = data[i]
-
     def write_goodThreshold(self, attr):
         data=attr.get_write_value()
-        _Xspress3Camera.setGoodThreshold(*data)
+        _Xspress3Camera.setGoodThreshold(self.attr_channel,data[0])
 
     def read_goodThreshold(self, attr):
         attr.set_value([_Xspress3Camera.getGoodThreshold(i) for i in range(_Xspress3Camera.getNumChan())])
@@ -280,19 +282,19 @@ class Xspress3(PyTango.Device_4Impl):
 
     def write_dtcParameters(self, attr):
         data=attr.get_write_value()
-        _Xspress3Camera.setDeadtimeCorrectionParameters(*data)
+        _Xspress3Camera.setDeadtimeCorrectionParameters(self.attr_channel,data[0],data[1],data[2],data[3],data[4],data[5])
 
     def read_scaling(self, attr):
         attr.set_value([self.attr_scaling_read[i] for i in range(_Xspress3Camera.getNumChan())])
 
     def write_scaling(self, attr):
         data=attr.get_write_value()
-        _Xspress3Camera.setScaling(*data)
-        if data[0] == -1:
+        _Xspress3Camera.setScaling(self.attr_channel, data[0])
+        if self.attr_channel == -1:
             for i in range(_Xspress3Camera.getNumChan()):
-                self.attr_scaling_read[i] = data[1]
+                self.attr_scaling_read[i] = data[0]
         else:
-            self.attr_scaling_read[int(data[0])] = data[1]
+            self.attr_scaling_read[self.attr_channel] = data[1]
 
     def read_fanTemperatures(self, attr):
         data = _Xspress3Camera.getFanTemperatures()
@@ -325,6 +327,9 @@ class Xspress3(PyTango.Device_4Impl):
         data=attr.get_write_value()
         _Xspress3Camera.setUseDtc(data)
 
+    def read_acqRunning(self, attr):
+        attr.set_value(_Xspress3Camera.isAcqRunning())
+
     def write_setTiming(self, attr):
         data=attr.get_write_value()
         _Xspress3Camera.setTiming(*data);
@@ -345,10 +350,21 @@ class Xspress3(PyTango.Device_4Impl):
 
     def write_dataSource(self, attr):
         data=attr.get_write_value()
-        _Xspress3Camera.setDataSource(*data)
+        _Xspress3Camera.setDataSource(self.attr_channel, self.__getDictValue(self.PyDataSrc, data[0]))
 
     def read_dataSource(self, attr):
-        attr.set_value([_Xspress3Camera.getDataSource(i) for i in range(_Xspress3Camera.getNumChan())])
+        attr.set_value([self.__getDictKey(self.PyDataSrc,_Xspress3Camera.getDataSource(i)) for i in range(_Xspress3Camera.getNumChan())])
+
+    def write_setItfgTiming(self, attr):
+        data=attr.get_write_value()
+        _Xspress3Camera.setItfgTiming(data[0], data[1], data[2]);
+
+    def read_histogram(self, attr):
+        data = _Xspress3Camera.readRawHistogram(self.attr_channel,0)
+        __dataflat_cache = numpy.array(data.buffer.ravel())
+        __dataflat_cache.dtype = numpy.uint32
+        data.releaseBuffer()
+        attr.set_value(__dataflat_cache)
 
 #------------------------------------------------------------------
 #------------------------------------------------------------------
@@ -458,11 +474,15 @@ class Xspress3Class(PyTango.DeviceClass):
         'FormatRun':
             [[PyTango.DevVarLongArray,"chan,[nbits_eng,aux1_mode,adc_bits,min_samples,aux2_mode,pileup_reject]"],
             [PyTango.DevVoid, "none"]],
-
         }
 
     attr_list = {
          'card':
+            [[PyTango.DevLong,
+              PyTango.SCALAR,
+              PyTango.READ_WRITE]],
+
+         'channel':
             [[PyTango.DevLong,
               PyTango.SCALAR,
               PyTango.READ_WRITE]],
@@ -501,11 +521,6 @@ class Xspress3Class(PyTango.DeviceClass):
             [[PyTango.DevBoolean,
               PyTango.SPECTRUM,
               PyTango.READ_WRITE, 4]],
-
-          'clocks':
-            [[PyTango.DevLong,
-              PyTango.SPECTRUM,
-              PyTango.READ_WRITE, 3]],
 
           'goodThreshold':
             [[PyTango.DevLong,
@@ -552,6 +567,11 @@ class Xspress3Class(PyTango.DeviceClass):
               PyTango.SCALAR,
               PyTango.READ_WRITE]],
 
+          'acqRunning':
+            [[PyTango.DevBoolean,
+              PyTango.SCALAR,
+              PyTango.READ]],
+
           'setTiming':
             [[PyTango.DevLong,
               PyTango.SPECTRUM,
@@ -573,11 +593,20 @@ class Xspress3Class(PyTango.DeviceClass):
               PyTango.READ_WRITE]],
 
           'dataSource':
-            [[PyTango.DevLong,
+            [[PyTango.DevString,
               PyTango.SPECTRUM,
               PyTango.READ_WRITE,8]],
 
-      }
+         'histogram':
+            [[PyTango.DevLong,
+              PyTango.SPECTRUM,
+              PyTango.READ, 4096]],
+
+         'setItfgTiming':
+            [[PyTango.DevLong,
+              PyTango.SPECTRUM,
+              PyTango.WRITE, 3]],
+     }
 
     def __init__(self, name) :
         PyTango.DeviceClass.__init__(self, name)

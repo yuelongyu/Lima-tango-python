@@ -162,7 +162,7 @@ class LimaCCDs(PyTango.Device_4Impl) :
         Core.Bpp16 : (2,0),
         Core.Bpp16S : (2,1),
         Core.Bpp32 : (4,0) ,
-        Core.Bpp32S : (4,1)
+        Core.Bpp32S : (4,1),
         }        
 
     ImageType2String = {
@@ -177,7 +177,7 @@ class LimaCCDs(PyTango.Device_4Impl) :
         Core.Bpp16 : "Bpp16" ,
         Core.Bpp16S : "Bpp16S" ,
         Core.Bpp32 : "Bpp32" ,
-        Core.Bpp32S : "Bpp32S"
+        Core.Bpp32S : "Bpp32S",
         }
 
     # DATA_ARRAY DevEncoded 
@@ -409,6 +409,16 @@ class LimaCCDs(PyTango.Device_4Impl) :
             self.ImageType2NbBytes[Core.Bpp32F] = (4,1)
             self.ImageType2String[Core.Bpp32F] = 'Bpp32F'
             self.ImageType2DataArrayType[Core.Bpp32F] = 8
+            
+        #ImageType Bpp1 to Bpp24
+        if SystemHasFeature('Core.Bpp1'):
+            for Bpp_type,Bpp_def,Bpp_name,Bpp_size in [(Core.Bpp1,(1,0),"Bpp1",0),
+                                                       (Core.Bpp6,(1,0),"Bpp6", 0),
+                                                       (Core.Bpp12,(2,0),"Bpp12",1),
+                                                       (Core.Bpp24,(4,0),"Bpp24",2)] :
+                self.ImageType2NbBytes[Bpp_type] = Bpp_def
+                self.ImageType2String[Bpp_type] = Bpp_name
+                self.ImageType2DataArrayType[Bpp_type] = Bpp_size
 
         #Tango Enum to Lima Enum
         self.__Prefix2SubClass = {'acc' : self.__control.acquisition,
@@ -422,6 +432,7 @@ class LimaCCDs(PyTango.Device_4Impl) :
         self.__Attribute2FunctionBase = {'acq_trigger_mode':'TriggerMode',
                                          'saving_overwrite_policy' : 'OverwritePolicy',
                                          'saving_format' : 'Format',
+                                         'saving_managed_mode' : 'ManagedMode',
                                          'shutter_mode' : 'Mode',
 					 'image_rotation':'Rotation',
                                          'video_mode':'Mode',
@@ -441,6 +452,9 @@ class LimaCCDs(PyTango.Device_4Impl) :
         else:                           # Core too Old
             self.__AccTimeMode = {}
         
+        self.__SavingManagedMode = {'SOFTWARE' : Core.CtSaving.Software,
+                                    'HARDWARE' : Core.CtSaving.Hardware}
+
         self.__SavingFormat = {'RAW' : Core.CtSaving.RAW,
                                'EDF' : Core.CtSaving.EDF,
                                'CBF' : Core.CtSaving.CBFFormat}
@@ -1314,13 +1328,13 @@ class LimaCCDs(PyTango.Device_4Impl) :
         saving.setNextNumber(data)
 
     @Core.DEB_MEMBER_FUNCT
-    def read_saving_frame_per_file(self,attr) :
+    def read_saving_frames_per_file(self,attr) :
         saving = self.__control.saving()
 
-        attr.set_value(saving.getFramePerFile())
+        attr.set_value(saving.getFramesPerFile())
 
     @Core.DEB_MEMBER_FUNCT
-    def write_saving_frame_per_file(self,attr) :
+    def write_saving_frames_per_file(self,attr) :
         data = attr.get_write_value()
         saving = self.__control.saving()
 
@@ -2209,11 +2223,15 @@ class LimaCCDsClass(PyTango.DeviceClass) :
         [[PyTango.DevString,
           PyTango.SCALAR,
           PyTango.READ_WRITE]],
+        'saving_managed_mode':
+        [[PyTango.DevString,
+          PyTango.SCALAR,
+          PyTango.READ_WRITE]],
         'saving_overwrite_policy':
         [[PyTango.DevString,
           PyTango.SCALAR,
           PyTango.READ_WRITE]],
-        'saving_frame_per_file':
+        'saving_frames_per_file':
         [[PyTango.DevLong,
           PyTango.SCALAR,
           PyTango.READ_WRITE]],
