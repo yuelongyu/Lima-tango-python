@@ -42,8 +42,8 @@
 import PyTango
 from Lima import Core
 from Lima import RoperScientific as RoperScientificAcq
-from LimaCCDs import CallableReadEnum,CallableWriteEnum
-
+from AttrHelper import get_attr_4u, get_attr_string_value_list
+import AttrHelper
 
 class RoperScientific(PyTango.Device_4Impl):
 
@@ -74,34 +74,10 @@ class RoperScientific(PyTango.Device_4Impl):
 
     @Core.DEB_MEMBER_FUNCT
     def getAttrStringValueList(self, attr_name):
-        valueList=[]
-        dict_name = '_' + self.__class__.__name__ + '__' + ''.join([x.title() for x in attr_name.split('_')])
-        d = getattr(self,dict_name,None)
-        if d:
-            valueList = d.keys()
-
-        return valueList
+        return get_attr_string_value_list(self, attr_name)
 
     def __getattr__(self,name) :
-        if name.startswith('read_') or name.startswith('write_') :
-            split_name = name.split('_')[1:]
-            attr_name = ''.join([x.title() for x in split_name])
-            dict_name = '_' + self.__class__.__name__ + '__' + attr_name
-            d = getattr(self,dict_name,None)
-            attr_name = self.__Attribute2FunctionBase.get('_'.join(split_name),attr_name)
-            if d:
-                if name.startswith('read_') :
-                    functionName = 'get' + attr_name
-                    function2Call = getattr(_RoperScientificAcq,functionName)
-                    callable_obj = CallableReadEnum(d,function2Call)
-                else:
-                    functionName = 'set' + attr_name
-                    function2Call = getattr(_RoperScientificAcq,function2Call)
-                    callable_obj = CallableWriteEnum(d,function2Call)
-                self.__dict__[name] = callable_obj
-                return callable_obj
-        raise AttributeError('RoperScientific has no attribute %s' % name)
-
+        return get_attr_4u(self, name, RoperScientificAcq)
 
 #------------------------------------------------------------------
 #    Read Temperature attribute
@@ -168,25 +144,6 @@ class RoperScientific(PyTango.Device_4Impl):
         _RoperScientificCam.setInternalAcqMode(int_acq_mode)
 
 
-#------------------------------------------------------------------
-#    Read UseFullFrame attribute
-#------------------------------------------------------------------
-
-    def read_UseFullFrame(self, attr):
-        use_full_frame = _RoperScientificCam.getUseFullFrame()
-        attr.set_value(use_full_frame)
-
-#------------------------------------------------------------------
-#    Write UseFullFrame attribute
-#------------------------------------------------------------------
-
-    def write_UseFullFrame(self, attr):
-        data = attr.get_write_value()
-        use_full_frame = int(data)
-        _RoperScientificCam.setUseFullFrame(use_full_frame)
-
-
-
         
 class RoperScientificClass(PyTango.DeviceClass):
 
@@ -219,10 +176,6 @@ class RoperScientificClass(PyTango.DeviceClass):
             PyTango.READ_WRITE]],
         'InternalAcqMode':
             [[PyTango.DevString,
-            PyTango.SCALAR,
-            PyTango.READ_WRITE]],
-        'UseFullFrame':
-            [[PyTango.DevLong,
             PyTango.SCALAR,
             PyTango.READ_WRITE]],
         }
