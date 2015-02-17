@@ -113,7 +113,10 @@ class BaslerClass(PyTango.DeviceClass):
          "Inter Packet Delay",0],
         'frame_transmission_delay':
         [PyTango.DevLong,
-         "Frame Transmission Delay",0]
+         "Frame Transmission Delay",0],
+        'packet_size':
+        [PyTango.DevLong,
+         "Network packet size (MTU)",8000],
         }
 
     cmd_list = {
@@ -147,7 +150,7 @@ def get_control(cam_ip_address = "0", frame_transmission_delay = 0,
     global _BaslerInterface
 
     if _BaslerCam is None:
-	_BaslerCam = BaslerAcq.Camera(cam_ip_address,packet_size)
+	_BaslerCam = BaslerAcq.Camera(cam_ip_address,int(packet_size))
 	_BaslerCam.setInterPacketDelay(int(inter_packet_delay))
 	_BaslerCam.setFrameTransmissionDelay(int(frame_transmission_delay))
 	_BaslerInterface = BaslerAcq.Interface(_BaslerCam)
