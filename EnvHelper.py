@@ -141,7 +141,11 @@ def setup_lima_env(argv):
     if not check_link_strict_version():
         return
     server_name = get_server_name(argv)
-    lima_camera_type = get_lima_camera_type(server_name)
+    try:
+        lima_camera_type = get_lima_camera_type(server_name)
+    except KeyError:            # first run, maybe wizard creation mode
+        return None
+
     cdir = os.path.join(os.path.dirname(__file__), 'camera')
     cfile_name = os.path.join(cdir, lima_camera_type + '.py')
     cfile = open(cfile_name, 'rt')

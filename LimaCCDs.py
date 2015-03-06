@@ -2510,8 +2510,11 @@ def _get_control():
         return control
     except NameError:
         pass
+    try:
+        camera_type = LimaCameraType or get_lima_camera_type()
+    except KeyError:            # wizard mode
+        return None
 
-    camera_type = LimaCameraType or get_lima_camera_type()
     mod_name = 'camera.' + camera_type
     try:
         m = __import__(mod_name, None, None, mod_name)
@@ -2579,7 +2582,7 @@ def main() :
         # create ct control
         control = _get_control()
 
-        if pytango_ver >= (8,1,7):
+        if pytango_ver >= (8,1,7) and control is not None:
             master_dev_name = get_lima_device_name()
             beamline_name, _, camera_name = master_dev_name.split('/')
             name_template = "{0}/{{type}}/{1}".format(beamline_name, camera_name)
@@ -2602,7 +2605,8 @@ def main() :
 
         # Configurations management (load default or custom config)
         dev = U.get_device_list_by_class("LimaCCDs")
-        dev[0].apply_config()
+        if dev:
+            dev[0].apply_config()
 
 	try:
             export_default_plugins()
