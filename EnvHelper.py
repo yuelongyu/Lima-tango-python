@@ -134,6 +134,8 @@ def get_lima_camera_type(server=None, cache=True):
     return camera_type
 
 def setup_lima_env(argv):
+    if is_query_mode(argv):
+        return
     if not check_args(argv):
         return
     if not check_link_strict_version():
@@ -163,6 +165,10 @@ def setup_lima_env(argv):
                k not in ['LIMA_LINK_STRICT_VERSION']:
             print_debug('Env: %s=%s' % (k, v))
     return lima_camera_type
+
+def is_query_mode(argv):
+    """Returns True if application started with '-?' argument"""
+    return '-?' in argv
 
 def check_args(argv):
     global Debug
