@@ -71,6 +71,14 @@ def _getDictValue(dict, key):
         return None
     return value
 
+#preserve the case of key
+def _getDictCaseValue(dict, key):
+    try:
+        value = dict[key]
+    except KeyError:
+        return None
+    return value
+
 ## @brief Class for genenic read_<attribute> with enum value
 class CallableReadEnum:
     def __init__(self,dictionnary,func2Call) :

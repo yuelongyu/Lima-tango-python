@@ -419,6 +419,8 @@ For more details about the camera device interface, please have a look on the fo
   Frelon <camera/frelon>
   ImXPAD <camera/imxpad>
   Maxipix <camera/maxipix>
+  Merlin <camera/merlin>
+  Mythen3 <camera/mythen3>
   PCO <camera/pco>
   Perkin Elmer <camera/perkinelmer>
   Photonic Science <camera/photonicscience>
