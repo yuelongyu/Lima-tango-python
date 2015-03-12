@@ -70,9 +70,8 @@ class LimaViewer (PyTango.Device_4Impl):
     def __init__(self,cl, name):
         PyTango.Device_4Impl.__init__(self,cl,name)
         self.debug_stream("In __init__()")
-        LimaViewer.init_device(self)
         #----- PROTECTED REGION ID(LimaViewer.__init__) ENABLED START -----#
-            self.ImageType2NumpyType = {
+        self.ImageType2NumpyType = {
                 'Bpp8' : numpy.uint8,
                 'Bpp8S' : numpy.int8,
                 'Bpp10' : numpy.uint16,
@@ -87,6 +86,7 @@ class LimaViewer (PyTango.Device_4Impl):
                 'Bpp32S' : numpy.int32,
                 'Bpp32F' : numpy.float32,
             }
+        LimaViewer.init_device(self)
         #----- PROTECTED REGION END -----#  //  LimaViewer.__init__
         
     def delete_device(self):
