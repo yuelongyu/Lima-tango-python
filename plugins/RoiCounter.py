@@ -139,6 +139,8 @@ class RoiCounterDeviceServer(BasePostProcess) :
         for roi_name in argin:
             roi_id = self.__roiName2ID.pop(roi_name,None)
             self.__roiID2Name.pop(roi_id,None)
+        if not len(self.__roiName2ID):
+            self.Stop()
             
     def setRois(self,argin) :
         if self.__roiCounterMgr is None:
@@ -315,7 +317,9 @@ class RoiCounterDeviceServer(BasePostProcess) :
             traceback.print_exc()
             
     def clearAllRois(self):
-        self.__roiCounterMgr.clearAllRois()
+        if self.__roiCounterMgr :
+            self.__roiCounterMgr.clearAllRois()
+            self.Stop()
 
     def setMaskFile(self,argin) :
         mask = getDataFromFile(*argin)

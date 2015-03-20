@@ -533,7 +533,7 @@ class LimaCCDs(PyTango.Device_4Impl) :
 
         #INIT display shared memory
         try:
-            shared_memory_names = ['LimaCCds',sys.argv[1]]
+            self.__shared_memory_names = ['LimaCCds',sys.argv[1]]
             shared_memory = self.__control.display()
             shared_memory.setNames(*self.__shared_memory_names)
         except AttributeError:
@@ -1328,13 +1328,13 @@ class LimaCCDs(PyTango.Device_4Impl) :
         saving.setNextNumber(data)
 
     @Core.DEB_MEMBER_FUNCT
-    def read_saving_frames_per_file(self,attr) :
+    def read_saving_frame_per_file(self,attr) :
         saving = self.__control.saving()
 
-        attr.set_value(saving.getFramesPerFile())
+        attr.set_value(saving.getFramePerFile())
 
     @Core.DEB_MEMBER_FUNCT
-    def write_saving_frames_per_file(self,attr) :
+    def write_saving_frame_per_file(self,attr) :
         data = attr.get_write_value()
         saving = self.__control.saving()
 
@@ -1356,24 +1356,6 @@ class LimaCCDs(PyTango.Device_4Impl) :
             saving.setFormat(value)
             defaultSuffix = self.__SavingFormatDefaultSuffix.get(value,'.unknown')
             saving.setSuffix(defaultSuffix)
-
-    ## @brief Read the frame per file
-    #
-    @Core.DEB_MEMBER_FUNCT
-    def read_frame_per_file(self,attr) :
-        saving = self.__control.saving()
-
-        value = saving.getFramePerFile()
-        attr.set_value(value)
-
-    ## @brief Change the number of saving frame per file
-    #
-    @Core.DEB_MEMBER_FUNCT
-    def write_frame_per_file(self,attr) :
-        data = attr.get_write_value()
-        saving = self.__control.saving()
-
-        saving.setFramesPerFile(data)
 
     ##@biref Read possible modules
     #
@@ -1823,7 +1805,7 @@ class LimaCCDs(PyTango.Device_4Impl) :
     @Core.DEB_MEMBER_FUNCT
     def getPluginDeviceNameFromType(self,pluginType):
         pluginType2deviceName = dict([(x.lower().replace('deviceserver',''),y) for x,y in get_sub_devices().iteritems()])
-        return pluginType2deviceName.get(pluginType,'')
+        return pluginType2deviceName.get(pluginType.lower(),'')
 
 #----------------------------------------------------------------------------
 #                         Configuration Mgt
@@ -2231,7 +2213,7 @@ class LimaCCDsClass(PyTango.DeviceClass) :
         [[PyTango.DevString,
           PyTango.SCALAR,
           PyTango.READ_WRITE]],
-        'saving_frames_per_file':
+        'saving_frame_per_file':
         [[PyTango.DevLong,
           PyTango.SCALAR,
           PyTango.READ_WRITE]],
