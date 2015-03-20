@@ -70,14 +70,9 @@ class Andor3(PyTango.Device_4Impl):
     def __init__(self,cl, name):
         PyTango.Device_4Impl.__init__(self,cl,name)
         # dictionnaries to be used with AttrHelper.get_attr_4u
-        self.__AdcGain = {'GAIN1':   _Andor3Camera.Gain1,
-                          'GAIN2':   _Andor3Camera.Gain2,
-                          'GAIN3':   _Andor3Camera.Gain3,
-                          'GAIN4':   _Andor3Camera.Gain4,
-                          'GAIN1_3': _Andor3Camera.Gain1_Gain3,
-                          'GAIN1_4': _Andor3Camera.Gain1_Gain4,
-                          'GAIN2_3': _Andor3Camera.Gain2_Gain3,
-                          'GAIN3_4': _Andor3Camera.Gain2_Gain4,
+        self.__AdcGain = {'b11_hi_gain':  _Andor3Camera.b11_hi_gain,
+                             'b11_low_gain': _Andor3Camera.b11_low_gain,
+                             'b16_lh_gain':  _Andor3Camera.b16_lh_gain,
                           }
         self.__AdcRate = {'MHZ10':  _Andor3Camera.MHz10,
                           'MHZ100': _Andor3Camera.MHz100,
@@ -95,7 +90,7 @@ class Andor3(PyTango.Device_4Impl):
                                         }
         self.__DestrideActive = {'YES': True,
                                  'NO':  False}
-        self.__Attribute2FunctionBase = {'adc_gain': 'AdcGain',
+        self.__Attribute2FunctionBase = {'adc_gain': 'SimpleGain',
                                          'adc_rate': 'AdcRate',
                                          'temperature': 'Temperature',
                                          'temperature_sp': 'TemperatureSP',
@@ -358,14 +353,17 @@ from Lima  import Andor3 as Andor3Acq
 _Andor3Camera = None
 _Andor3Interface = None
 
-def get_control(config_path='/users/blissadm/local/Andor3/andor/bitflow', camera_number = '0', destride_active=True, **keys) :
+def get_control(config_path='/users/blissadm/local/Andor3/andor/bitflow', camera_number = '0', destride_active='true', **keys) :
     #properties are passed here as string
     global _Andor3Camera
     global _Andor3Interface
     if _Andor3Camera is None:
         print '\n\nStarting and configuring the Andor3 camera ...'
         _Andor3Camera = Andor3Acq.Camera(config_path, int(camera_number))
-        _Andor3Interface = Andor3Acq.Interface(_Andor3Camera, destride_active)
+        if destride_active.lower() == 'true': active = True
+        else: active  = False
+
+        _Andor3Interface = Andor3Acq.Interface(_Andor3Camera, active)
         print '\n\nAndor3 Camera #%s (%s:%s) is started'%(camera_number,_Andor3Camera.getDetectorType(),_Andor3Camera.getDetectorModel())
     return Core.CtControl(_Andor3Interface)
 
