@@ -69,7 +69,7 @@ class Andor(PyTango.Device_4Impl):
     @Core.DEB_MEMBER_FUNCT
     def __init__(self,cl, name):
         PyTango.Device_4Impl.__init__(self,cl,name)
-        self.init_device()
+
         # dictionnaries to be used with AttrHelper.get_attr_4u
         self.__FastTrigger = {'ON':True,
                            'OFF':False}
@@ -84,6 +84,7 @@ class Andor(PyTango.Device_4Impl):
                                          'cooler': 'Cooler',
                                          'cooling_status': 'CoolingStatus',
                                          }
+        self.init_device()
                                                
 #------------------------------------------------------------------
 #    Device destructor
