@@ -530,6 +530,10 @@ class LimaCCDs(PyTango.Device_4Impl) :
 	    self.__VideoMode['BAYER_BG8'] = Core.BAYER_BG8
 	    self.__VideoMode['BAYER_BG16'] = Core.BAYER_BG16
 
+        self.__VideoSource = {}
+        if SystemHasFeature('Core.CtVideo.BASE_IMAGE'):
+            self.__VideoSource = {'BASE_IMAGE': Core.CtVideo.BASE_IMAGE,
+                                  'LAST_IMAGE': Core.CtVideo.LAST_IMAGE}
 
         #INIT display shared memory
         try:
@@ -2262,6 +2266,10 @@ class LimaCCDsClass(PyTango.DeviceClass) :
           PyTango.SCALAR,
           PyTango.READ_WRITE]],
         'video_mode':
+        [[PyTango.DevString,
+          PyTango.SCALAR,
+          PyTango.READ_WRITE]],
+        'video_source':
         [[PyTango.DevString,
           PyTango.SCALAR,
           PyTango.READ_WRITE]],
