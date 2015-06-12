@@ -55,7 +55,15 @@ class RoperScientific(PyTango.Device_4Impl):
 #------------------------------------------------------------------
     def __init__(self,*args) :
         PyTango.Device_4Impl.__init__(self,*args)
-
+        
+        self.__AdcRate = {'MHZ1': 0,
+                          'KHZ100': 1,
+                          }
+        self.__InternalAcqMode = {'FOCUS': 'FOCUS',
+                                  'STANDARD': 'STANDARD',
+                                  }
+        self.__Attribute2FunctionBase = {'adc_rate': 'SpeedTableIndex',
+                                         }
         self.init_device()
 
 #------------------------------------------------------------------
@@ -77,74 +85,13 @@ class RoperScientific(PyTango.Device_4Impl):
         return get_attr_string_value_list(self, attr_name)
 
     def __getattr__(self,name) :
-        return get_attr_4u(self, name, RoperScientificAcq)
+        return get_attr_4u(self, name, _RoperScientificCam)
 
-#------------------------------------------------------------------
-#    Read Temperature attribute
-#------------------------------------------------------------------
-
-    def read_Temperature(self, attr):
-        temperature = _RoperScientificCam.getTemperature()
-        attr.set_value(temperature)
-
-#------------------------------------------------------------------
-#    Read TemperatureSetPoint attribute
-#------------------------------------------------------------------
-
-    def read_TemperatureSetPoint(self, attr):
-        temperature = _RoperScientificCam.getTemperatureSetPoint()
-        attr.set_value(temperature)
-
-#------------------------------------------------------------------
-#    Write TemperatureSetPoint attribute
-#------------------------------------------------------------------
-
-    def write_TemperatureSetPoint(self, attr):
-        data = attr.get_write_value()
-        temperature = float(data)
-        _RoperScientificCam.setTemperatureSetPoint(temperature)
-
-#------------------------------------------------------------------
-#    Read Gain attribute
-#------------------------------------------------------------------
-
-    def read_Gain(self, attr):
-        gain = _RoperScientificCam.getGain()
-        attr.set_value(gain)
-
-#------------------------------------------------------------------
-#    Write Gain attribute
-#------------------------------------------------------------------
-
-    def write_Gain(self, attr):
-        data = attr.get_write_value()
-        gain = int(data)
-        _RoperScientificCam.setTemperatureSetPoint(gain)
-
-#------------------------------------------------------------------
-#    Read InternalAcqMode attribute
-#------------------------------------------------------------------
 
     def read_InternalAcqMode(self, attr):
         int_acq_mode = _RoperScientificCam.getInternalAcqMode()
         attr.set_value(int_acq_mode)
 
-#------------------------------------------------------------------
-#    Write InternalAcqMode attribute
-#------------------------------------------------------------------
-
-    def write_InternalAcqMode(self, attr):
-        data = attr.get_write_value()
-        int_acq_mode = str(data)
-        if int_acq_mode.upper() != "STANDARD" and int_acq_mode.upper() != "CONTINUOUS" and int_acq_mode.upper() != "FOCUS":
-            PyTango.Except.throw_exception('WrongData',\
-                                           'Wrong value InternalAcqMode: %s'%(int_acq_mode.upper()),\
-                                           'LimaCCD Class')
-            
-        _RoperScientificCam.setInternalAcqMode(int_acq_mode)
-
-
-        
 class RoperScientificClass(PyTango.DeviceClass):
 
     class_property_list = {}
@@ -162,22 +109,26 @@ class RoperScientificClass(PyTango.DeviceClass):
         }
 
     attr_list = {
-        'Temperature':
+        'temperature':
             [[PyTango.DevFloat,
             PyTango.SCALAR,
             PyTango.READ]],
-        'TemperatureSetPoint':
+        'temperature_set_point':
             [[PyTango.DevFloat,
             PyTango.SCALAR,
             PyTango.READ_WRITE]],
-        'Gain':
+        'gain':
             [[PyTango.DevLong,
             PyTango.SCALAR,
             PyTango.READ_WRITE]],
-        'InternalAcqMode':
+        'internal_acq_mode':
             [[PyTango.DevString,
             PyTango.SCALAR,
             PyTango.READ_WRITE]],
+        'adc_rate':
+            [[PyTango.DevString,
+              PyTango.SCALAR,
+              PyTango.READ_WRITE]],
         }
 
     def __init__(self,name) :
