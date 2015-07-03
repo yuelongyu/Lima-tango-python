@@ -1618,6 +1618,14 @@ class LimaCCDs(PyTango.Device_4Impl) :
                 header_map[key] = val
             saving.updateFrameHeader(imageId,header_map)
 
+    ##@brief reset common header
+    #
+    @Core.DEB_MEMBER_FUNCT
+    def resetCommonHeader(self):
+        control = self.__control
+        saving = control.saving()
+        saving.resetCommonHeader()
+
     ##@brief get image data
     #
     @Core.DEB_MEMBER_FUNCT
@@ -1915,6 +1923,9 @@ class LimaCCDsClass(PyTango.DeviceClass) :
          [PyTango.DevVoid,""]],
         'setImageHeader':
         [[PyTango.DevVarStringArray,"ImageId0 SEPARATOR imageHeader0,ImageId1 SEPARATOR imageHeader1..."],
+         [PyTango.DevVoid,""]],
+        'resetCommonHeader':
+        [[PyTango.DevVoid,""],
          [PyTango.DevVoid,""]],
         'getImage':
         [[PyTango.DevLong,"The image number"],
