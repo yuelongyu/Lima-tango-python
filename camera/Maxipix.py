@@ -1,7 +1,7 @@
 ############################################################################
 # This file is part of LImA, a Library for Image Acquisition
 #
-# Copyright (C) : 2009-2014
+# Copyright (C) : 2009-2015
 # European Synchrotron Radiation Facility
 # BP 220, Grenoble 38043
 # FRANCE
@@ -43,9 +43,9 @@ import PyTango
 import sys, types, os, time
 
 from Lima import Core
-from Lima.Maxipix.MpxCommon import MpxError
+from Lima.Maxipix import Maxipix as MaxipixModule
 # import some useful helpers to create direct mapping between tango attributes
-# and Lima interfaces.
+# and Lima APIs.
 from AttrHelper import get_attr_4u, get_attr_string_value_list
 import AttrHelper
 
@@ -60,21 +60,22 @@ class Maxipix(PyTango.Device_4Impl):
     def __init__(self,*args) :
         PyTango.Device_4Impl.__init__(self,*args)
 
-	_PriamAcq = _MaxipixAcq.getPriamAcq()
-        self.__SignalLevel = {'LOW_FALL': _PriamAcq.LOW_FALL,\
-                              'HIGH_RISE': _PriamAcq.HIGH_RISE}
+        self.__SignalLevel = {'LOW_FALL': MaxipixModule.PriamAcq.LOW_FALL,\
+                              'HIGH_RISE': MaxipixModule.PriamAcq.HIGH_RISE}
         self.__ReadyLevel = self.__SignalLevel
         self.__GateLevel = self.__SignalLevel
         self.__TriggerLevel = self.__SignalLevel
         self.__ShutterLevel = self.__SignalLevel
         
-        self.__ReadyMode =   {'EXPOSURE': _PriamAcq.EXPOSURE,\
-                              'EXPOSURE_READOUT': _PriamAcq.EXPOSURE_READOUT}
-        self.__GateMode =    {'INACTIVE': _PriamAcq.INACTIVE,\
-                              'ACTIVE': _PriamAcq.ACTIVE}
-        self.__FillMode =    _MaxipixAcq.mpxFillModes
-        
-        self.__dacname = "thl"
+        self.__ReadyMode =   {'EXPOSURE': MaxipixModule.PriamAcq.EXPOSURE,\
+                              'EXPOSURE_READOUT': MaxipixModule.PriamAcq.EXPOSURE_READOUT}
+        self.__GateMode =    {'INACTIVE': MaxipixModule.PriamAcq.INACTIVE,\
+                              'ACTIVE': MaxipixModule.PriamAcq.ACTIVE}
+        self.__FillMode =    {'RAW': MaxipixModule.MaxipixReconstruction.RAW,
+                              'ZERO': MaxipixModule.MaxipixReconstruction.ZERO,
+                              'DISPATCH': MaxipixModule.MaxipixReconstruction.DISPATCH,
+                              'MEAN': MaxipixModule.MaxipixReconstruction.MEAN
+                              }
         
         self.__Attribute2FunctionBase = {'signal_level': 'SignalLevel',
                                          'ready_level': 'ReadyLevel',
@@ -83,7 +84,8 @@ class Maxipix(PyTango.Device_4Impl):
                                          'trigger_level': 'TriggerLevel',
                                          'ready_mode': 'ReadyMode',
                                          'gate_mode': 'GateMode',
-                                         'fill_mode': 'FillMode'
+                                         'fill_mode': 'FillMode',
+                                         'energy_threshold': 'Energy'
                                          }
 
         self.init_device()
@@ -123,9 +125,9 @@ class Maxipix(PyTango.Device_4Impl):
         if not key: return # property is not set
         
         dict = getattr(self, '_'+self.__class__.__name__+'__'+name)
-        _PriamAcq = _MaxipixAcq.getPriamAcq()
+        _PriamAcq = _MaxipixInterface.priamAcq()
         if prop_name.count('fill_mode'):
-            func = getattr(_MaxipixAcq, 'set'+name)
+            func = getattr(_MaxipixInterface, 'set'+name)
         else:
             func = getattr(_PriamAcq, 'set'+name)
         deb.Always('Setting property '+prop_name) 
@@ -169,76 +171,12 @@ class Maxipix(PyTango.Device_4Impl):
 #==================================================================
 
     def __getattr__(self,name) :
-        _PriamAcq = _MaxipixAcq.getPriamAcq()
-        if name.count('fill_mode'):
-            return get_attr_4u(self, name, _MaxipixAcq)
+        _PriamAcq = _MaxipixInterface.priamAcq()
+        if name.count('fill_mode') or name.count('energy_threshold'):
+            return get_attr_4u(self, name, _MaxipixInterface)
         else:
             return get_attr_4u(self, name, _PriamAcq)
             
-
-	            
-    ## @brief Read the current dac name
-    #
-    def read_dac_name(self,attr) :
-        attr.set_value(self.__dacname)
-        
-    ## @brief Write dac name
-    #
-    def write_dac_name(self,attr) :
-        data = attr.get_write_value()
-
-        dacs = _MaxipixAcq.mpxDacs
-        if data not in dacs.getListKeys():
-            PyTango.Except.throw_exception('WrongData',\
-                                           'Wrong value %s: %s'%('dac_name',data),\
-                                           'Maxipix Class')          
-        self.__dacname = data[0]
-
-    ## @brief Read the possible dac names
-    #
-    def read_dac_possible(self,attr) :
-
-        dacs = _MaxipixAcq.mpxDacs
-        data = dacs.getListKeys()
-        attr.set_value(data)        
-
-    # Read the chip dac value, named by the dac_name attribute
-    # For multichips only a unique DAC is valid for all the chips
-    def read_dac_value(self,attr) :
-        data = 0
-        dacs = _MaxipixAcq.mpxDacs
-        data = dacs.getOneDac(0,self.__dacname)
-        # if a all the chips don't have the same dac value
-        # None is return, typically this is the case for thl
-        if data == None: data = -1
-        attr.set_value(data)
-        
-    ## @brief Write a DAC value of the named dac_name attribute
-    #
-    def write_dac_value(self,attr) :
-        data = attr.get_write_value()
-        dacs = _MaxipixAcq.mpxDacs
-        dacs.setOneDac(0,self.__dacname, data)
-        dacs.applyChipDacs(0)
-    
-    ## @brief Read the energy threshold 
-    #
-    # energy threshold
-    def read_energy_threshold(self,attr) :
-        dacs= _MaxipixAcq.mpxDacs
-        value = dacs.getEnergy()
-	if value is None: value = -1
-	
-        attr.set_value(value)
-
-    ## @brief Write the energy calibration
-    #
-    def write_energy_threshold(self,attr) :
-        data = attr.get_write_value()
-        
-        dacs = _MaxipixAcq.mpxDacs
-        dacs.setEnergy(data)
-        dacs.applyChipDacs(0)
         
     ## @brief read the config name
     #
@@ -252,7 +190,7 @@ class Maxipix(PyTango.Device_4Impl):
     #
     def write_config_name(self,attr) :
         data = attr.get_write_value()
-        _MaxipixAcq.loadConfig(data)
+        _MaxipixInterface.loadConfig(data)
         self.config_name = data
 
     ## @brief read the config path
@@ -267,7 +205,7 @@ class Maxipix(PyTango.Device_4Impl):
     #
     def write_config_path(self,attr) :
         data = attr.get_write_value()
-        _MaxipixAcq.setPath(data)
+        _MaxipixInterface.setPath(data)
         self.config_path = data
 
     ## @brief read the board id
@@ -296,41 +234,6 @@ class Maxipix(PyTango.Device_4Impl):
             return self.__getConfigNameList()
         else:
             return get_attr_string_value_list(self, attr_name)
-
-#------------------------------------------------------------------
-#    setDebugFlags command:
-#
-#    Description: Get the current acquired frame number
-#    argout: DevVarDoubleArray    
-#------------------------------------------------------------------
-    @Core.DEB_MEMBER_FUNCT
-    def setDebugFlags(self, deb_flags):
-        deb_flags &= 0xffffffff
-        deb.Param('Setting debug flags: 0x%08x' % deb_flags)
-        Core.DebParams.setTypeFlags((deb_flags   >> 16)  & 0xff)
-        Core.DebParams.setModuleFlags((deb_flags >>  0)  & 0xffff)
-
-        deb.Trace('FormatFlags: %s' % Core.DebParams.getFormatFlagsNameList())
-        deb.Trace('TypeFlags:   %s' % Core.DebParams.getTypeFlagsNameList())
-        deb.Trace('ModuleFlags: %s' % Core.DebParams.getModuleFlagsNameList())
-
-#------------------------------------------------------------------
-#    getDebugFlags command:
-#
-#    Description: Get the current acquired frame number
-#    argout: DevVarDoubleArray    
-#------------------------------------------------------------------
-    @Core.DEB_MEMBER_FUNCT
-    def getDebugFlags(self):
-        deb.Trace('FormatFlags: %s' % Core.DebParams.getFormatFlagsNameList())
-        deb.Trace('TypeFlags:   %s' % Core.DebParams.getTypeFlagsNameList())
-        deb.Trace('ModuleFlags: %s' % Core.DebParams.getModuleFlagsNameList())
-        
-        deb_flags = (((Core.DebParams.getTypeFlags()    & 0xff)   << 16) |
-                     ((Core.DebParams.getModuleFlags()  & 0xffff) <<  0))
-        deb_flags &= 0xffffffff
-        deb.Return('Getting debug flags: 0x%08x' % deb_flags)
-        return deb_flags
 
 class MaxipixClass(PyTango.DeviceClass):
 
@@ -376,12 +279,6 @@ class MaxipixClass(PyTango.DeviceClass):
         'getAttrStringValueList':
         [[PyTango.DevString, "Attribute name"],
          [PyTango.DevVarStringArray, "Authorized String value list"]],
-        'getDebugFlags':
-        [[PyTango.DevVoid, ""],
-         [PyTango.DevULong, "Debug flag in HEX format"]],
-        'setDebugFlags':
-        [[PyTango.DevULong, "Debug flag in HEX format"],
-         [PyTango.DevVoid, ""]],
         }
 
     attr_list = {
@@ -495,36 +392,6 @@ class MaxipixClass(PyTango.DeviceClass):
              'format':"",
              'description':"",
          }],	  
-         'dac_possible':	  
-         [[PyTango.DevString,
-           PyTango.SPECTRUM,
-           PyTango.READ,17],
-         {
-             'label':"",
-             'unit':"",
-             'format':"",
-             'description':"",
-          }],	  
-        'dac_name':	  
-        [[PyTango.DevString,
-           PyTango.SCALAR,
-           PyTango.READ_WRITE],
-         {
-             'label':"",
-             'unit':"",
-             'format':"",
-             'description':"",
-         }],	  
-         'dac_value':	  
-         [[PyTango.DevLong,
-           PyTango.SCALAR,
-           PyTango.READ_WRITE],
-         {
-             'label':"",
-             'unit':"",
-             'format':"%xd",
-             'description':"",
-          }],
         }
 
 
@@ -536,20 +403,21 @@ class MaxipixClass(PyTango.DeviceClass):
 #----------------------------------------------------------------------------
 #                              Plugins
 #----------------------------------------------------------------------------
-from Lima.Maxipix.MpxAcq import MpxAcq
+from Lima.Maxipix import Maxipix as MaxipixModule
 
-_MaxipixAcq = None
+_MaxipixCamera = None
+_MaxipixInterface = None
 
 def get_control(espia_dev_nb = '0',config_path='', config_name='', reconstruction_active='true', **keys) :
     #properties are passed here as string
-    global _MaxipixAcq
+    global _MaxipixCamera
     global _MaxipixInterface
 
     if reconstruction_active.lower() == 'true': active = True
     else: active  = False
-    if _MaxipixAcq is None:
-        _MaxipixAcq = MpxAcq(int(espia_dev_nb), config_path, config_name, active)
-        _MaxipixInterface = _MaxipixAcq.getInterface()
+    if _MaxipixCamera is None:
+        _MaxipixCamera = MaxipixModule.Camera(int(espia_dev_nb), config_path, config_name, active)
+        _MaxipixInterface = MaxipixModule.Interface(_MaxipixCamera)
         
     return Core.CtControl(_MaxipixInterface)
 
