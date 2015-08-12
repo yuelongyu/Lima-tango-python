@@ -90,6 +90,10 @@ class Andor3(PyTango.Device_4Impl):
                                         }
         self.__DestrideActive = {'YES': True,
                                  'NO':  False}
+        self.__Overlap = {'ON':  True,
+                         'OFF': False}
+        self.__SpuriousNoiseFilter = {'ON':  True,
+                         'OFF': False}
         self.__Attribute2FunctionBase = {'adc_gain': 'SimpleGain',
                                          'adc_rate': 'AdcRate',
                                          'temperature': 'Temperature',
@@ -102,6 +106,8 @@ class Andor3(PyTango.Device_4Impl):
                                          'frame_rate': 'FrameRate',
                                          'max_frame_rate_transfer': 'MaxFrameRateTransfer',
                                          'readout_time': 'ReadoutTime',
+                                         'overlap': 'Overlap',
+                                         'spurious_noise_filter': 'SpuriousNoiseFilter',
                                          }
         self.init_device()
                                                
@@ -334,7 +340,26 @@ class Andor3Class(PyTango.DeviceClass):
              'format': '%f',
              'description': 'return the time to readout data from the sensor',
              }],
-
+        'overlap':
+        [[PyTango.DevString,
+          PyTango.SCALAR,
+          PyTango.READ_WRITE],
+         {
+             'label':' Enable/Disable overlap mode',
+             'unit': 'N/A',
+             'format': '',
+             'description': 'OFF or ON',
+             }],
+        'spurious_noise_filter':
+        [[PyTango.DevString,
+          PyTango.SCALAR,
+          PyTango.READ_WRITE],
+         {
+             'label':'Enable/Disable spurious noise filter',
+             'unit': 'N/A',
+             'format': '',
+             'description': 'OFF or ON',
+             }],
         }
 
 #------------------------------------------------------------------

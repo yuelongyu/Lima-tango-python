@@ -1,7 +1,7 @@
 ############################################################################
 # This file is part of LImA, a Library for Image Acquisition
 #
-# Copyright (C) : 2009-2011
+# Copyright (C) : 2009-2015
 # European Synchrotron Radiation Facility
 # BP 220, Grenoble 38043
 # FRANCE
@@ -63,7 +63,7 @@ from EnvHelper import get_sub_devices
 from EnvHelper import get_lima_camera_type, get_lima_device_name
 from EnvHelper import create_tango_objects
 from AttrHelper import get_attr_4u
-
+from AttrHelper import _getDictKey, _getDictValue
 from Lima import Core
 
 import plugins
@@ -421,7 +421,7 @@ class LimaCCDs(PyTango.Device_4Impl) :
                 self.ImageType2DataArrayType[Bpp_type] = Bpp_size
 
         #Tango Enum to Lima Enum
-        self.__Prefix2SubClass = {'acc' : self.__control.acquisition,
+        self.__Prefix2SubClass = {'acc' : self.__control.accumulation,
                                   'acq' : self.__control.acquisition,
                                   'shutter' : self.__control.shutter,
                                   'saving' : self.__control.saving,
@@ -436,7 +436,11 @@ class LimaCCDs(PyTango.Device_4Impl) :
                                          'shutter_mode' : 'Mode',
 					 'image_rotation':'Rotation',
                                          'video_mode':'Mode',
-                                         'buffer_max_memory': 'MaxMemory'}
+                                         'buffer_max_memory': 'MaxMemory',
+                                         'acc_mode': 'Mode',
+                                         'acc_threshold_before': 'ThresholdBefore',
+                                         'acc_offset_before': 'OffsetBefore'}
+    
             
         self.__ShutterMode = {'MANUAL': Core.ShutterManual,
                               'AUTO_FRAME': Core.ShutterAutoFrame,
@@ -504,6 +508,11 @@ class LimaCCDs(PyTango.Device_4Impl) :
                                     '90' : Core.Rotation_90,
                                     '180' : Core.Rotation_180,
                                     '270' : Core.Rotation_270}
+ 
+        if SystemHasFeature('Core.CtAccumulation.Parameters.STANDARD'):
+            self.__AccMode = {'STANDARD': Core.CtAccumulation.Parameters.STANDARD,
+                              'THRESHOLD_BEFORE': Core.CtAccumulation.Parameters.THRESHOLD_BEFORE,
+                              'OFFSET_THEN_THRESHOLD_BEFORE': Core.CtAccumulation.Parameters.OFFSET_THEN_THRESHOLD_BEFORE}
 
         try:
             self.__VideoMode = {'Y8'         : Core.Y8,
@@ -897,7 +906,8 @@ class LimaCCDs(PyTango.Device_4Impl) :
             msg = "Accumulation threshold plugins not loaded"
             deb.Error(msg)
             raise Exception(msg)
-        
+
+
     ## @brief Read latency time 
     #
     @Core.DEB_MEMBER_FUNCT
@@ -2072,6 +2082,18 @@ class LimaCCDsClass(PyTango.DeviceClass) :
         [[PyTango.DevDouble,
           PyTango.SCALAR,
           PyTango.READ_WRITE]],
+        'acc_mode':
+         [[PyTango.DevString,
+           PyTango.SCALAR,
+           PyTango.READ_WRITE]],
+        'acc_threshold_before':
+         [[PyTango.DevLong,
+           PyTango.SCALAR,
+           PyTango.READ_WRITE]],      
+        'acc_offset_before':
+         [[PyTango.DevLong,
+           PyTango.SCALAR,
+           PyTango.READ_WRITE]],      
         'concat_nb_frames':
         [[PyTango.DevLong,
           PyTango.SCALAR,
