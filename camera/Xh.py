@@ -209,6 +209,18 @@ class Xh(PyTango.Device_4Impl):
 	nbscans = _XhCam.getNbScans()
 	attr.set_value(nbscans)
 
+#------------------------------------------------------------------
+#    read maxframes:
+#
+#    Description: reads the maxframes 
+#    argin: DevInt   
+#------------------------------------------------------------------	
+
+    def read_maxframes(self,attr):
+	maxframes_s = _XhCam.getMaxFrames()
+	maxframes = int(maxframes_s)
+	attr.set_value(maxframes)
+
 
 #------------------------------------------------------------------
 #------------------------------------------------------------------
@@ -256,7 +268,11 @@ class XhClass(PyTango.DeviceClass):
 	[[PyTango.DevLong,
 	PyTango.SCALAR,
 	PyTango.READ_WRITE]],
-        }
+        'maxframes':
+	[[PyTango.DevLong,
+	PyTango.SCALAR,
+	PyTango.READ]],
+       }
 
     def __init__(self,name) :
         PyTango.DeviceClass.__init__(self,name)
