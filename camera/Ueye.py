@@ -22,19 +22,103 @@
 #----------------------------------------------------------------------------
 # Plugins
 #----------------------------------------------------------------------------
+import PyTango
 from Lima import Core
-from Lima import Ueye
- 
+from Lima import Ueye as UeyeModule
+from AttrHelper import get_attr_4u, get_attr_string_value_list
+
+class Ueye(PyTango.Device_4Impl):
+
+    Core.DEB_CLASS(Core.DebModApplication, 'LimaCCDs')
+
+#------------------------------------------------------------------
+#    Device constructor
+#------------------------------------------------------------------
+    def __init__(self,*args) :
+        PyTango.Device_4Impl.__init__(self,*args)
+
+        self.init_device()
+
+        self.__Attribute2FunctionBase = {
+                                         }
+
+#------------------------------------------------------------------
+#    Device destructor
+#------------------------------------------------------------------
+    def delete_device(self):
+        pass
+
+#------------------------------------------------------------------
+#    Device initialization
+#------------------------------------------------------------------
+    @Core.DEB_MEMBER_FUNCT
+    def init_device(self):
+        self.set_state(PyTango.DevState.ON)
+        self.get_device_properties(self.get_device_class())
+
+#------------------------------------------------------------------
+#    getAttrStringValueList command:
+#
+#    Description: return a list of authorized values if any
+#    argout: DevVarStringArray   
+#------------------------------------------------------------------
+    @Core.DEB_MEMBER_FUNCT
+    def getAttrStringValueList(self, attr_name):
+        #use AttrHelper
+        return get_attr_string_value_list(self, attr_name)
+#==================================================================
+#
+#    Dexela read/write attribute methods
+#
+#==================================================================
+    def __getattr__(self,name) :
+        #use AttrHelper
+        return get_attr_4u(self,name,_DexelaInterface)
+
+
+#==================================================================
+#
+#    DexelaClass class definition
+#
+#==================================================================
+class UeyeClass(PyTango.DeviceClass):
+
+    class_property_list = {}
+
+    device_property_list = {
+        'address':
+        [PyTango.DevString,
+         "Video device path","0"],
+        }
+
+    cmd_list = {
+        'getAttrStringValueList':
+        [[PyTango.DevString, "Attribute name"],
+         [PyTango.DevVarStringArray, "Authorized String value list"]],
+        }
+
+    attr_list = {
+        }
+
+    def __init__(self,name) :
+        PyTango.DeviceClass.__init__(self,name)
+        self.set_type(name)
+
+#----------------------------------------------------------------------------
+# Plugins
+#----------------------------------------------------------------------------
 _UeyeInterface = None
 
 
-def get_control(**keys) :
+def get_control(address="0", **keys) :
     global _UeyeInterface
     if _UeyeInterface is None:
-	ueye = Ueye.Camera()
-        _UeyeInterface = Ueye.Interface(ueye)
+	ueye = UeyeModule.Camera(int(address))
+        _UeyeInterface = UeyeModule.Interface(ueye)
 	_UeyeInterface._ref_interface = ueye
     return Core.CtControl(_UeyeInterface)
 
 
+def get_tango_specific_class_n_device():
+    return UeyeClass,Ueye
 
