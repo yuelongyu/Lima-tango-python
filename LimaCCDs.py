@@ -1345,7 +1345,7 @@ class LimaCCDs(PyTango.Device_4Impl) :
     def read_saving_frame_per_file(self,attr) :
         saving = self.__control.saving()
 
-        attr.set_value(saving.getFramePerFile())
+        attr.set_value(saving.getFramesPerFile())
 
     @Core.DEB_MEMBER_FUNCT
     def write_saving_frame_per_file(self,attr) :
