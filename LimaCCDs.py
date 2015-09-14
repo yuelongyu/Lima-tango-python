@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 ############################################################################
 # This file is part of LImA, a Library for Image Acquisition
 #
@@ -420,6 +421,8 @@ class LimaCCDs(PyTango.Device_4Impl) :
                 self.ImageType2String[Bpp_type] = Bpp_name
                 self.ImageType2DataArrayType[Bpp_type] = Bpp_size
 
+        self.__Name2SubClass = {'acc_time_mode' : self.__control.acquisition}
+
         #Tango Enum to Lima Enum
         self.__Prefix2SubClass = {'acc' : self.__control.accumulation,
                                   'acq' : self.__control.acquisition,
@@ -608,7 +611,9 @@ class LimaCCDs(PyTango.Device_4Impl) :
             return func
         else :
              split_name = name.split('_')[1:]
-             subClass = self.__Prefix2SubClass.get(split_name[0],None)
+             subClass = self.__Name2SubClass.get("_".join(split_name),None)
+             if subClass is None:
+                 subClass = self.__Prefix2SubClass.get(split_name[0],None)
              if subClass:
                  obj = subClass()
                  return get_attr_4u(self,name, obj)
