@@ -27,6 +27,7 @@ from Utils import getDataFromFile,BasePostProcess
 
 class BackgroundSubstractionDeviceServer(BasePostProcess) :
     BACKGROUND_TASK_NAME = 'BackGroundTask'
+    GET_BACKGROUND_IMAGE = "TMP_GET_BACKGROUND_IMAGE"
     Core.DEB_CLASS(Core.DebModApplication,'BackgroundSubstraction')
     
     def __init__(self,cl,name) :
@@ -70,13 +71,47 @@ class BackgroundSubstractionDeviceServer(BasePostProcess) :
     @Core.DEB_MEMBER_FUNCT
     def setBackgroundImage(self,filepath) :
         deb.Param('filepath=%s' % filepath)
-        self.__backGroundImage = getDataFromFile(filepath)
+        image = getDataFromFile(filepath)
 	if self.__deleteDarkAfterRead:
 	    os.unlink(filepath)
+	self._setBackgroundImage(image)
+	
+    def _setBackgroundImage(self,image):
+	self.__backGroundImage = image
         if(self.__backGroundTask) :
-            self.__backGroundTask.setBackgroundImage(self.__backGroundImage)
+            self.__backGroundTask.setBackgroundImage(image)
 
+    @Core.DEB_MEMBER_FUNCT
+    def takeNextAcquisitionAsBackground(self):
+	class GetBackgroundImage(Core.Processlib.SinkTaskBase):
+	    def __init__(self,cnt,control_ref):
+		Core.Processlib.SinkTaskBase.__init__(self)
+		self.__control_ref = control_ref
+		ctControl = _control_ref()
+		saving = ctControl.saving()
+		self.__previous_saving_mode = saving.getSavingMode()
+		saving.setSavingMode(Core.CtSaving.Manual)
+		self.__cnt = cnt
+		
+	    def process(self,data):
+		background = Core.Processlib.Data()
+		background.buffer = data.buffer
+		self.__cnt._setBackgroundImage(background)
+		ctControl = _control_ref()
+		extOpt = ctControl.externalOperation()
+		extOpt.delOp(BackgroundSubstractionDeviceServer.GET_BACKGROUND_IMAGE)
+		saving = ctControl.saving()
+		saving.setSavingMode(self.__previous_saving_mode)
+		self.__cnt.Start()
 
+	self.Stop()
+	ctControl = _control_ref()
+	extOpt = ctControl.externalOperation()
+	self.__getImageTask = extOpt.addOp(Core.USER_SINK_TASK,self.GET_BACKGROUND_IMAGE,
+					   self._runLevel)
+	self.__background = GetBackgroundImage(self,_control_ref)
+	self.__getImageTask.setSinkTask(self.__background)
+	
 class BackgroundSubstractionDeviceServerClass(PyTango.DeviceClass) :
         #	 Class Properties
     class_property_list = {
@@ -92,6 +127,9 @@ class BackgroundSubstractionDeviceServerClass(PyTango.DeviceClass) :
     cmd_list = {
         'setBackgroundImage':
         [[PyTango.DevString,"Full path of background image file"],
+         [PyTango.DevVoid,""]],
+        'takeNextAcquisitionAsBackground':
+        [[PyTango.DevVoid,""],
          [PyTango.DevVoid,""]],
 	'Start':
 	[[PyTango.DevVoid,""],
