@@ -156,6 +156,13 @@ class Pco(PyTango.Device_4Impl):
         attr.set_value(val)
 
 #------------------------------------------------------------------
+#    traceAcq attribute R
+#------------------------------------------------------------------
+    def read_traceAcq(self, attr):
+        val= _PcoCam.talk("traceAcq")
+        attr.set_value(val)
+
+#------------------------------------------------------------------
 #    pixelRate attribute RW
 #------------------------------------------------------------------
     def read_pixelRate(self, attr):
@@ -217,6 +224,12 @@ class PcoClass(PyTango.DeviceClass):
     #    Device Properties
 
     device_property_list = {
+        'params':
+        [PyTango.DevString,
+           "general parameters",[]],
+        'dummy':
+        [PyTango.DevString,
+           "dummy string",[]],
         'debug_control':
         [PyTango.DevString,
            "general debug",[]],
@@ -288,6 +301,10 @@ class PcoClass(PyTango.DeviceClass):
          [[PyTango.DevString,
            PyTango.SCALAR,
            PyTango.READ]],
+         'traceAcq':	  
+         [[PyTango.DevString,
+           PyTango.SCALAR,
+           PyTango.READ]],
         }
 
 #------------------------------------------------------------------
@@ -303,19 +320,32 @@ class PcoClass(PyTango.DeviceClass):
 _PcoCam = None
 _PcoInterface = None
 
-def get_control(debug_control = "0", debug_module = "0", debug_type="0",
-                debug_format = "0", **keys) :
+def get_control(debug_control = "0", 
+                debug_module = "0", 
+                debug_type="0",
+                debug_format = "0x31", 
+                params = [], 
+                **keys) :
+
     global _PcoCam
     global _PcoInterface
-
 
     debControl = int(debug_control,0)
     debModule = int(debug_module,0)
     debType = int(debug_type,0)
     debFormat = int(debug_format,0)
 
-    
+    paramsIn = "".join("%s;" % (x,) for x in params)
 
+    print "============= Properties ============="
+    print "         keys:", keys
+    print "       params:", params
+    print "     paramsIn:", paramsIn
+    print "%s [%s] [0x%x]" % ("debug_control:", debug_control, debControl)
+    print "%s [%s] [0x%x]" % (" debug_module:", debug_module, debModule)
+    print "%s [%s] [0x%x]" % (" debug_format:", debug_format, debFormat)
+    print "%s [%s] [0x%x]" % ("   debug_type:", debug_type, debType)
+    print "======================================"
 
     if debControl:
         Core.DebParams.setModuleFlags(debModule)
@@ -324,17 +354,23 @@ def get_control(debug_control = "0", debug_module = "0", debug_type="0",
         Core.DebParams.setTypeFlags(0)
         Core.DebParams.setModuleFlags(0)
 
-    #Core.DebParams.setFormatFlags(0x31)
     Core.DebParams.setFormatFlags(debFormat)
 
+
     if _PcoCam is None:
-        _PcoCam = PcoAcq.Camera("")
+        _PcoCam = PcoAcq.Camera(paramsIn)
         _PcoInterface = PcoAcq.Interface(_PcoCam)
     return Core.CtControl(_PcoInterface)
 
+
+#----------------------------------------------------------------------------
+#----------------------------------------------------------------------------
 def get_tango_specific_class_n_device():
     return PcoClass,Pco
 
+
+#----------------------------------------------------------------------------
+#----------------------------------------------------------------------------
 def close_interface() :
     global _PcoCam
     _PcoCam = None
