@@ -35,6 +35,7 @@ class BackgroundSubstractionDeviceServer(BasePostProcess) :
         self.__backGroundImage = Core.Processlib.Data()
 	self.get_device_properties(self.get_device_class())
 	self.__deleteDarkAfterRead = False
+        self.__offset = 0
 
         BasePostProcess.__init__(self,cl,name)
         BackgroundSubstractionDeviceServer.init_device(self)
@@ -55,7 +56,10 @@ class BackgroundSubstractionDeviceServer(BasePostProcess) :
                                                        self.BACKGROUND_TASK_NAME,
                                                        self._runLevel)
                   self.__backGroundTask.setBackgroundImage(self.__backGroundImage)
+                  if self.__offset :
+                      self.__backGroundTask.setOffset(self.__offset)
 		except:
+                        self.__offset = 0
 			import traceback
 			traceback.print_exc()
 			return
@@ -67,6 +71,19 @@ class BackgroundSubstractionDeviceServer(BasePostProcess) :
     def write_delete_dark_after_read(self,attr) :
 	data = attr.get_write_value()
 	self.__deleteDarkAfterRead = data
+
+    def read_offset(self,attr) :
+        attr.set_value(self.__offset)
+
+    def write_offset(self,attr) :
+        offset = attr.get_write_value()
+        self.__offset = offset
+        if self.__backGroundTask:
+            try:
+                self.__backGroundTask.setOffset(offset)
+            except AttributeError:
+                self.__offset = 0
+                raise
 
     @Core.DEB_MEMBER_FUNCT
     def setBackgroundImage(self,filepath) :
@@ -150,6 +167,10 @@ class BackgroundSubstractionDeviceServerClass(PyTango.DeviceClass) :
 	[[PyTango.DevBoolean,
 	  PyTango.SCALAR,
 	  PyTango.READ_WRITE]],
+        'offset':
+        [[PyTango.DevLong,
+          PyTango.SCALAR,
+          PyTango.READ_WRITE]],
 	}
 
 
