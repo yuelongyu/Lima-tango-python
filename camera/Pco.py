@@ -44,17 +44,14 @@ import pdb
 from Lima import Core
 from Lima import Pco as PcoAcq
 #from LimaCCDs import CallableReadEnum,CallableWriteEnum
-#from AttrHelper import get_attr_4u, get_attr_string_value_list,_getDictKey, _getDictValue
+from AttrHelper import get_attr_4u, get_attr_string_value_list,_getDictKey, _getDictValue
 
-# import some useful helpers to create direct mapping between tango attributes
-# and Lima interfaces.
-from AttrHelper import get_attr_4u, get_attr_string_value_list
 
+RESET_CLOSE_INTERFACE	= 100
 
 class Pco(PyTango.Device_4Impl):
 
     Core.DEB_CLASS(Core.DebModApplication, 'LimaCCDs')
-
 
 #------------------------------------------------------------------
 #    Device constructor
@@ -81,8 +78,6 @@ class Pco(PyTango.Device_4Impl):
         self.set_state(PyTango.DevState.ON)
         self.get_device_properties(self.get_device_class())
         
-
-    
 
 #==================================================================
 #
@@ -319,6 +314,7 @@ class PcoClass(PyTango.DeviceClass):
 #----------------------------------------------------------------------------
 _PcoCam = None
 _PcoInterface = None
+_PcoControl = None
 
 def get_control(debug_control = "0", 
                 debug_module = "0", 
@@ -329,6 +325,7 @@ def get_control(debug_control = "0",
 
     global _PcoCam
     global _PcoInterface
+    global _PcoControl
 
     debControl = int(debug_control,0)
     debModule = int(debug_module,0)
@@ -360,7 +357,10 @@ def get_control(debug_control = "0",
     if _PcoCam is None:
         _PcoCam = PcoAcq.Camera(paramsIn)
         _PcoInterface = PcoAcq.Interface(_PcoCam)
-    return Core.CtControl(_PcoInterface)
+        _PcoControl = Core.CtControl(_PcoInterface)
+        
+
+    return _PcoControl
 
 
 #----------------------------------------------------------------------------
@@ -369,8 +369,13 @@ def get_tango_specific_class_n_device():
     return PcoClass,Pco
 
 
-#----------------------------------------------------------------------------
-#----------------------------------------------------------------------------
-def close_interface() :
-    global _PcoCam
-    _PcoCam = None
+#==================================================================================
+#==================================================================================
+# called by ->  delete_device (LimaCCDs.py:352)   [LimaCCDs(id00/limaccds/pco2k1)]
+# requiered to close properly the camera / sdk
+#   because the cam, interface destructors are NOT called (?)
+#==================================================================================
+def close_interface():
+    print "... close_interface()"
+    _PcoInterface.reset(RESET_CLOSE_INTERFACE)
+
