@@ -563,13 +563,14 @@ class LimaCCDs(PyTango.Device_4Impl) :
                           "video_last_image", "video_last_image_counter"]:
             attr = attr_list.get_attr_by_name(attr_name)
             attr.set_change_event(True, False)
-                        
-        self.__video_image_cbk = self.VideoImageCallback(self)
-        self.__control.video().registerImageCallback(self.__video_image_cbk)
+        
+        if self.TangoEvent:
+            self.__video_image_cbk = self.VideoImageCallback(self)
+            self.__control.video().registerImageCallback(self.__video_image_cbk)
 
-        # INIT events on last_image_ready
-        self.__image_status_cbk = self.ImageStatusCallback(self, self.__control)
-        self.__control.registerImageStatusCallback(self.__image_status_cbk)
+            # INIT events on last_image_ready
+            self.__image_status_cbk = self.ImageStatusCallback(self, self.__control)
+            self.__control.registerImageStatusCallback(self.__image_status_cbk)
 
         # Setup a user-defined detector name if it exists
         if self.InstrumentName:
@@ -1908,6 +1909,9 @@ class LimaCCDsClass(PyTango.DeviceClass) :
         'BufferMaxMemory' :
          [PyTango.DevString,
           "The maximum among of memory (RAM) Lima should use to allocate the frame buffers, e.g 50 %, default is 70%",[]],
+        'TangoEvent' :
+        [PyTango.DevBoolean,
+         "Activate Tango event",[False]],
         }
 
     #    Command definitions
