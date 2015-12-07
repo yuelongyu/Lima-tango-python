@@ -70,9 +70,9 @@ class Andor3(PyTango.Device_4Impl):
     def __init__(self,cl, name):
         PyTango.Device_4Impl.__init__(self,cl,name)
         # dictionnaries to be used with AttrHelper.get_attr_4u
-        self.__AdcGain = {'b11_hi_gain':  _Andor3Camera.b11_hi_gain,
-                             'b11_low_gain': _Andor3Camera.b11_low_gain,
-                             'b16_lh_gain':  _Andor3Camera.b16_lh_gain,
+        self.__AdcGain = {'B11_HI_GAIN':  _Andor3Camera.b11_hi_gain,
+                             'B11_LOW_GAIN': _Andor3Camera.b11_low_gain,
+                             'B16_LH_GAIN':  _Andor3Camera.b16_lh_gain,
                           }
         self.__AdcRate = {'MHZ10':  _Andor3Camera.MHz10,
                           'MHZ100': _Andor3Camera.MHz100,
@@ -88,8 +88,6 @@ class Andor3(PyTango.Device_4Impl):
         self.__ElectronicShutterMode = {'ROLLING': _Andor3Camera.Rolling,
                                         'GLOBAL': _Andor3Camera.Global,
                                         }
-        self.__DestrideActive = {'YES': True,
-                                 'NO':  False}
         self.__Overlap = {'ON':  True,
                          'OFF': False}
         self.__SpuriousNoiseFilter = {'ON':  True,
@@ -102,7 +100,6 @@ class Andor3(PyTango.Device_4Impl):
                                          'cooling_status': 'CoolingStatus',
                                          'fan_speed': 'FanSpeed',
                                          'electronic_shutter_mode': 'ElectronicShutterMode',
-                                         'destride_active': 'DestrideActive',
                                          'frame_rate': 'FrameRate',
                                          'max_frame_rate_transfer': 'MaxFrameRateTransfer',
                                          'readout_time': 'ReadoutTime',
@@ -204,9 +201,6 @@ class Andor3Class(PyTango.DeviceClass):
         'cooler':
         [PyTango.DevString,
          'Start or stop the cooler ("ON"/"OFF")', []],
-        'destride_active':
-        [PyTango.DevString,
-         'Activate the destriding of the image ("YES"/"NO")', ["YES"]],                 
         }
 
 
@@ -300,16 +294,6 @@ class Andor3Class(PyTango.DeviceClass):
             'format': '',
             'description': 'Fan speed, off, low or High',
             }],
-        'destride_active':
-        [[PyTango.DevString,
-          PyTango.SCALAR,
-          PyTango.READ_WRITE],
-         {
-             'label':'Activate destride image reconstruction',
-             'unit': 'N/A',
-             'format': '',
-             'description': 'YES or NO',
-             }],
         'frame_rate':
         [[PyTango.DevDouble,
           PyTango.SCALAR,
@@ -378,17 +362,14 @@ from Lima  import Andor3 as Andor3Acq
 _Andor3Camera = None
 _Andor3Interface = None
 
-def get_control(config_path='/users/blissadm/local/Andor3/andor/bitflow', camera_number = '0', destride_active='true', **keys) :
+def get_control(config_path='/users/blissadm/local/Andor3/andor/bitflow', camera_number = '0', **keys) :
     #properties are passed here as string
     global _Andor3Camera
     global _Andor3Interface
     if _Andor3Camera is None:
         print '\n\nStarting and configuring the Andor3 camera ...'
         _Andor3Camera = Andor3Acq.Camera(config_path, int(camera_number))
-        if destride_active.lower() == 'true': active = True
-        else: active  = False
-
-        _Andor3Interface = Andor3Acq.Interface(_Andor3Camera, active)
+        _Andor3Interface = Andor3Acq.Interface(_Andor3Camera)
         print '\n\nAndor3 Camera #%s (%s:%s) is started'%(camera_number,_Andor3Camera.getDetectorType(),_Andor3Camera.getDetectorModel())
     return Core.CtControl(_Andor3Interface)
 
