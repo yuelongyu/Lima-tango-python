@@ -3,4 +3,11 @@
 LIMA_BASE_SERVER_PATH=$BLISSADM/applications/LimaCCDs
 
 cd $LIMA_BASE_SERVER_PATH
-exec python LimaCCDs.py $* 
+
+if [ -z "$*" ]; then
+    echo "Please give an instance name."
+    exec python LimaCCDs.py -?
+else
+    exec python LimaCCDs.py $*
+fi
+

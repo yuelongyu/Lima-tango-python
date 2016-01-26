@@ -40,7 +40,7 @@
 #=============================================================================
 #
 import PyTango
-import os
+import os,glob
 from Lima import Core
 from Lima import imXpad as XpadAcq
 #from LimaCCDs import CallableReadEnum,CallableWriteEnum
@@ -70,7 +70,8 @@ class imXPAD(PyTango.Device_4Impl):
 #------------------------------------------------------------------
     @Core.DEB_MEMBER_FUNCT
     def init_device(self):
-        
+        self._config_name = None
+        self._ITHL_offset = 0
 
         try:
             
@@ -82,102 +83,110 @@ class imXPAD(PyTango.Device_4Impl):
             print e
             
         #Dictionaries with the Types. 
-        self.AcquisitionModes = {'Standard':XpadAcq.Camera.XpadAcquisitionMode.Standard,
-                                 'ComputerBurst':XpadAcq.Camera.XpadAcquisitionMode.ComputerBurst,
-                                 'DetectorBurst':XpadAcq.Camera.XpadAcquisitionMode.DetectorBurst,
+        self.__AcquisitionMode = {'Standard':XpadAcq.Camera.XpadAcquisitionMode.Standard,
+                                  'ComputerBurst':XpadAcq.Camera.XpadAcquisitionMode.ComputerBurst,
+                                  'DetectorBurst':XpadAcq.Camera.XpadAcquisitionMode.DetectorBurst,
                                  # 'SingleBunch16bits':XpadAcq.Camera.XpadAcquisitionMode.SingleBunch16bits,
                                  # 'SingleBunch32bits':XpadAcq.Camera.XpadAcquisitionMode.SingleBunch32bits,
                                  # 'Stacking16bits':XpadAcq.Camera.XpadAcquisitionMode.Stacking16bits,
                                  # 'Stacking32bits':XpadAcq.Camera.XpadAcquisitionMode.Stacking32bits,
                                  }
 
-        self.OutputSignals = {'ExposureBusy':XpadAcq.Camera.XpadOutputSignal.ExposureBusy,
-            'ShutterBusy':XpadAcq.Camera.XpadOutputSignal.ShutterBusy,
-            'BusyUpdateOverflow':XpadAcq.Camera.XpadOutputSignal.BusyUpdateOverflow,
-            'PixelCounterEnabled':XpadAcq.Camera.XpadOutputSignal.PixelCounterEnabled,
-            'ExternalGate':XpadAcq.Camera.XpadOutputSignal.ExternalGate,
-            'ExposureReadDone':XpadAcq.Camera.XpadOutputSignal.ExposureReadDone,
-            'DataTransfer':XpadAcq.Camera.XpadOutputSignal.DataTransfer,
-            'RAMReadyImageBusy':XpadAcq.Camera.XpadOutputSignal.RAMReadyImageBusy,
-            'XPADToLocalDDR':XpadAcq.Camera.XpadOutputSignal.XPADToLocalDDR,
-            'LocalDDRToPC':XpadAcq.Camera.XpadOutputSignal.LocalDDRToPC}
+        self.__OutputSignal = {'ExposureBusy' : XpadAcq.Camera.XpadOutputSignal.ExposureBusy,
+                               'ShutterBusy' : XpadAcq.Camera.XpadOutputSignal.ShutterBusy,
+                               'BusyUpdateOverflow' : XpadAcq.Camera.XpadOutputSignal.BusyUpdateOverflow,
+                               'PixelCounterEnabled' : XpadAcq.Camera.XpadOutputSignal.PixelCounterEnabled,
+                               'ExternalGate' : XpadAcq.Camera.XpadOutputSignal.ExternalGate,
+                               'ExposureReadDone' : XpadAcq.Camera.XpadOutputSignal.ExposureReadDone,
+                               'DataTransfer' : XpadAcq.Camera.XpadOutputSignal.DataTransfer,
+                               'RAMReadyImageBusy' : XpadAcq.Camera.XpadOutputSignal.RAMReadyImageBusy,
+                               'XPADToLocalDDR' : XpadAcq.Camera.XpadOutputSignal.XPADToLocalDDR,
+                               'LocalDDRToPC' : XpadAcq.Camera.XpadOutputSignal.LocalDDRToPC}
          
-        self.TriggerModes = {'INTERNAL_TRIGGER':0,
-                            'EXTERNAL_TRIGGER':2,
-                            'EXTERNAL_GATE':1,
-                            'EXTERNAL_MULTI_TRIGGER':3}
-        
-        self.ImageFileFormats = {'Ascii':XpadAcq.Camera.XpadImageFileFormat.Ascii,
-                       'Binary':XpadAcq.Camera.XpadImageFileFormat.Binary}
+        self.__ImageFileFormat = {'Ascii':XpadAcq.Camera.XpadImageFileFormat.Ascii,
+                                  'Binary':XpadAcq.Camera.XpadImageFileFormat.Binary}
         
         ##Set DEFAULT configuration to store input values
         ##(there are no getters for these attributes) 
 
         # print("Setting values by Default")
         
-        self.AcquisitionMode ='Standard'
-        _imXPADCam.setAcquisitionMode(self.AcquisitionModes[self.AcquisitionMode])
+        _imXPADCam.setAcquisitionMode(XpadAcq.Camera.XpadAcquisitionMode.Standard)
 
-        self.FlatFieldCorrectionFlag = 1 # Enabled by default
-        _imXPADCam.setFlatFieldCorrectionFlag(self.FlatFieldCorrectionFlag)
+        self.__FlatFieldCorrectionFlag = {'ON' : True,
+                                        'OFF': False}
+        _imXPADCam.setFlatFieldCorrectionFlag(True)
         
-        self.GeometricalCorrectionFlag = 1
-        _imXPADCam.setGeometricalCorrectionFlag(self.GeometricalCorrectionFlag)       
-        self.ImageFileFormat = 'Binary'
-        _imXPADCam.setImageFileFormat(self.ImageFileFormats[self.ImageFileFormat])
-        self.OutputSignalMode = 'BusyUpdateOverflow'
-        _imXPADCam.setOutputSignalMode(self.OutputSignals[self.OutputSignalMode])
+        self.__GeometricalCorrectionFlag = {'ON' : True,
+                                            'OFF': False}
+        _imXPADCam.setGeometricalCorrectionFlag(True)
+
+        self.__ImageTransferFlag =  {'ON' : True,
+                                     'OFF': False}
+
+        _imXPADCam.setImageFileFormat(XpadAcq.Camera.XpadImageFileFormat.Binary)
+
+        _imXPADCam.setOutputSignalMode(XpadAcq.Camera.XpadOutputSignal.BusyUpdateOverflow)
+
         
     @Core.DEB_MEMBER_FUNCT
-#     def getAttrStringValueList(self, attr_name):
-# #### old implementation
-# #        valueList=[]
-# #        dict_name = '_' + self.__class__.__name__ + '__' + ''.join([x.title() for x in attr_name.split('_')])
-# #        d = getattr(self,dict_name,None)
-# #        if d:
-# #            valueList = d.keys()
-# #
-# #        return valueList
-#         #use AttrHelper
-#         return get_attr_string_value_list(self, attr_name)
-
+    def getAttrStringValueList(self, attr_name):
+        if attr_name.startswith('config_name') :
+            full_path = os.path.join(self.config_path,'*.cfg')
+            return [os.path.splitext(os.path.basename(x))[0] for x in glob.glob(full_path)]
+        else:
+            return get_attr_string_value_list(self, attr_name)
 
     @Core.DEB_MEMBER_FUNCT
     def loadConfig(self,config_prefix) :
+        if config_prefix == self._config_name: return
+
         config_path = self.config_path
         _imXPADCam.loadConfigGFromFile(os.path.join(config_path,'%s.cfg' % config_prefix))
         _imXPADCam.loadConfigLFromFile(os.path.join(config_path,'%s.cfl' % config_prefix))
+        self._config_name = config_prefix
+        self._ITHL_offset = 0
 
     @Core.DEB_MEMBER_FUNCT
     def saveConfig(self,config_prefix) :
         config_path = self.config_path
+        print 'saveConfig',config_path,config_prefix
         _imXPADCam.saveConfigGToFile(os.path.join(config_path,'%s.cfg' % config_prefix))
         _imXPADCam.saveConfigLToFile(os.path.join(config_path,'%s.cfl' % config_prefix))
-        
-#     def __getattr__(self,name) :
-# #### old implementation
-# #        if name.startswith('read_') or name.startswith('write_') :
-# #            split_name = name.split('_')[1:]
-# #            attr_name = ''.join([x.title() for x in split_name])
-# #            dict_name = '_' + self.__class__.__name__ + '__' + attr_name
-# #            d = getattr(self,dict_name,None)
-# #            attr_name = self.__Attribute2FunctionBase.get('_'.join(split_name),attr_name)
-# #            if d:
-# #                if name.startswith('read_') :
-# #                    functionName = 'get' + attr_name
-# #                    function2Call = getattr(_XpadAcq,functionName)
-# #                    callable_obj = CallableReadEnum(d,function2Call)
-# #                else:
-# #                    functionName = 'set' + attr_name
-# #                    function2Call = getattr(_XpadAcq,function2Call)
-# #                    callable_obj = CallableWriteEnum(d,function2Call)
-# #                self.__dict__[name] = callable_obj
-# #                return callable_obj
-# #        raise AttributeError('Xpad has no attribute %s' % name)
-#         #use AttrHelper
-#         return get_attr_4u(self,name,XpadAcq)
+        self._config_name = config_prefix
+        self._ITHL_offset = 0
 
+    def __getattr__(self,name) :
+        return get_attr_4u(self, name, _imXPADCam)
      
+    def read_config_name(self,attr):
+        config_name = self._config_name
+        if config_name is None:
+            config_name = "MEMORY"
+        attr.set_value(config_name)
+
+    def write_config_name(self,attr):
+        config_name = attr.get_write_value()
+        if config_name == "MEMORY": return
+        self.loadConfig(config_name)
+
+    def read_ITHL_offset(self,attr):
+        attr.set_value(self._ITHL_offset)
+        
+    def write_ITHL_offset(self,attr):
+        new_ithl = attr.get_write_value()
+        prev_ithl = self._ITHL_offset
+        diff = new_ithl - prev_ithl
+        while(diff):
+            if(diff > 0):
+                _imXPADCam.ITHLIncrease()
+                diff -= 1
+                self._ITHL_offset += 1
+            else:
+                _imXPADCam.ITHLDecrease()
+                diff += 1
+                self._ITHL_offset -= 1
+
 #==================================================================
 #
 #    imXPAD command methods
@@ -187,41 +196,34 @@ class imXPAD(PyTango.Device_4Impl):
     def calibrationOTNPulse(self, attr):
         print ("OTNpulseCalibration in %s", attr)
         _imXPADCam.calibrationOTNPulse(attr)
-    
+        self._config_name = None
+        self._ITHL_offset = 0
+
     def calibrationOTN(self,attr):
         print ("OTNcalibration in %s", attr)
         _imXPADCam.calibrationOTN(attr)
-        
+        self._config_name = None
+        self._ITHL_offset = 0
+
     def calibrationBEAM(self, values):
         print ("BeamCalibration in %s", values)
         time = int(values[0])
         ITHLmax = int(values[1])
         calibConfig = int(values[2])
         _imXPADCam.calibrationBEAM(time, ITHLmax, calibConfig)
+        self._config_name = None
+        self._ITHL_offset = 0
 
     def ITHLIncrease(self):
         print ("ITHLIncrease")
-        #pass
         _imXPADCam.ITHLIncrease()
+        self._ITHL_offset += 1
 
     def ITHLDecrease(self):
         print ("ITHLDecrease")
-        #pass
         _imXPADCam.ITHLDecrease()
+        self._ITHL_offset -= 1
     
-    def setAcquisitionMode(self, attr):    
-        print ("setAcquisitionMode in %s", attr)    
-        _imXPADCam.setAcquisitionMode(self.AdquisitionModes[attr])
-        
-
-    def setFlatFieldCorrectionFlag(self,attr):
-        print ("setFlatFieldCorrectionFlag in %s", attr)
-        _imXPADCam.setFlatFieldCorrectionFlag(attr)
-     
-    def setGeometricalCorrectionFlag(self, attr):
-        print ("setGeometricalCorrectionFlag in %s", attr)
-        _imXPADCam.setGeometricalCorrectionFlag(attr)
-
     def askReady(self):
         print ("In askReady Command")
         val= _imXPADCam.askReady()
@@ -243,11 +245,6 @@ class imXPAD(PyTango.Device_4Impl):
     def resetModules(self):
         _imXPADCam.resetModules()
         
-    def setOutputSignalMode(self, attr):
-        print ("setOutputSignalMode in %s", attr)
-        self.OutputSignalMode = self.OutputSignals[attr]
-        _imXPADCam.setOutputSignalMode(self.OutputSignalMode)
-      
     def saveConfigLToFile(self,config_prefix) :
         print ("saveConfigLToFile in %s", config_prefix)
         config_path = self.config_path
@@ -326,181 +323,8 @@ class imXPAD(PyTango.Device_4Impl):
 #    imXPAD read/write attribute methods
 #
 #==================================================================       
-#------------------------------------------------------------------
-#    Read Acquisition_Mode attribute
-#------------------------------------------------------------------
-    def read_Acquisition_Mode(self, attr):
-        print "In ", self.get_name(), "::read_Acquisition_Mode()"
-        attr.set_value(str(self.AcquisitionMode))
-
-#------------------------------------------------------------------
-#    Write Acquisition_Mode attribute
-#------------------------------------------------------------------
-    def write_Acquisition_Mode(self, attr):
-        print "In ", self.get_name(), "::write_Acquisition_Mode()"
-        val = attr.get_write_value()
-        self.AcquisitionMode = self.AcquisitionModes[val]
-        _imXPADCam.setAcquisitionMode(self.AcquisitionMode)
-        print "Leaving ", self.get_name(), "::write_Acquisition_Mode()"
    
-#------------------------------------------------------------------
-#    read Flat_Field_Correction_Flag attribute
-#------------------------------------------------------------------
-    def read_Flat_Field_Correction_Flag(self, attr):
-        print "In ", self.get_name(), "::read_Flat_Field_Correction_Flag()"
-        attr.set_value(self.FlatFieldCorrectionFlag)
-     
-#------------------------------------------------------------------
-#    Write Flat_Field_Correction_Flag attribute
-#------------------------------------------------------------------
-    def write_Flat_Field_Correction_Flag(self, attr):
-        print "In ", self.get_name(), "::write_Flat_Field_Correction_Flag()"
-        self.FlatFieldCorrectionFlag = bool(attr.get_write_value())
-        _imXPADCam.setFlatFieldCorrectionFlag(self.FlatFieldCorrectionFlag)
-        print "Leaving ", self.get_name(), "::write_Field_Correction_Flag()"
-   
-#------------------------------------------------------------------
-#    read Image_Transfer_Flag attribute
-#------------------------------------------------------------------
-    def read_Image_Transfer_Flag(self, attr):
-        print "In ", self.get_name(), "::read_Image_Transfer_Flag()"
-        self.ImageTransferFlag = _imXPADCam.getImageTransferFlag()
-        attr.set_value(self.ImageTransferFlag)
-        print "Leaving ", self.get_name(), "::read_Image_Transfer_Flag()"
-
-#------------------------------------------------------------------
-#    Write Image_Transfer_Flag attribute
-#------------------------------------------------------------------
-    def write_Image_Transfer_Flag(self, attr):
-        print "In ", self.get_name(), "::write_Image_Transfer_Flag()"
-        self.ImageTransferFlag = bool(attr.get_write_value())
-        _imXPADCam.setImageTransferFlag(self.ImageTransferFlag)
-        print "Leaving ", self.get_name(), "::write_Image_Transfer_Flag()"
-
-#------------------------------------------------------------------
-#    read Over_Flow_Time attribute
-#------------------------------------------------------------------
-    def read_Over_Flow_Time(self, attr):
-        print "In ", self.get_name(), "::read_Over_Flow_Time()"
-        self.OverflowTime = _imXPADCam.getOverflowTime()
-        attr.set_value(self.OverflowTime)
-     
-#------------------------------------------------------------------
-#    Write Image_Transfer_Flag attribute
-#------------------------------------------------------------------
-    def write_Over_Flow_Time(self, attr):
-        print "In ", self.get_name(), "::write_Over_Flow_Time()"
-        self.OverflowTime = bool(attr.get_write_value())
-        _imXPADCam.setOverflowTime(self.OverflowTime)
-        print "Leaving ", self.get_name(), "::write_Over_Flow_Time()"
-        
-#------------------------------------------------------------------
-#    read Flat_Field_Correction_Flag attribute
-#------------------------------------------------------------------
-    def read_Geometrical_Correction_Flag(self, attr):
-        print "In ", self.get_name(), "::read_Geometrical_Correction_Flag()"
-        attr.set_value(self.GeometricalCorrectionFlag)
-   
-#------------------------------------------------------------------
-#    Write Geometrical_Correction_Flag attribute
-#------------------------------------------------------------------
-    def write_Geometrical_Correction_Flag(self, attr):
-        print "In ", self.get_name(), "::write_Geometrical_Correction_Flag()"
-        self.GeometricalCorrectionFlag = bool(attr.get_write_value())
-        _imXPADCam.setGeometricalCorrectionFlag(self.GeometricalCorrectionFlag)
-        print "Leaving ", self.get_name(), "::write_Geometrical_Correction_Flag()"
-   
-#------------------------------------------------------------------
-#    read Output_Signal attribute
-#------------------------------------------------------------------
-    def read_Output_Signal(self, attr):
-        print "In ", self.get_name(), "::read_Output_Signal()"
-        attr.set_value(self.OutputSignalMode)
-   
-#------------------------------------------------------------------
-#    Write Output_Signal attribute
-#------------------------------------------------------------------
-    def write_Output_Signal(self, attr):
-        print "In ", self.get_name(), "::write_Output_Signal()"
-        self.OutputSignalMode = attr.get_write_value()
-        _imXPADCam.setOutputSignalMode(self.OutputSignals[self.OutputSignalMode])
-        print "Leaving ", self.get_name(), "::write_Output_Signal()"
-   
-#------------------------------------------------------------------
-#    read Trigger_Mode attribute
-#------------------------------------------------------------------
-    def read_Trigger_Mode(self, attr):
-        print "In ", self.get_name(), "::read_Trigger_Mode()"
-        val = _imXPADCam.getTrigMode()
-        for i in self.TriggerModes:
-            if self.TriggerModes[i] == val:
-                val = i
-        attr.set_value(str(val))
-   
-#------------------------------------------------------------------
-#    Write Output_Signal attribute
-#------------------------------------------------------------------
-    def write_Trigger_Mode(self, attr):
-        print "In ", self.get_name(), "::write_Trigger_Mode()"
-        val = attr.get_write_value()      
-        _imXPADCam.setTrigMode(self.TriggerModes[val])
-        print "Leaving ", self.get_name(), "::write_Trigger_Mode()"
-      
-#------------------------------------------------------------------
-#    read Image_Format attribute
-#------------------------------------------------------------------
-    def read_Image_Format(self, attr):
-        print "In ", self.get_name(), "::read_Image_Format()"
-        val = self.ImageFileFormat
-        attr.set_value(val)
-   
-#------------------------------------------------------------------
-#    Write Output_Signal attribute
-#------------------------------------------------------------------
-    def write_Image_Format(self, attr):
-        print "In ", self.get_name(), "::write_Image_Format()"
-        val = self.ImageFileFormats[attr.get_write_value()]
-        _imXPADCam.setImageFileFormat(val)
-        print "Leaving ", self.get_name(), "::write_Image_Format()"
-   
-   
-   
-#------------------------------------------------------------------
-#    read Exp_Time attribute
-#------------------------------------------------------------------
-    def read_Exp_Time(self, attr):
-        print "In ", self.get_name(), "::read_Exp_Time()"
-        self.Exp_Time = _imXPADCam.getExpTime()
-        attr.set_value(self.ExpTime)
-   
-#------------------------------------------------------------------
-#    Write Output_Signal attribute
-#------------------------------------------------------------------
-    def write_Exp_Time(self, attr):
-        print "In ", self.get_name(), "::write_Output_SignalExp_Time()"
-        self.Exp_Time = attr.get_write_value()
-        _imXPADCam.setExpTime(self.ExpTime)
-        print "Leaving ", self.get_name(), "::write_setExpTime()"   
-        
-        
-#------------------------------------------------------------------
-#    read NbFrames attribute
-#------------------------------------------------------------------
-    def read_NbFrames(self, attr):
-        print "In ", self.get_name(), "::read_NbFrames()"
-        self.NbFrames = _imXPADCam.getNbTime()
-        attr.set_value(self.NbFrames)
-   
-#------------------------------------------------------------------
-#    Write Output_Signal attribute
-#------------------------------------------------------------------
-    def write_Exp_Time(self, attr):
-        print "In ", self.get_name(), "::write_NbFrames()"
-        self.NbFrames = attr.get_write_value()
-        _imXPADCam.setNbFrames(self.NbFrames)
-        print "Leaving ", self.get_name(), "::write_NbFrames()"   
-                
-        
+#@see __getattr__        
       
 #==================================================================
 #
@@ -520,14 +344,14 @@ class imXPADClass(PyTango.DeviceClass):
          'ip port',[]],
         'config_path' :
         [PyTango.DevString,
-         "Config path",[]]
+         "Config path",['/tmp']]
         }
     
     
     cmd_list = {
-#        'getAttrStringValueList':
-#        [[PyTango.DevString, "Attribute name"],
-#         [PyTango.DevVarStringArray, "Authorized String value list"]],
+        'getAttrStringValueList':
+        [[PyTango.DevString, "Attribute name"],
+         [PyTango.DevVarStringArray, "Authorized String value list"]],
                 
        'getUSBDeviceList':
         [[PyTango.DevVoid, "getUSBDeviceList"],
@@ -563,6 +387,10 @@ class imXPADClass(PyTango.DeviceClass):
                  
         'saveConfigLToFile':
         [[PyTango.DevString, "Save L Config file prefix"],
+         [PyTango.DevVoid,""]],                  
+
+        'saveConfig':
+        [[PyTango.DevString, "Save Config file prefix"],
          [PyTango.DevVoid,""]],                  
         
         'calibrationOTN':
@@ -617,19 +445,10 @@ class imXPADClass(PyTango.DeviceClass):
         [[PyTango.DevVoid, "Decrement of one unit in the global ITHL register"],
          [PyTango.DevVoid,""]],
 
-        'setOutputSignalMode':
-        [[PyTango.DevString, "Type OutputSignalMode"],
-         [PyTango.DevVoid,""]],    
-                
             }
 
     attr_list = {                  
         "Acquisition_Mode":
-        [[PyTango.DevString, 
-         PyTango.SCALAR, 
-         PyTango.READ_WRITE]],
-                 
-        "Trigger_Mode":
         [[PyTango.DevString, 
          PyTango.SCALAR, 
          PyTango.READ_WRITE]],
@@ -640,12 +459,12 @@ class imXPADClass(PyTango.DeviceClass):
          PyTango.READ_WRITE]],
                  
         "Flat_Field_Correction_Flag":
-        [[PyTango.DevShort, 
+        [[PyTango.DevString, 
          PyTango.SCALAR, 
          PyTango.READ_WRITE]],
                  
         "Image_Transfer_Flag":
-        [[PyTango.DevShort, 
+        [[PyTango.DevString, 
          PyTango.SCALAR, 
          PyTango.READ_WRITE]],
         
@@ -655,23 +474,24 @@ class imXPADClass(PyTango.DeviceClass):
          PyTango.READ_WRITE]],
                  
         "Geometrical_Correction_Flag":
-        [[PyTango.DevShort, 
+        [[PyTango.DevString, 
          PyTango.SCALAR, 
          PyTango.READ_WRITE]],    
                           
-        "Image_Format":
+        "Image_File_Format":
         [[PyTango.DevString, 
          PyTango.SCALAR, 
-         PyTango.READ_WRITE]],      
-                  
-        "Trigger_Mode":
-        [[PyTango.DevString, 
+         PyTango.READ_WRITE]],
+
+        "config_name":
+        [[PyTango.DevString,
+          PyTango.SCALAR,
+          PyTango.READ_WRITE]],
+
+        "ITHL_offset":
+        [[PyTango.DevLong, 
          PyTango.SCALAR, 
-         PyTango.READ_WRITE]],               
-#           "ITHL":
-#           [[PyTango.DevShort, 
-#           PyTango.SCALAR, 
-#           PyTango.READ_WRITE]],                   
+         PyTango.READ_WRITE]],
         }
 
     def __init__(self,name) :

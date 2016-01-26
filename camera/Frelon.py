@@ -139,30 +139,14 @@ class Frelon(PyTango.Device_4Impl):
         attr.set_value(seq_status)
 
     def read_readout_time(self,attr):
-        if self.has_time_calc():
-            ans= _FrelonAcq.execFrelonSerialCmd(">TRD?")
-            rep= ans.split(":")[1]
-            readout_time= float(rep)/1e6
-            attr.set_value(readout_time)
-        else:
-            PyTango.Except.throw_exception('DevFailed',\
-                    'Readout Time not implemented on this frelon model',\
-                    'Frelon Class')
+        cam = _FrelonAcq.getFrelonCamera()
+        readout_time = cam.getReadoutTime()
+        attr.set_value(readout_time)
 
     def read_transfer_time(self,attr):
-        if self.has_time_calc():
-            ans= _FrelonAcq.execFrelonSerialCmd(">TTR?")
-            rep= ans.split(":")[1]
-            transfer_time= float(rep)/1e6
-            attr.set_value(transfer_time)
-        else:
-            PyTango.Except.throw_exception('DevFailed',\
-                    'Transfer Time not implemented on this frelon model',\
-                    'Frelon Class')
-
-    def has_time_calc(self):
-        model = _FrelonAcq.getCameraModel()
-        return model.hasTimeCalc()
+        cam = _FrelonAcq.getFrelonCamera()
+        transfer_time = cam.getTransferTime()
+        attr.set_value(transfer_time)
 
 
 class FrelonClass(PyTango.DeviceClass):
