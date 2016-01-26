@@ -130,6 +130,13 @@ class Pco(PyTango.Device_4Impl):
         attr.set_value(val)
 
 #------------------------------------------------------------------
+#    pcoLogsEnabled attribute R
+#------------------------------------------------------------------
+    def read_pcoLogsEnabled(self, attr):
+        val  = _PcoCam.talk("pcoLogsEnabled")
+        attr.set_value(val)
+
+#------------------------------------------------------------------
 #    maxNbImages attribute R
 #------------------------------------------------------------------
     def read_maxNbImages(self, attr):
@@ -277,6 +284,10 @@ class PcoClass(PyTango.DeviceClass):
            PyTango.SCALAR,
            PyTango.READ]],
          'frameRate':	  
+         [[PyTango.DevString,
+           PyTango.SCALAR,
+           PyTango.READ]],
+         'pcoLogsEnabled':	  
          [[PyTango.DevString,
            PyTango.SCALAR,
            PyTango.READ]],
