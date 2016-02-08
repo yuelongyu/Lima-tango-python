@@ -482,6 +482,9 @@ class LimaCCDs(PyTango.Device_4Impl) :
         if SystemHasFeature('Core.CtSaving.EDFConcat'):
             self.__SavingFormat['EDFCONCAT'] = Core.CtSaving.EDFConcat
             self.__SavingFormatDefaultSuffix[Core.CtSaving.EDFConcat] = '.edf'
+        if SystemHasFeature('Core.CtSaving.EDFLZ4'):
+            self.__SavingFormat['EDFLZ4'] = Core.CtSaving.EDFLZ4
+            self.__SavingFormatDefaultSuffix[Core.CtSaving.EDFLZ4] = '.edf.lz4'
 
         self.__SavingMode = {'MANUAL' : Core.CtSaving.Manual,
                              'AUTO_FRAME' : Core.CtSaving.AutoFrame,

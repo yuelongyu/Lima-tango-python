@@ -526,6 +526,8 @@ class LimaTacoCCDs(PyTango.Device_4Impl, object):
             pars.fileFormat = Core.CtSaving.HDF5
         elif pars.suffix.lower()[-5:] == '.tiff':
             pars.fileFormat = Core.CtSaving.TIFFFormat
+        elif pars.suffix.lower()[-8:] == '.edf.lz4':
+            pars.fileFormat = Core.CtSaving.EDFLZ4
         else:
             pars.fileFormat = Core.CtSaving.RAW
         saving.setParameters(pars)
