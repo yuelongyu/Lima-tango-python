@@ -46,9 +46,6 @@ from Lima import Dexela as DexelaAcq
 from AttrHelper import get_attr_4u, get_attr_string_value_list
 
 
-basepath,modefilename = os.path.split(DexelaAcq.__file__)
-database_path = os.path.join(basepath,'DexelaConfig.cfg')
-
 class Dexela(PyTango.Device_4Impl):
 
     Core.DEB_CLASS(Core.DebModApplication, 'LimaCCDs')
@@ -82,6 +79,8 @@ class Dexela(PyTango.Device_4Impl):
 	#Full well mode
 	self.__FullWellMode = {'HIGH' : _DexelaInterface.High,
 			       'LOW' : _DexelaInterface.Low}
+        self.__SkipFirstFrame = {'YES' : True,
+                                 'NO' : False}
 #------------------------------------------------------------------
 #    getAttrStringValueList command:
 #
@@ -112,12 +111,9 @@ class DexelaClass(PyTango.DeviceClass):
     class_property_list = {}
 
     device_property_list = {
-        'database_path':
+        'format_file':
         [PyTango.DevString,
-         "Database path",[database_path]],
-        'sensor_format':
-        [PyTango.DevString,
-         "Sensor Format",["sensor2923"]],
+         "Format file",[]],
         }
 
     cmd_list = {
@@ -127,7 +123,7 @@ class DexelaClass(PyTango.DeviceClass):
         }
 
     attr_list = {
-	'full_well_mode':
+	'skip_first_frame':
 	[[PyTango.DevString,
 	  PyTango.SCALAR,
 	  PyTango.READ_WRITE]],
@@ -142,11 +138,11 @@ class DexelaClass(PyTango.DeviceClass):
 #----------------------------------------------------------------------------
 _DexelaInterface = None
 
-def get_control(database_path,sensor_format) :
+def get_control(format_file) :
     global _DexelaInterface
 
     if _DexelaInterface is None:
-	_DexelaInterface = DexelaAcq.Interface(database_path,sensor_format)
+	_DexelaInterface = DexelaAcq.Interface(format_file)
     return Core.CtControl(_DexelaInterface)
 
 def get_tango_specific_class_n_device():
