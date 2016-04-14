@@ -112,8 +112,9 @@ class RayonixHs(PyTango.Device_4Impl):
         self.__ReadoutMode = {'READOUT_MODE_STANDARD': RayonixHsAcq.READOUT_MODE_STANDARD,
                               'READOUT_MODE_HIGH_GAIN': RayonixHsAcq.READOUT_MODE_HIGH_GAIN,
                               'READOUT_MODE_LOW_NOISE': RayonixHsAcq.READOUT_MODE_LOW_NOISE,
-                              'READOUT_MODE_HDR': RayonixHsAcq.READOUT_MODE_HDR,
+                              'READOUT_MODE_HDR32': RayonixHsAcq.READOUT_MODE_HDR32,
                               'READOUT_MODE_TURBO': RayonixHsAcq.READOUT_MODE_TURBO,
+                              'READOUT_MODE_HDR16': RayonixHsAcq.READOUT_MODE_HDR16
                               }
         self.__Attribute2FunctionBase = {'frame_mode': 'FrameMode',
                                          'frame_trigger_signal_type': 'FrameTriggerSignalType',
