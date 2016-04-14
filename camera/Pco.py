@@ -123,10 +123,24 @@ class Pco(PyTango.Device_4Impl):
         attr.set_value(val)
 
 #------------------------------------------------------------------
-#    framerate attribute R
+#    framerate attribute READ
 #------------------------------------------------------------------
     def read_frameRate(self, attr):
         val  = _PcoCam.talk("frameRate")
+        attr.set_value(val)
+
+#------------------------------------------------------------------
+#    lastImgRecorded attribute READ
+#------------------------------------------------------------------
+    def read_lastImgRecorded(self, attr):
+        val  = _PcoCam.talk("lastImgRecorded")
+        attr.set_value(val)
+
+#------------------------------------------------------------------
+#    lastImgAcquired attribute READ
+#------------------------------------------------------------------
+    def read_lastImgAcquired(self, attr):
+        val  = _PcoCam.talk("lastImgAcquired")
         attr.set_value(val)
 
 #------------------------------------------------------------------
@@ -169,18 +183,61 @@ class Pco(PyTango.Device_4Impl):
 #------------------------------------------------------------------
     def read_pixelRate(self, attr):
         val  = _PcoCam.talk("pixelRate")
-        key= _getDictKey(self._Pco__Pixelrate, val)
-        attr.set_value(key)
+        #key= _getDictKey(self._Pco__Pixelrate, val)
+        #attr.set_value(key)
         #print "--- read_pixelRate>",val, key
+        attr.set_value(val)
+        print "--- read_pixelRate>",val
 
     def write_pixelRate(self, attr):
         data = attr.get_write_value()
         key = data
-        value= _getDictValue(self._Pco__Pixelrate, key)
+        #value= _getDictValue(self._Pco__Pixelrate, key)
+        #cmd = '%s %s' % ('pixelRate', value)
+
+        value= key
         cmd = '%s %s' % ('pixelRate', value)
         val  = _PcoCam.talk(cmd)
-        #print "---- write_pixelRate>", cmd, key, value
+        print "---- write_pixelRate>", cmd, key, value, val
         
+#------------------------------------------------------------------
+#    pixelRateInfo attribute READ
+#------------------------------------------------------------------
+    def read_pixelRateInfo(self, attr):
+        val  = _PcoCam.talk("pixelRateInfo")
+        attr.set_value(val)
+        #print "--- read_pixelRateInfo>",val
+
+#------------------------------------------------------------------
+#    pixelRateValidValues attribute READ
+#------------------------------------------------------------------
+    def read_pixelRateValidValues(self, attr):
+        val  = _PcoCam.talk("pixelRateValidValues")
+        attr.set_value(val)
+        #print "--- read_pixelRateInfo>",val
+
+#------------------------------------------------------------------
+#    adc attribute RW
+#------------------------------------------------------------------
+    def read_adc(self, attr):
+        val  = _PcoCam.talk("adc")
+        attr.set_value(val)
+        #print "--- read_pixelRate>",val
+
+    def write_adc(self, attr):
+        value = attr.get_write_value()
+        cmd = '%s %s' % ('adc', value)
+        val  = _PcoCam.talk(cmd)
+        #print "---- write_pixelRate>", cmd, key, value, val
+        
+#------------------------------------------------------------------
+#    adcMax attribute R
+#------------------------------------------------------------------
+    def read_adcMax(self, attr):
+        val  = _PcoCam.talk("adcMax")
+        attr.set_value(val)
+        #print "--- read_pixelRate>",val
+
 #------------------------------------------------------------------
 #    rollingShutter attribute RW
 #------------------------------------------------------------------
@@ -287,11 +344,35 @@ class PcoClass(PyTango.DeviceClass):
          [[PyTango.DevString,
            PyTango.SCALAR,
            PyTango.READ]],
+         'lastImgRecorded':	  
+         [[PyTango.DevString,
+           PyTango.SCALAR,
+           PyTango.READ]],
+         'lastImgAcquired':	  
+         [[PyTango.DevString,
+           PyTango.SCALAR,
+           PyTango.READ]],
          'pcoLogsEnabled':	  
          [[PyTango.DevString,
            PyTango.SCALAR,
            PyTango.READ]],
          'pixelRate':	  
+         [[PyTango.DevString,
+           PyTango.SCALAR,
+           PyTango.READ_WRITE]],
+         'pixelRateInfo':	  
+         [[PyTango.DevString,
+           PyTango.SCALAR,
+           PyTango.READ]],
+         'pixelRateValidValues':	  
+         [[PyTango.DevString,
+           PyTango.SCALAR,
+           PyTango.READ]],
+         'adcMax':	  
+         [[PyTango.DevString,
+           PyTango.SCALAR,
+           PyTango.READ]],
+         'adc':	  
          [[PyTango.DevString,
            PyTango.SCALAR,
            PyTango.READ_WRITE]],
@@ -330,6 +411,7 @@ _PcoControl = None
 def get_control(debug_control = "0", 
                 debug_module = "0", 
                 debug_type="0",
+                mem_factor="0",
                 debug_format = "0x31", 
                 params = [], 
                 **keys) :
@@ -342,6 +424,7 @@ def get_control(debug_control = "0",
     debModule = int(debug_module,0)
     debType = int(debug_type,0)
     debFormat = int(debug_format,0)
+    memFactor = int(mem_factor,0)
 
     paramsIn = "".join("%s;" % (x,) for x in params)
 
@@ -353,6 +436,7 @@ def get_control(debug_control = "0",
     print "%s [%s] [0x%x]" % (" debug_module:", debug_module, debModule)
     print "%s [%s] [0x%x]" % (" debug_format:", debug_format, debFormat)
     print "%s [%s] [0x%x]" % ("   debug_type:", debug_type, debType)
+    print "%s [%s] [0x%x]" % ("   mem_factor:", mem_factor, memFactor)
     print "======================================"
 
     if debControl:
@@ -369,7 +453,14 @@ def get_control(debug_control = "0",
         _PcoCam = PcoAcq.Camera(paramsIn)
         _PcoInterface = PcoAcq.Interface(_PcoCam)
         _PcoControl = Core.CtControl(_PcoInterface)
-        
+        memFactor0 = _PcoControl.buffer().getMaxMemory()
+        _PcoControl.buffer().setMaxMemory(memFactor)
+        memFactor1 = _PcoControl.buffer().getMaxMemory()
+
+    print "================================================="
+    print "%s org[%d] req[%d] now[%d]" % ("   mem_factor:", memFactor0, memFactor, memFactor1)
+    print "================================================="
+
 
     return _PcoControl
 
