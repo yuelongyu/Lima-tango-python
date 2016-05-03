@@ -338,10 +338,10 @@ class RayonixHsClass(PyTango.DeviceClass):
         [PyTango.DevString,
          'Electronic shutter enabled', ['false']],
         'cooler_temperature_setpoint':
-        [PyTango.DevString,
+        [PyTango.DevDouble,
          'Detector cooling setpoint', [-120]],
         'sensor_temperature_setpoint':
-        [PyTango.DevString,
+        [PyTango.DevDouble,
          'Sensor temperature setpoint', [-80]],
         'output1_signal_type':
         [PyTango.DevString,
