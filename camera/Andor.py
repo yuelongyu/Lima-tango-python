@@ -1,7 +1,7 @@
 ############################################################################
 # This file is part of LImA, a Library for Image Acquisition
 #
-# Copyright (C) : 2009-2012
+# Copyright (C) : 2009-2016
 # European Synchrotron Radiation Facility
 # BP 220, Grenoble 38043
 # FRANCE
@@ -77,13 +77,37 @@ class Andor(PyTango.Device_4Impl):
                              'OFF': False}
         self.__ShutterLevel = {'LOW':0,
                                    'HIGH':1}       
-        self.__Attribute2FunctionBase = {'fast_trigger': 'FastExtTrigger',
-                                         'shutter_level': 'ShutterLevel',
-                                         'temperature': 'Temperature',
-                                         'temperature_sp': 'TemperatureSP',
-                                         'cooler': 'Cooler',
-                                         'cooling_status': 'CoolingStatus',
-                                         }
+        self.__FanMode = {'FULL': AndorAcq.FAN_ON_FULL,
+                      'LOW': AndorAcq.FAN_ON_LOW,
+                      'OFF': AndorAcq.FAN_OFF,
+                      }
+        self.__HighCapacity = {'HIGH_CAPACITY': AndorAcq.HIGH_CAPACITY,
+                               'HIGH_SENSITIVITY': AndorAcq.HIGH_SENSITIVITY,
+                               }
+        self.__BaselineClamp = {'ON': True,
+                                'OFF': False}
+
+        #Only needed to map attribute and function which does not fit the with naming convention.
+        self.__Attribute2FunctionBase = {
+            'temperature_sp': 'TemperatureSP',
+            #'my_attr1': 'AnOtherFunctionName',
+                                       }
+
+        # prepare lists of supported PGain/VerticalShiftSpeed/AdcSpeed
+        self.__PGain = {}
+        max_ind = _AndorInterface.getPGainMaxIndex()
+        for ind in range(max_ind):
+            self.__PGain[_AndorInterface.getPGainString(ind)] = ind
+        
+        self.__VsSpeed = {}
+        max_ind = _AndorInterface.getVsSpeedMaxIndex()
+        for ind in range(max_ind):
+            self.__VsSpeed[_AndorInterface.getVsSpeedString(ind)] = ind
+
+        self.__AdcSpeed = {}
+        max_ind = _AndorInterface.getAdcSpeedMaxIndex()
+        for ind in range(max_ind):
+            self.__AdcSpeed[_AndorInterface.getAdcSpeedPaireString(ind)] = ind
         self.init_device()
                                                
 #------------------------------------------------------------------
@@ -103,15 +127,16 @@ class Andor(PyTango.Device_4Impl):
         # Load the properties
         self.get_device_properties(self.get_device_class())
 
-        # Apply properties if any
+        
+       # Apply properties if any
         if self.p_gain:
-            _AndorInterface.setPGain(self.p_gain)
+            _AndorInterface.setPGain(self.__PGain[self.p_gain])
             
         if self.vs_speed:
-            _AndorInterface.setVsSpeed(self.vs_speed)
+            _AndorInterface.setVsSpeed(self.__VsSpeed[self.vs_speed])
             
         if self.adc_speed:
-            _AndorInterface.setAdcSpeed(self.adc_speed)
+            _AndorInterface.setAdcSpeed(self.__AdcSpeed[self.adc_speed])
 
         if self.temperature_sp:            
             _AndorInterface.setTemperatureSP(self.temperature_sp)
@@ -124,6 +149,18 @@ class Andor(PyTango.Device_4Impl):
             
         if self.shutter_level:
             _AndorInterface.setShutterLevel(self.__ShutterLevel[self.shutter_level])
+
+        if self.fan_mode:
+            _AndorInterface.setFanMode(self.__FanMode[self.fan_mode])
+
+        if self.high_capacity:
+            _AndorInterface.setHighCapacity(self.__HighCapacity[self.high_capacity])
+
+        if self.baseline_clamp:
+            _AndorInterface.setBaselineClamp(self.__BaselineClamp[self.baseline_clamp])
+
+ 
+        
 
 #==================================================================
 #
@@ -203,6 +240,15 @@ class AndorClass(PyTango.DeviceClass):
         'shutter_level':
         [PyTango.DevString,
          'level of the shutter output ("LOW"/"HIGH")', []],                 
+        'fan_mode':
+        [PyTango.DevString,
+         'Fan mode ("FAN_ON_FULL"/"ON_LOW"/"FAN_OFF")',[]],
+        'high_capacity': 
+        [PyTango.DevString,
+         'High Capacity ("HIGH_CAPACITY"/"HIGH_SENSITIVITY")',[]],
+        'baseline_clamp': 
+        [PyTango.DevString,
+         'baseline clamp  ("ON"/"OFF")',[]],
         }
 
 
@@ -287,34 +333,65 @@ class AndorClass(PyTango.DeviceClass):
              'description': '[0]: exposure, [1]: latency',
              }],
         'p_gain':
-        [[PyTango.DevShort,
+        [[PyTango.DevString,
           PyTango.SCALAR,
           PyTango.READ_WRITE],
          {
              'label':'Preamplifier Gain',
              'unit': 'N/A',
-             'format': '%d',
-             'description': 'Premplifier Gain which can be apply to the readout, from 0-N, check the camera documentation for the valid range',
+             'format': '%s',
+             'description': 'Premplifier Gain which can be apply to the readout, from X1-XN, check the camera documentation for the valid range',
              }],
         'vs_speed':
-        [[PyTango.DevShort,
+        [[PyTango.DevString,
           PyTango.SCALAR,
           PyTango.READ_WRITE],
          {
              'label':'Vertical shift speed',
              'unit': 'N/A',
-             'format': '%d',
-             'description': 'Vertical shift speed,  from 0-N, check the camera documentation for the valid range, -1 to set the max. speed',
+             'format': '',
+             'description': 'Vertical shift speed,  in us/pixel, check the camera documentation for the valid range',
              }],
         'adc_speed':
-        [[PyTango.DevShort,
+        [[PyTango.DevString,
           PyTango.SCALAR,
           PyTango.READ_WRITE],
          {
              'label': 'ADC/HSspeed pairs of possible combination',
              'unit': 'N/A',
-             'format': '%d',
-             'description': 'ADC and Horizontal shift speed in the range [0-N], check the documentatio for more help, -1 to set the max ADC/speed pair',
+             'format': '',
+             'description': 'ADC and Horizontal shift speed, in ADCchannel/Freq.Mhz, check the documentatio for more help',
+             }],
+
+        'high_capacity':
+        [[PyTango.DevString,
+          PyTango.SCALAR,
+          PyTango.READ_WRITE],
+         {
+             'label':'Off/On the High Capacity mode',
+             'unit': 'N/A',
+             'format': '',
+             'description': 'HIGH_CAPACITY or HIGH_SENSITIVITY',
+             }],
+        'fan_mode':
+        [[PyTango.DevString,
+          PyTango.SCALAR,
+          PyTango.READ_WRITE],
+         {
+             'label':'Off/On_full/On_low the fan',
+             'unit': 'N/A',
+             'format': '',
+             'description': 'FAN_OFF or FAN_ON_FULL, or FAN_ON_LOW',
+             }],
+        'baseline_clamp':
+        [[PyTango.DevString,
+          PyTango.SCALAR,
+          PyTango.READ_WRITE],
+         {
+             'label':'On/Off the baseline clamping',
+             'unit': 'N/A',
+             'format': '',
+             'description': 'ON or OFF',
              }],
 
         }
