@@ -59,7 +59,6 @@ class Pco(PyTango.Device_4Impl):
     def __init__(self,*args) :
         PyTango.Device_4Impl.__init__(self,*args)
 
-        self._Pco__Pixelrate = { "LOW": "95333333", "HIGH":"286000000" }    
         self._Pco__Rollingshutter = { "only for EDGE": "-1", "GLOBAL": "0", "ROLLING":"1" }    
         
         self.init_device()
@@ -88,35 +87,35 @@ class Pco(PyTango.Device_4Impl):
         return get_attr_4u(self, name, _PcoAcq)
 
 #------------------------------------------------------------------
-#    lastError attribute R
+#    lastError attribute READ
 #------------------------------------------------------------------
     def read_lastError(self, attr):
         val  = _PcoCam.talk("lasterror")
         attr.set_value(val)
 
 #------------------------------------------------------------------
-#    camInfo attribute R
+#    camInfo attribute READ
 #------------------------------------------------------------------
     def read_camInfo(self, attr):
         val  = _PcoCam.talk("camInfo")
         attr.set_value(val)
 
 #------------------------------------------------------------------
-#    camType attribute R
+#    camType attribute READ
 #------------------------------------------------------------------
     def read_camType(self, attr):
         val  = _PcoCam.talk("camType")
         attr.set_value(val)
 
 #------------------------------------------------------------------
-#    clXferPar attribute R
+#    clXferPar attribute READ
 #------------------------------------------------------------------
     def read_clXferPar(self, attr):
         val  = _PcoCam.talk("clTransferParam")
         attr.set_value(val)
 
 #------------------------------------------------------------------
-#    cocRunTime attribute R
+#    cocRunTime attribute READ
 #------------------------------------------------------------------
     def read_cocRunTime(self, attr):
         val  = _PcoCam.talk("cocRunTime")
@@ -144,61 +143,53 @@ class Pco(PyTango.Device_4Impl):
         attr.set_value(val)
 
 #------------------------------------------------------------------
-#    pcoLogsEnabled attribute R
+#    pcoLogsEnabled attribute READ
 #------------------------------------------------------------------
     def read_pcoLogsEnabled(self, attr):
         val  = _PcoCam.talk("pcoLogsEnabled")
         attr.set_value(val)
 
 #------------------------------------------------------------------
-#    maxNbImages attribute R
+#    maxNbImages attribute READ
 #------------------------------------------------------------------
     def read_maxNbImages(self, attr):
         val  = _PcoCam.talk("maxNbImages")
         attr.set_value(val)
 
 #------------------------------------------------------------------
-#    info attribute R
+#    info attribute READ
 #------------------------------------------------------------------
     def read_info(self, attr):
         val= _PcoCam.talk("")
         attr.set_value(val)
 
 #------------------------------------------------------------------
-#    version attribute R
+#    version attribute READ
 #------------------------------------------------------------------
     def read_version(self, attr):
         val= _PcoCam.talk("timestamp")
         attr.set_value(val)
 
 #------------------------------------------------------------------
-#    traceAcq attribute R
+#    traceAcq attribute READ
 #------------------------------------------------------------------
     def read_traceAcq(self, attr):
         val= _PcoCam.talk("traceAcq")
         attr.set_value(val)
 
 #------------------------------------------------------------------
-#    pixelRate attribute RW
+#    pixelRate attribute READ_WRITE
 #------------------------------------------------------------------
     def read_pixelRate(self, attr):
         val  = _PcoCam.talk("pixelRate")
-        #key= _getDictKey(self._Pco__Pixelrate, val)
-        #attr.set_value(key)
-        #print "--- read_pixelRate>",val, key
         attr.set_value(val)
-        print "--- read_pixelRate>",val
+        #print "--- read_pixelRate>",val
 
     def write_pixelRate(self, attr):
-        data = attr.get_write_value()
-        key = data
-        #value= _getDictValue(self._Pco__Pixelrate, key)
-        #cmd = '%s %s' % ('pixelRate', value)
-
-        value= key
+        value = attr.get_write_value()
         cmd = '%s %s' % ('pixelRate', value)
         val  = _PcoCam.talk(cmd)
-        print "---- write_pixelRate>", cmd, key, value, val
+        #print "---- write_pixelRate>", cmd, value, val
         
 #------------------------------------------------------------------
 #    pixelRateInfo attribute READ
@@ -217,7 +208,7 @@ class Pco(PyTango.Device_4Impl):
         #print "--- read_pixelRateInfo>",val
 
 #------------------------------------------------------------------
-#    adc attribute RW
+#    adc attribute READ_WRITE
 #------------------------------------------------------------------
     def read_adc(self, attr):
         val  = _PcoCam.talk("adc")
@@ -231,7 +222,7 @@ class Pco(PyTango.Device_4Impl):
         #print "---- write_pixelRate>", cmd, key, value, val
         
 #------------------------------------------------------------------
-#    adcMax attribute R
+#    adcMax attribute READ
 #------------------------------------------------------------------
     def read_adcMax(self, attr):
         val  = _PcoCam.talk("adcMax")
@@ -239,7 +230,7 @@ class Pco(PyTango.Device_4Impl):
         #print "--- read_pixelRate>",val
 
 #------------------------------------------------------------------
-#    rollingShutter attribute RW
+#    rollingShutter attribute READ_WRITE
 #------------------------------------------------------------------
     def read_rollingShutter(self, attr):
         val  = _PcoCam.talk("rollingShutter")
