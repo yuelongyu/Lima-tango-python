@@ -445,11 +445,12 @@ def get_control(debug_control = "0",
         _PcoInterface = PcoAcq.Interface(_PcoCam)
         _PcoControl = Core.CtControl(_PcoInterface)
         memFactor0 = _PcoControl.buffer().getMaxMemory()
-        _PcoControl.buffer().setMaxMemory(memFactor)
-        memFactor1 = _PcoControl.buffer().getMaxMemory()
+        #_PcoControl.buffer().setMaxMemory(memFactor)
+        #memFactor1 = _PcoControl.buffer().getMaxMemory()
 
     print "================================================="
-    print "%s org[%d] req[%d] now[%d]" % ("   mem_factor:", memFactor0, memFactor, memFactor1)
+    #print "%s org[%d] req[%d] now[%d]" % ("   mem_factor:", memFactor0, memFactor, memFactor1)
+    print "%s org[%d]" % ("   mem_factor:", memFactor0)
     print "================================================="
 
 
