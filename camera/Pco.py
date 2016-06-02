@@ -39,6 +39,12 @@
 #         (c) - Bliss - ESRF
 #=============================================================================
 #
+#=============================================================================
+# 2016/06/02 - property params
+#    split between 1 param (str) and more params (class 'PyTango._PyTango.StdStringVector')
+#=============================================================================
+
+
 import PyTango
 import pdb
 from Lima import Core
@@ -417,7 +423,12 @@ def get_control(debug_control = "0",
     debFormat = int(debug_format,0)
     memFactor = int(mem_factor,0)
 
-    paramsIn = "".join("%s;" % (x,) for x in params)
+    if(type(params) == str):
+		# <type 'str'>
+        paramsIn = params
+    else:
+        # <class 'PyTango._PyTango.StdStringVector'>
+        paramsIn = "".join("%s;" % (x,) for x in params)
 
     print "============= Properties ============="
     print "         keys:", keys
