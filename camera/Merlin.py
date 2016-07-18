@@ -98,6 +98,11 @@ class Merlin (PyTango.Device_4Impl):
         self.__TriggerLevel = {'NORMAL': MerlinAcq.Camera.NORMAL,
                                'INVERTED': MerlinAcq.Camera.INVERTED}
 
+        self.__FillMode = {'NOFILL' : MerlinAcq.Camera.NOFILL,
+                           'INSERTZERO' : MerlinAcq.Camera.INSERTZERO,
+                           'DISTRIBUTE' : MerlinAcq.Camera.DISTRIBUTE,
+                           'INTERPOLATE' : MerlinAcq.Camera.INTERPOLATE}
+
         self.init_device()
 
         
@@ -335,22 +340,22 @@ class Merlin (PyTango.Device_4Impl):
         _MerlinCamera.setTriggerOutLVDSInvert(trigout)
         
     @Core.DEB_MEMBER_FUNCT
-    def read_triggerOutTTLDelay(self, attr):
-        attr.set_value(_MerlinCamera.getTriggerOutTTLDelay())
+    def read_triggerInTTLDelay(self, attr):
+        attr.set_value(_MerlinCamera.getTriggerInTTLDelay())
         
     @Core.DEB_MEMBER_FUNCT
-    def write_triggerOutTTLDelay(self, attr):
+    def write_triggerInTTLDelay(self, attr):
         data=attr.get_write_value()
-        _MerlinCamera.setTriggerOutTTLDelay(data)
+        _MerlinCamera.setTriggerInTTLDelay(data)
         
     @Core.DEB_MEMBER_FUNCT
-    def read_triggerOutLVDSDelay(self, attr):
-        attr.set_value(_MerlinCamera.getTriggerOutLVDSDelay())
+    def read_triggerInLVDSDelay(self, attr):
+        attr.set_value(_MerlinCamera.getTriggerInLVDSDelay())
         
     @Core.DEB_MEMBER_FUNCT
-    def write_triggerOutLVDSDelay(self, attr):
+    def write_triggerInLVDSDelay(self, attr):
         data=attr.get_write_value()
-        _MerlinCamera.setTriggerOutLVDSDelay(data)
+        _MerlinCamera.setTriggerInLVDSDelay(data)
         
     @Core.DEB_MEMBER_FUNCT
     def read_triggerUseDelay(self, attr):
@@ -427,6 +432,17 @@ class Merlin (PyTango.Device_4Impl):
         data=attr.get_write_value()
         mode = AttrHelper._getDictValue(self.__Switch,data)
         _MerlinCamera.setFileEnable(mode)
+
+    @Core.DEB_MEMBER_FUNCT
+    def read_fillMode(self, attr):
+        mode = _MerlinCamera.getFillMode()
+        attr.set_value(AttrHelper._getDictKey(self.__FillMode,mode))
+        
+    @Core.DEB_MEMBER_FUNCT
+    def write_fillMode(self, attr):
+        data=attr.get_write_value()
+        mode = AttrHelper._getDictValue(self.__FillMode,data)
+        _MerlinCamera.setFillMode(mode)
 
     def read_acqRunning(self, attr):
         attr.set_value(_MerlinCamera.isAcqRunning())
@@ -676,7 +692,7 @@ class MerlinClass(PyTango.DeviceClass):
              'label':'Trigger stop mode',
              'unit': 'INTERNAL/RISING_EDGE_TTL/FALLING_EDGE_TTL/RISING_EDGE_LVDS/FALLING_EDGE_LVDS/SOFT',
                 }],
-        'triggerOutTTL':
+        'triggerInTTL':
             [[PyTango.DevString,
             PyTango.SCALAR,
             PyTango.READ_WRITE],
@@ -684,7 +700,7 @@ class MerlinClass(PyTango.DeviceClass):
              'label':'TTL Trigger stop mode',
              'unit': 'TTL/LVDS/TTL_DELAYED/LVDS_DELAYED/FOLLOW_SHUTTER/ONE_PER_ACQ_BURST/SHUTTER_AND_SENSOR_READ/OUTPUT_BUSY',
                 }],
-        'triggerOutLVDS':
+        'triggerInLVDS':
             [[PyTango.DevString,
             PyTango.SCALAR,
             PyTango.READ_WRITE],
@@ -708,7 +724,7 @@ class MerlinClass(PyTango.DeviceClass):
              'label':'LVDS Trigger invert mode',
              'unit': 'NORMAL/INVERTED',
                 }],
-        'triggerOutTTLDelay':
+        'triggerInTTLDelay':
             [[PyTango.DevLong64,
             PyTango.SCALAR,
             PyTango.READ_WRITE],
@@ -718,7 +734,7 @@ class MerlinClass(PyTango.DeviceClass):
              'min_value': '0',
              'max_value': '68719476720',             
                 }],
-        'triggerOutLVDSDelay':
+        'triggerInLVDSDelay':
             [[PyTango.DevLong64,
             PyTango.SCALAR,
             PyTango.READ_WRITE],
@@ -797,6 +813,15 @@ class MerlinClass(PyTango.DeviceClass):
             {
              'label':'Enable file saving to Merlin PC',
              'unit': 'ON/OFF',
+                }],
+
+        'fillMode':
+            [[PyTango.DevString,
+            PyTango.SCALAR,
+            PyTango.READ_WRITE],
+            {
+             'label':'Set the Fillmode for inter-chip gap',
+             'unit': 'NoFill/InsertZero/Distribute/Interpolate',
                 }],
 
           'acqRunning':
