@@ -71,21 +71,33 @@ class Andor(PyTango.Device_4Impl):
         PyTango.Device_4Impl.__init__(self,cl,name)
 
         # dictionnaries to be used with AttrHelper.get_attr_4u
-        self.__FastTrigger = {'ON':True,
+        self.__FastExtTrigger = {'ON':True,
                            'OFF':False}
         self.__Cooler = {'ON': True,
                              'OFF': False}
         self.__ShutterLevel = {'LOW':0,
                                    'HIGH':1}       
-        self.__FanMode = {'FULL': AndorAcq.FAN_ON_FULL,
-                      'LOW': AndorAcq.FAN_ON_LOW,
-                      'OFF': AndorAcq.FAN_OFF,
-                      }
-        self.__HighCapacity = {'HIGH_CAPACITY': AndorAcq.HIGH_CAPACITY,
-                               'HIGH_SENSITIVITY': AndorAcq.HIGH_SENSITIVITY,
-                               }
-        self.__BaselineClamp = {'ON': True,
-                                'OFF': False}
+
+        if _AndorInterface.getFanMode() == AndorAcq.FAN_UNSUPPORTED:
+            self.__FanMode = {'UNSUPPORTED': AndorAcq.FAN_UNSUPPORTED}
+        else:
+            self.__FanMode = {'FULL': AndorAcq.FAN_ON_FULL,
+                              'LOW': AndorAcq.FAN_ON_LOW,
+                              'OFF': AndorAcq.FAN_OFF,
+                              }
+
+        if _AndorInterface.getHighCapacity() == AndorAcq.HC_UNSUPPORTED:
+            self.__HighCapacity = {'UNSUPPORTED': AndorAcq.HC_UNSUPPORTED}
+        else:
+            self.__HighCapacity = {'HIGH_CAPACITY': AndorAcq.HIGH_CAPACITY,
+                                   'HIGH_SENSITIVITY': AndorAcq.HIGH_SENSITIVITY,
+                                   }
+
+        if _AndorInterface.getBaselineClamp() == AndorAcq.BLCLAMP_UNSUPPORTED:
+            self.__BaselineClamp = {'UNSUPPORTED': AndorAcq.BLCLAMP_UNSUPPORTED}
+        else:
+            self.__BaselineClamp = {'ON': AndorAcq.BLCLAMP_ENABLED,
+                                    'OFF': AndorAcq.BLCLAMP_DISABLED}
 
         #Only needed to map attribute and function which does not fit the with naming convention.
         self.__Attribute2FunctionBase = {
@@ -144,19 +156,26 @@ class Andor(PyTango.Device_4Impl):
         if self.cooler:
             _AndorInterface.setCooler(self.__Cooler[self.cooler])
             
-        if self.fast_trigger:
-            _AndorInterface.setFastExtTrigger(self.__FastTrigger[self.fast_trigger])
+        if self.fast_ext_trigger:
+            _AndorInterface.setFastExtTrigger(self.__FastExtTrigger[self.fast_ext_trigger])
             
         if self.shutter_level:
             _AndorInterface.setShutterLevel(self.__ShutterLevel[self.shutter_level])
 
-        if self.fan_mode:
-            _AndorInterface.setFanMode(self.__FanMode[self.fan_mode])
 
-        if self.high_capacity:
-            _AndorInterface.setHighCapacity(self.__HighCapacity[self.high_capacity])
+        if self.__FanMode.has_key('UNSUPPORTED') and self.fan_mode:
+            deb.Error('Cannot set fan_mode property, not supported for this camera model')
+        elif self.fan_mode:
+                _AndorInterface.setFanMode(self.__FanMode[self.fan_mode])
 
-        if self.baseline_clamp:
+        if self.__HighCapacity.has_key('UNSUPPORTED') and self.high_capacity:
+            deb.Error('Cannot set high_capacity property, not supported for this camera model')
+        elif self.high_capacity:
+                _AndorInterface.setHighCapacity(self.__HighCapacity[self.high_capacity])
+
+        if self.__BaselineClamp.has_key('UNSUPPORTED') and self.baseline_clamp:
+            deb.Error('Cannot set baseline_clamp propery, not supported for this camera model')
+        elif self.baseline_clamp:
             _AndorInterface.setBaselineClamp(self.__BaselineClamp[self.baseline_clamp])
 
  
@@ -220,13 +239,13 @@ class AndorClass(PyTango.DeviceClass):
         [PyTango.DevShort,
          'Camera number', []],
         'p_gain':
-        [PyTango.DevShort,
+        [PyTango.DevString,
          'Preamplifier gain', []],
         'vs_speed':
-        [PyTango.DevShort,
+        [PyTango.DevString,
          'Vertical shift speed', []],
         'adc_speed':
-        [PyTango.DevShort,
+        [PyTango.DevString,
          'ADC/HSspeed pairs', []],
         'temperature_sp':
         [PyTango.DevShort,
@@ -234,7 +253,7 @@ class AndorClass(PyTango.DeviceClass):
         'cooler':
         [PyTango.DevString,
          'Start or stop the cooler ("ON"/"OFF")', []],
-        'fast_trigger':
+        'fast_ext_trigger':
         [PyTango.DevString,
          'Trigger fast mode ("ON"/"OFF")', []],
         'shutter_level':
@@ -262,32 +281,29 @@ class AndorClass(PyTango.DeviceClass):
 
     #    Attribute definitions
     attr_list = {
-        'fast_trigger':
+        'fast_ext_trigger':
         [[PyTango.DevString,
           PyTango.SCALAR,
           PyTango.READ_WRITE],
          {
-             'label':'Fast trigger mode, see manual for usage',
              'unit': 'N/A',
              'format': '',
-             'description': 'OFF or ON',
+             'description': 'Fast trigger mode, see manual for usage, OFF or ON',
              }],
         'shutter_level':
         [[PyTango.DevString,
           PyTango.SCALAR,
           PyTango.READ_WRITE],
          {
-             'label':'Shutter output level, see manual for usage',
              'unit': 'N/A',
              'format': '',
-             'description': 'LOW or HIGH',
+             'description': 'Shutter output level, see manual for usage LOW or HIGH',
              }],
        'temperature_sp':
         [[PyTango.DevShort,
           PyTango.SCALAR,
           PyTango.READ_WRITE],
          {
-             'label':'Set/get the temperature set-point',
              'unit': 'C',
              'format': '%1d',
              'description': 'in Celsius',
@@ -297,7 +313,6 @@ class AndorClass(PyTango.DeviceClass):
           PyTango.SCALAR,
           PyTango.READ],
          {
-             'label':'get the current temperature sensor',
              'unit': 'C',
              'format': '%1d',
              'description': 'in Celsius',
@@ -307,27 +322,25 @@ class AndorClass(PyTango.DeviceClass):
           PyTango.SCALAR,
           PyTango.READ_WRITE],
          {
-             'label':'Start/stop the cooler',
              'unit': 'N/A',
              'format': '',
-             'description': 'OFF or ON',
+             'description': 'Start/stop the cooler, OFF or ON',
              }],
         'cooling_status':
         [[PyTango.DevString,
           PyTango.SCALAR,
           PyTango.READ],
          {
-             'label':'Fast trigger mode, see manual for usage',
+             'label':'Cooling status',
              'unit': 'N/A',
              'format': '%1d',
-             'description': '0-OFF / 1-ON',
+             'description': 'return status of the cooling system, tell if the setpoint is reached',
              }],
         'timing':
         [[PyTango.DevFloat,
           PyTango.SPECTRUM,
           PyTango.READ,2],
         {
-             'label':'Timing values, exposure and latency times',
              'unit': 'second',
              'format': '%f',
              'description': '[0]: exposure, [1]: latency',
@@ -337,7 +350,6 @@ class AndorClass(PyTango.DeviceClass):
           PyTango.SCALAR,
           PyTango.READ_WRITE],
          {
-             'label':'Preamplifier Gain',
              'unit': 'N/A',
              'format': '%s',
              'description': 'Premplifier Gain which can be apply to the readout, from X1-XN, check the camera documentation for the valid range',
@@ -347,7 +359,6 @@ class AndorClass(PyTango.DeviceClass):
           PyTango.SCALAR,
           PyTango.READ_WRITE],
          {
-             'label':'Vertical shift speed',
              'unit': 'N/A',
              'format': '',
              'description': 'Vertical shift speed,  in us/pixel, check the camera documentation for the valid range',
@@ -357,18 +368,15 @@ class AndorClass(PyTango.DeviceClass):
           PyTango.SCALAR,
           PyTango.READ_WRITE],
          {
-             'label': 'ADC/HSspeed pairs of possible combination',
              'unit': 'N/A',
              'format': '',
              'description': 'ADC and Horizontal shift speed, in ADCchannel/Freq.Mhz, check the documentatio for more help',
              }],
-
         'high_capacity':
         [[PyTango.DevString,
           PyTango.SCALAR,
           PyTango.READ_WRITE],
          {
-             'label':'Off/On the High Capacity mode',
              'unit': 'N/A',
              'format': '',
              'description': 'HIGH_CAPACITY or HIGH_SENSITIVITY',
@@ -378,7 +386,6 @@ class AndorClass(PyTango.DeviceClass):
           PyTango.SCALAR,
           PyTango.READ_WRITE],
          {
-             'label':'Off/On_full/On_low the fan',
              'unit': 'N/A',
              'format': '',
              'description': 'FAN_OFF or FAN_ON_FULL, or FAN_ON_LOW',
@@ -388,7 +395,6 @@ class AndorClass(PyTango.DeviceClass):
           PyTango.SCALAR,
           PyTango.READ_WRITE],
          {
-             'label':'On/Off the baseline clamping',
              'unit': 'N/A',
              'format': '',
              'description': 'ON or OFF',
