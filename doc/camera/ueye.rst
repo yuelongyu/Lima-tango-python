@@ -1,5 +1,5 @@
 Ueye Tango device
-=======
+==================
 
 This is the reference documentation of the Simulator Tango device.
 

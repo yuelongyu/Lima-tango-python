@@ -1,5 +1,5 @@
 Frelon Tango device
-======
+=======================
 
 This is the reference documentation of the Frelon Tango device.
 

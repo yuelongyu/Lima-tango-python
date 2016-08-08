@@ -1,5 +1,5 @@
 RayonixHs Tango device
-===========
+======================
 
 This is the reference documentation of the RayonixHs Tango device.
 

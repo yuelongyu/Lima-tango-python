@@ -1,5 +1,5 @@
 Pilatus Tango device
-=======
+====================
 
 This is the reference documentation of the Pilatus Tango device.
 

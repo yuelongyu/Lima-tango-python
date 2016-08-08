@@ -1,5 +1,5 @@
 RoperScientific Tango device
-===============
+============================
 
 This is the reference documentation of the RoperScientific Tango device.
 
@@ -23,7 +23,7 @@ Temperature		rw	DevFloat	 	The detector read temperature
 TemperatureSetPoint     rw      DevFloat                The detector temperature setpoint
 Gain                    rw      DevLong                 The detector gain factor
 InternalAcqMode         rw      DevString               The internal acquisition mode, **STANDARD**, **CONTINUOUS** or **FOCUS**
-UseFullFrame            rw      DevLong                 ????
+UseFullFrame            rw      DevLong                 
 ======================= ======= ======================= ======================================================================
 
 Please refer to the PVCAM (SDK) user's guide for more information on how to use InternalAcqMode and UseFullFrame attributes.

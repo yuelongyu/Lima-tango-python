@@ -1,5 +1,5 @@
 Prosilica Tango device
-=========
+=======================
 
 This is the reference documentation of the Prosilica Tango device.
 

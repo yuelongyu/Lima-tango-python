@@ -1,5 +1,5 @@
 Ultra Tango device
-=======
+==================
 
 This is the reference documentation of the Ultra Tango device.
 

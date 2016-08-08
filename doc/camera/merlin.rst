@@ -1,5 +1,5 @@
 Merlin Tango device
-=========
+======================
 
 This is the reference documentation of the Merlin Tango device.
 
@@ -24,6 +24,7 @@ Simulate          No              0               Command simulation mode
 
 Attributes
 ----------
+
 ======================= ======= ================ ======================================================================
 Attribute name		    RW	    Type			 Description
 ======================= ======= ================ ======================================================================
@@ -61,7 +62,7 @@ thScanNum               rw      DevLong          Threshold number to scan (0 < n
 thStart                 rw      DevFloat         Threshold scan start energy keV (0 < e < 999.99)
 thStep                  rw      DevFloat         Threshold scan step energy keV (0 < e < 999.99)
 thStop                  rw      DevFloat         Threshold scan stop energy keV (0 < e < 999.99)
-======================= ======= ======================= ======================================================================
+======================= ======= ================ ======================================================================
 
 Commands
 --------

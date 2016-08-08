@@ -43,7 +43,7 @@ DevCcdSetRoI            DevVarLongArray[4]:  DevVoid                 Set the new
 DevCcdGetRoi		DevVoid              DevVarLongArray[4]:     Return the last Region-of-Interest
                                              startx,endx,starty,
  					     endy
-DevCcdSetFilePar       DevStringArray[5]
+DevCcdSetFilePar        DevStringArray[5]
 DevCcdHeader
 DevCcdImageHeader
 DevCcdHeaderDelimiter
@@ -67,7 +67,7 @@ DevCcdGetLstErrMsg
 DevCcdGetCurrent
 DevGetDebugFlags
 DevSetDebugFlags
-=======================	=============== =======================	===========================================
+=======================	==================== ======================= ===========================================
 
 
 

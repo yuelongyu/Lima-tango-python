@@ -1,5 +1,5 @@
 Xspress3 Tango device
-=========
+=====================
 
 This is the reference documentation of the Xspress3 Tango device.
 

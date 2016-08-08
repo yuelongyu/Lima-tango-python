@@ -17,6 +17,7 @@ debug_module    No              0               To set the debug module list (he
 debug_format    No              0               To set the debug format (hex value)
 debug_type      No              0               To set the debug type (hex value)	
 =============== =============== =============== ==============================================================
+
 For the debug flags you can have a look on the **common/include/Debug.h** file.
 
 

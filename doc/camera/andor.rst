@@ -1,5 +1,5 @@
 Andor Tango device
-=============
+=====================
 
 This is the reference documentation of the Andor Tango device.
 
@@ -46,8 +46,7 @@ fan_mode		rw	DevString		The FAN mode for extra-cooling: **(\*\*)**
 							 - **FAN_OFF**  
 							 - **FAN_ON_FULL**
 							 - **FAN_ON_LOW**
-fast_ext_trigger	rw	DevString		Fast external trigger mode, see Andor documentation for usage Mode 
-							are:
+fast_ext_trigger	rw	DevString		Fast external trigger mode, see Andor documentation for usage Mode are:
 							 - **ON**, fast mode, the camera will not wait until the a keep clean cycle has been completed before accepting the next 
 							   trigger
 							 - **OFF**, slow mode	

@@ -1,5 +1,5 @@
 Mythen3 Tango device
-=========
+======================
 
 This is the reference documentation of the Mythen3 Tango device.
 
@@ -67,13 +67,13 @@ Commands
 =======================	================ ======================= ===========================================
 Command name		    Arg. in		     Arg. out		         Description
 =======================	================ ======================= ===========================================
-Init			        DevVoid 	     DevVoid                 Do not use
-State			        DevVoid		     DevLong                 Return the device state
-Status			        DevVoid		     DevString               Return the device state as a string
-LogStart	            DevVoid 	     DevVoid                 Start logging server activity (use sparingly)
-LogStop 		        DevVoid 	     DevVoid                 Stop logging server activity
-LogRead		            DevVoid 	     DevVoid                 Print logging file to terminal
+Init			DevVoid 	 DevVoid                 Do not use
+State			DevVoid		 DevLong                 Return the device state
+Status			DevVoid		 DevString               Return the device state as a string
+LogStart	        DevVoid 	 DevVoid                 Start logging server activity (use sparingly)
+LogStop 		DevVoid 	 DevVoid                 Stop logging server activity
+LogRead		        DevVoid 	 DevVoid                 Print logging file to terminal
 ReadFrame               DevLong          DevVarULongArray        [in] frame number [out] a frame of mythen data
-ReadData		        DevVoid 	     DevVarULongArray        [out] all frames of mythen data
+ReadData		DevVoid 	 DevVarULongArray        [out] all frames of mythen data
 ResetMythen             DevVoid          DevVoid                 Reset
 =======================	================ ======================= ===========================================

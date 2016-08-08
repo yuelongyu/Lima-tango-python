@@ -1,5 +1,5 @@
 PointGrey Tango device
-===========
+======================
 
 This is the reference documentation of the PointGrey Tango device.
 

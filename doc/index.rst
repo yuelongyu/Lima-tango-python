@@ -3,33 +3,42 @@ Python TANGO server
 
 This is the python Tango devices server by the ESRF team.
 
-This server provides a main device for the standard camera control, a camera specific device for the camera configuration and a set of "plugin" devices for extra operations or just to export some subset of interface.
+This server provides a main device for the standard camera control, a camera specific device for the camera configuration and a set of "plugin" devices for extra operations or just to provide some specific API for clients.
 
-Thanks to the Lima framework,  the control can be achieved through a common device as well as some features like calculations. The configuration of the detector is done by  the specific detector device. 
-At ESRF we decided to develop the Tango devices only in python language which implies that all the detector C++ interfaces have been wrapped to python modules.
+Thanks to the Lima framework,  the control can be achieved through a common server and a set of software operations (Mask,Flatfield,Background,RoiCounter,PeakFinder...) on image as well. The configuration of the detector is done by  the specific detector device. 
+At ESRF we decided to develop the Tango devices only in python language which implies that all the detector C++ interfaces have been wrapped in python.
 
 Main device: LimaCCDs
 ----------------------
 
-**LimaCCDs** is the generic device and it provides a unique interface to control any of the supported cameras. One can find below the 
-commands, the attributes and the proporties. 
+**LimaCCDs** is the generic device and it provides a unique interface to control any supported cameras. One can find below the 
+commands, the attributes and the properties. 
 
-To run a LimaCCDs server you will need at least to configure the **LimaCameraType** property. This property will tell to the LimaCCDs server
-which camera you want to run,  then it will try to create the corresponding camera device (see the camera device chapter below for detailed list).
+To run a LimaCCDs server you will need at least to configure the **LimaCameraType** property. This property is used by  the LimaCCDs server to create
+the proper camera device. Pleas refer a specific camera (e.g Basler) device chapter for further information.
 
 Property
 ''''''''
 ========================== =============== ====================== =====================================================
 Property name		   Mandatory       Default value          Description
 ========================== =============== ====================== =====================================================
+AccThresholdCallbackModule No              ""                     Plugin file name which manages threshold
+BufferMaxMemory		   No		   70			  The maximum among of memory in percent of the available RAM
+			   		   			  that Lima is using to allocate frame buffer.
+ConfigurationFilePath      No              ~/lima_<serv-name>.cfg The default configuration file path
+ConfigurationDefaultName   No              "default"              Your default configuration name
+IntrumentName		   No		   ""			  The instrument name, e.g ESRF-ID02 (**\***)
 LimaCameraType		   Yes             N/A                    The camera type: e.g. Maxipix
+MaxVideoFPS		   No		   30			  Maximum value for frame-per-second
 NbProcessingThread         No              1                      The max number of thread for processing.
                                                                   Can be used to improve the performance 
                                                                   when more than 1 task (plugin device) is activated
-AccThresholdCallbackModule No              ""                     Plugin file name which manages threshold
-ConfigurationFilePath      No              ~/lima_<serv-name>.cfg The default configuration file path
-ConfigurationDefaultName   No              "default"              Your default configuration name
+TangoEvent		   No              False		  Activate Tango Event for counters and new images
+UserDetectorName	   No		   ""			  A user detector identifier, e.g frelon-saxs, (**\***)
 ========================== =============== ====================== =====================================================
+
+(**\***) Properties only used to set meta-data in HDF5 saving format.
+
 
 Commands
 '''''''''
@@ -115,6 +124,7 @@ for instance the **Acquisition** module attributes  are always named **acq_<attr
  * Video   (prefix *video_*)
  * Shared Memory (prefix *shared_memory_*)
  * Configuration (prefix *config_*)
+ * Buffer (prefix *buffer_*)
 
 Many attributes are of type DevString and they have a fixed list of possible values. you can get the list by calling the special command
 **getAttrStringValueList**. Because a camera cannot support some attribute values , the command getAttrStringValueList will give you the 
@@ -144,6 +154,8 @@ ready_for_next_image	 ro	 DevBoolean		 True after a camera readout, otherwise fa
 							 used for fast synchronisation with trigger mode (internal
 							 or external).
 ready_for_next_acq	 ro	 DevBoolean		 True after end of acquisition, otherwise false.
+user_detector_name	 rw	 DevString		 User detector name
+instrument_name		 rw	 DevString		 Intrument/beamline name
 \                        \       \                       \
 \                        \       **ACQUISITION**         \
 acq_status		 ro	 DevString		 Acquisition status: Ready, Running, Fault or Configuration
@@ -210,7 +222,7 @@ saving_prefix		 rw	 DevString		 The image file prefix
 saving_suffix		 rw	 DevString		 The image file suffix
 saving_next_number	 rw	 DevLong		 The image next number
 							 The full image file name is:
-							  - /saving_directory/saving_prefix+sprintf("%04d",saving_next_number)+saving_suffix
+							 /saving_directory/saving_prefix+sprintf("%04d",saving_next_number)+saving_suffix
 saving_format		 rw	 DevString		 The data format for saving:
 							  - **Raw**, save in binary format
 							  - **Edf**, save in ESRF Data Format
@@ -247,12 +259,10 @@ image_flip		 rw	 DevBoolean[2]		 Flip on the image, [0] = flip over X axis, [1] 
 image_rotation           rw      DevString               Rotate the image: "0", "90", "180" or "270"
 \                        \       \                       \
 \                        \       **SHUTTER**             \
-shutter_mode		 rw	 DevString		 Using the external shutter output to synchronize a shutter with 
-                                                         the acquisition several modes are available:
-                                                          - **Manual**
-                                                          - **Auto_frame**, the output signal is activated for
-                                                            each individual frame of a sequence
-                                                          - **Auto_sequence**, the output signal is activated
+shutter_mode		 rw	 DevString		 Synchronization for shutter,  modes are available:
+							  - **Manual**
+							  - **Auto_frame**, the output signal is activated for each individual frame of a sequence
+							  - **Auto_sequence**, the output signal is activated
 							    during the whole sequence
 shutter_open_time	 rw	 DevDouble		 Delay (sec.) between the output shutter trigger and the
 							 beginning of the acquisition, if not null the shutter signal
@@ -326,6 +336,9 @@ shared_memory_active     rw                              Activate or not the sha
 \                        \       **CONFIG**              \
 config_available_module  ro      DevString[]             List of possible config modules, 
 config_available_name    ro      DevString[]             List of existing config names
+\                        \       **BUFFER**              \
+buffer_max_memory	 rw	 DevShort		 The maximum among of memory in percent of the available RAM
+			   		   		 that Lima is using to allocate frame buffer.
 ======================== ======= ======================= =======================================================================================
 
 

@@ -1,5 +1,5 @@
 PerkinElmer Tango device
-============
+========================
 
 This is the reference documentation of the PerkinElmer Tango device.
 
