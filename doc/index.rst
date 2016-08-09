@@ -427,17 +427,19 @@ For more details about the camera device interface, please have a look on the fo
   :maxdepth: 1
 
   Andor <camera/andor>
+  Andor3 <camera/andor3>
   Basler <camera/basler>
   Dexela <camera/dexela>
   Frelon <camera/frelon>
   ImXPAD <camera/imxpad>
   Maxipix <camera/maxipix>
   Merlin <camera/merlin>
-  Mythen3 <camera/mythen3>
+  Dectris Eiger <camera/eiger>
+  Dectris Mythen3 <camera/mythen3>
+  Dectris Pilatus <camera/pilatus>
   PCO <camera/pco>
   Perkin Elmer <camera/perkinelmer>
   Photonic Science <camera/photonicscience>
-  Pilatus <camera/pilatus>
   PointGrey <camera/pointgrey>
   Prosilica <camera/prosilica>
   Rayonix HS <camera/rayonixhs>
@@ -445,6 +447,7 @@ For more details about the camera device interface, please have a look on the fo
   Simulator <camera/simulator>
   Ueye <camera/ueye>
   Ultra <camera/ultra>
+  V4l2 <camera/v4l2>
   XH <camera/xh>
   Xpad <camera/xpad>
   Xspress3 <camera/xspress3>
