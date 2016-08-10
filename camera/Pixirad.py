@@ -62,9 +62,9 @@ class Pixirad(PyTango.Device_4Impl):
 #    Device constructor
 #------------------------------------------------------------------
     @Core.DEB_MEMBER_FUNCT
-    def __init__(self,*args) :
+    def __init__(self,cl, name) :
 #
-        PyTango.Device_4Impl.__init__(self,*args)
+        PyTango.Device_4Impl.__init__(self,cl, name)
 ### #TOUT METTRE EN MINUSCULE ############# 
 
 ### TODO: Decide if we keep this exposed to the tango interface.                            
@@ -122,6 +122,10 @@ class Pixirad(PyTango.Device_4Impl):
 	  
 	self.__Polarity = { 'POS' : PixiradModule.Camera.POS,\
 			    'NEG' : PixiradModule.Camera.NEG};
+			    
+			    
+			    
+	#__Attribute2FunctionBase		????    
 	  
         self.init_device()
         
@@ -152,9 +156,9 @@ class Pixirad(PyTango.Device_4Impl):
 ### Call directly set/get 
     def __getattr__(self,name) :      
         try:  
-	  get_attr_4u(self, name, _PixiradInterface)
+	  return get_attr_4u(self, name, _PixiradInterface)
         except:
-	  get_attr_4u(self, name, _PixiradCamera)
+	  return get_attr_4u(self, name, _PixiradCamera)
         
         
 
@@ -173,7 +177,10 @@ class PixiradClass(PyTango.DeviceClass):
          "IP Adress of the detector.",[]],
         'port_number':
         [PyTango.DevShort,
-         "port number for detector (DAQ commands)",[]]
+         "port number for detector (DAQ commands)",[]],
+        'initial_model':
+        [PyTango.DevString,
+         "Model type PX1, PX8",[]]
         }
 
     cmd_list = {
@@ -442,14 +449,14 @@ from Lima import Pixirad as PixiradModule
 _PixiradCamera = None
 _PixiradInterface = None
 
-def get_control(ip_address = '192.168.0.1',port_number='6666', **keys) :
+def get_control(ip_address = '192.168.0.1',port_number='6666', initial_model = 'PX8', **keys) :
     #properties are passed here as string
     global _PixiradCamera
     global _PixiradInterface
 
 
     if _PixiradCamera is None:
-        _PixiradCamera = PixiradModule.Camera(ip_address, int(port_number))
+        _PixiradCamera = PixiradModule.Camera(ip_address, int(port_number), initial_model)
         _PixiradInterface = PixiradModule.Interface(_PixiradCamera)
         
     return Core.CtControl(_PixiradInterface)
