@@ -439,6 +439,7 @@ For more details about the camera device interface, please have a look on the fo
   Dectris Pilatus <camera/pilatus>
   PCO <camera/pco>
   Perkin Elmer <camera/perkinelmer>
+  Pixirad <camera/pixirad>
   Photonic Science <camera/photonicscience>
   PointGrey <camera/pointgrey>
   Prosilica <camera/prosilica>
