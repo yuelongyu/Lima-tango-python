@@ -359,6 +359,10 @@ class Xspress3(PyTango.Device_4Impl):
         data=attr.get_write_value()
         _Xspress3Camera.setItfgTiming(data[0], data[1], data[2]);
 
+    def write_saveChannels(self, attr):
+        data=attr.get_write_value()
+        _Xspress3Camera.setSaveChannels(data.tolist());
+
     def read_histogram(self, attr):
         data = _Xspress3Camera.readRawHistogram(self.attr_channel,0)
         __dataflat_cache = numpy.array(data.buffer.ravel())
@@ -394,9 +398,9 @@ class Xspress3Class(PyTango.DeviceClass):
             [PyTango.DevBoolean,
             "true = don`t create a scope data module",
             [False]],
-        'nbFrames':
+        'maxFrames':
             [PyTango.DevLong,
-            "Number of 4096 energy bin spectra timeframes",
+            "Maximum number of 4096 energy bin spectra timeframes",
             [1]],
         'scopeModName':
             [PyTango.DevString,
@@ -606,6 +610,11 @@ class Xspress3Class(PyTango.DeviceClass):
             [[PyTango.DevLong,
               PyTango.SPECTRUM,
               PyTango.WRITE, 3]],
+
+         'saveChannels':
+            [[PyTango.DevLong,
+              PyTango.SPECTRUM,
+              PyTango.WRITE, 128]],
      }
 
     def __init__(self, name) :
@@ -622,12 +631,12 @@ class Xspress3Class(PyTango.DeviceClass):
 _Xspress3Camera = None
 _Xspress3Interface = None
 
-def get_control(nbCards=1, nbFrames=1, baseIPaddress="", basePort=0, baseMACaddress="", nbChans=1, createScopeModule=0, scopeModName="", debug=1, cardIndex=0, noUDP=0, directoryName="", **keys) :
+def get_control(nbCards=1, maxFrames=1, baseIPaddress="", basePort=0, baseMACaddress="", nbChans=1, createScopeModule=0, scopeModName="", debug=1, cardIndex=0, noUDP=0, directoryName="", **keys) :
     global _Xspress3Camera
     global _Xspress3Interface
-#    Core.DebParams.setTypeFlags(Core.DebParams.AllFlags)
+    Core.DebParams.setTypeFlags(Core.DebParams.AllFlags)
     if _Xspress3Interface is None:
-        _Xspress3Camera = Xspress3Acq.Camera(int(nbCards), int(nbFrames), baseIPaddress, int(basePort), baseMACaddress, int(nbChans),
+        _Xspress3Camera = Xspress3Acq.Camera(int(nbCards), int(maxFrames), baseIPaddress, int(basePort), baseMACaddress, int(nbChans),
                                           bool(int(createScopeModule)), scopeModName, int(debug), int(cardIndex), bool(int(noUDP)), directoryName)
         _Xspress3Interface = Xspress3Acq.Interface(_Xspress3Camera)
     return Core.CtControl(_Xspress3Interface)
