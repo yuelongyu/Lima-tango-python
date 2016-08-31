@@ -303,7 +303,7 @@ class Xspress3(PyTango.Device_4Impl):
         data.releaseBuffer()
         attr.set_value(__dataflat_cache)
 
-    def write_setpoint(self, attr):
+    def write_setPoint(self, attr):
         data=attr.get_write_value()
         _Xspress3Camera.setFanSetpoint(data)
 
