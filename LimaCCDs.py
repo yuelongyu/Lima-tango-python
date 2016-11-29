@@ -1205,15 +1205,27 @@ class LimaCCDs(PyTango.Device_4Impl) :
     
     ## @brief read write statistic
     #
+    # return saving_speed,compression_speed, compression_ratio,incoming_speed
     @Core.DEB_MEMBER_FUNCT
-    def read_write_statistic(self,attr) :
+    def read_write_average_statistic(self,attr) :
         saving = self.__control.saving()
-        stat = saving.getWriteTimeStatistic()
-        if not len(stat) :
-            attr.set_value([-1],1)
-        else:
-            attr.set_value(stat,len(stat))
+        attr.set_value(saving.getStatisticCounters(),4)
 	
+    ## @brief get the write statistics history size
+    #
+    @Core.DEB_MEMBER_FUNCT
+    def read_write_average_statistic_history(self,attr) :
+        saving = self.__control.saving()
+        attr.set_value(saving.getStatisticHistorySize())
+
+    
+    ## @brief set the write statistics history size
+    #
+    @Core.DEB_MEMBER_FUNCT
+    def write_image_events_max_rate(self,attr) :
+        stat_size = attr.get_write_value()
+        saving = self.__control.saving()
+        saving.setStatisticHistorySize(stat_size)
 
     ## @brief Write current shutter state if in manual mode
     # True-Open, False-Close
@@ -2230,10 +2242,14 @@ class LimaCCDsClass(PyTango.DeviceClass) :
         [[PyTango.DevBoolean,
           PyTango.SCALAR,
           PyTango.READ]],
-        'write_statistic':
+        'write_average_statistic':
         [[PyTango.DevDouble,
           PyTango.SPECTRUM,
-          PyTango.READ,256]],
+          PyTango.READ,4]],
+        'write_average_statistic_history':
+        [[PyTango.DevLong,
+          PyTango.SCALAR,
+          PyTango.READ_WRITE]],
         'shutter_mode':
         [[PyTango.DevString,
           PyTango.SCALAR,
