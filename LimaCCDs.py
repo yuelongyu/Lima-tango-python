@@ -1600,6 +1600,12 @@ class LimaCCDs(PyTango.Device_4Impl) :
     def stopAcq(self) :
         self.__control.stopAcq()
 
+   ##@brief abort an acquisition
+    #
+    @Core.DEB_MEMBER_FUNCT
+    def abortAcq(self) :
+        self.__control.abortAcq()
+
     ##@brief reset acquisition
     #
     @Core.DEB_MEMBER_FUNCT
@@ -1946,6 +1952,9 @@ class LimaCCDsClass(PyTango.DeviceClass) :
         [[PyTango.DevVoid,""],
          [PyTango.DevVoid,""]],
         'stopAcq':
+        [[PyTango.DevVoid,""],
+         [PyTango.DevVoid,""]],
+        'abortAcq':
         [[PyTango.DevVoid,""],
          [PyTango.DevVoid,""]],
         'reset':
