@@ -380,6 +380,13 @@ class LimaCCDs(PyTango.Device_4Impl) :
             pass
         else:
             Core.Processlib.PoolThreadMgr.get().setNumberOfThread(nb_thread)
+        try:
+            max_concurrent_writing_task = int(self.SavingMaxConcurrentWritingTask)
+        except ValueError:
+            pass
+        else:
+            saving = self.__control.saving()
+            saving.setMaxConcurrentWritingTask(max_concurrent_writing_task)
 
         interface = self.__control.hwInterface()
         self.__detinfo = interface.getHwCtrlObj(Core.HwCap.DetInfo)
@@ -436,6 +443,7 @@ class LimaCCDs(PyTango.Device_4Impl) :
                                          'saving_overwrite_policy' : 'OverwritePolicy',
                                          'saving_format' : 'Format',
                                          'saving_managed_mode' : 'ManagedMode',
+                                         'saving_max_concurrent_writing_task': 'MaxConcurrentWritingTask',
                                          'shutter_mode' : 'Mode',
 					 'image_rotation':'Rotation',
                                          'video_mode':'Mode',
@@ -888,8 +896,7 @@ class LimaCCDs(PyTango.Device_4Impl) :
     #
     @Core.DEB_MEMBER_FUNCT
     def write_acc_saturated_threshold(self,attr) :        
-        data = attr.get_write_value()
-
+        data = attr.get_write_
         acc = self.__control.accumulation()
         acc.setPixelThresholdValue(data)
 
@@ -1941,6 +1948,9 @@ class LimaCCDsClass(PyTango.DeviceClass) :
         'TangoEvent' :
         [PyTango.DevBoolean,
          "Activate Tango event",[False]],
+        'SavingMaxConcurrentWritingTask':
+        [PyTango.DevShort,
+         "Maximum concurrent writing tasks",[1]],
         }
 
     #    Command definitions
@@ -2314,6 +2324,10 @@ class LimaCCDsClass(PyTango.DeviceClass) :
 	[[PyTango.DevString,
 	  PyTango.SCALAR,
 	  PyTango.READ_WRITE]],
+        'saving_max_concurrent_writing_task':
+        [[PyTango.DevShort,
+          PyTango.SCALAR,
+          PyTango.READ_WRITE]],
         'debug_modules_possible':
          [[PyTango.DevString,
           PyTango.SPECTRUM,
