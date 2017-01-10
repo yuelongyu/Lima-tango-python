@@ -65,7 +65,31 @@ class Pco(PyTango.Device_4Impl):
     def __init__(self,*args) :
         PyTango.Device_4Impl.__init__(self,*args)
 
-        self._Pco__Rollingshutter = { "only for EDGE": "-1", "GLOBAL": "0", "ROLLING":"1" }    
+        #self._Pco__Rollingshutter = { "only for EDGE": "-1", "GLOBAL": "0", "ROLLING":"1" }    
+
+        self.__Attribute2FunctionBase = {
+											'acqTimeoutRetry': 'AcqTimeoutRetry',
+											'adc': 'Adc',
+											'adcMax': 'AdcMax',
+											'cocRunTime': 'CocRunTime',
+											'frameRate': 'FrameRate',
+											'lastImgAcquired': 'LastImgAcquired',
+											'lastImgRecorded': 'LastImgRecorded',
+											'maxNbImages': 'MaxNbImages',
+											'pcoLogsEnabled': 'PcoLogsEnabled',
+											'info': 'CamInfo',
+											'camInfo': 'CamInfo',
+											'camType': 'CamType',
+											'version': 'Version',
+											'clXferPar': 'ClTransferParam',
+											'lastError': 'LastError',
+											'pixelRateValidValues': 'PixelRateValidValues',
+											'pixelRateInfo': 'PixelRateInfo',
+											'pixelRate': 'PixelRate',
+											'rollingShutter': 'RollingShutter',
+											'traceAcq': 'TraceAcq',
+                                            }
+        
         
         self.init_device()
 
@@ -90,167 +114,10 @@ class Pco(PyTango.Device_4Impl):
 #
 #==================================================================
     def __getattr__(self,name) :
-        return get_attr_4u(self, name, _PcoAcq)
+        return get_attr_4u(self, name, _PcoCam)
 
-#------------------------------------------------------------------
-#    lastError attribute READ
-#------------------------------------------------------------------
-    def read_lastError(self, attr):
-        val  = _PcoCam.talk("lasterror")
-        attr.set_value(val)
 
-#------------------------------------------------------------------
-#    camInfo attribute READ
-#------------------------------------------------------------------
-    def read_camInfo(self, attr):
-        val  = _PcoCam.talk("camInfo")
-        attr.set_value(val)
 
-#------------------------------------------------------------------
-#    camType attribute READ
-#------------------------------------------------------------------
-    def read_camType(self, attr):
-        val  = _PcoCam.talk("camType")
-        attr.set_value(val)
-
-#------------------------------------------------------------------
-#    clXferPar attribute READ
-#------------------------------------------------------------------
-    def read_clXferPar(self, attr):
-        val  = _PcoCam.talk("clTransferParam")
-        attr.set_value(val)
-
-#------------------------------------------------------------------
-#    cocRunTime attribute READ
-#------------------------------------------------------------------
-    def read_cocRunTime(self, attr):
-        val  = _PcoCam.talk("cocRunTime")
-        attr.set_value(val)
-
-#------------------------------------------------------------------
-#    framerate attribute READ
-#------------------------------------------------------------------
-    def read_frameRate(self, attr):
-        val  = _PcoCam.talk("frameRate")
-        attr.set_value(val)
-
-#------------------------------------------------------------------
-#    lastImgRecorded attribute READ
-#------------------------------------------------------------------
-    def read_lastImgRecorded(self, attr):
-        val  = _PcoCam.talk("lastImgRecorded")
-        attr.set_value(val)
-
-#------------------------------------------------------------------
-#    lastImgAcquired attribute READ
-#------------------------------------------------------------------
-    def read_lastImgAcquired(self, attr):
-        val  = _PcoCam.talk("lastImgAcquired")
-        attr.set_value(val)
-
-#------------------------------------------------------------------
-#    pcoLogsEnabled attribute READ
-#------------------------------------------------------------------
-    def read_pcoLogsEnabled(self, attr):
-        val  = _PcoCam.talk("pcoLogsEnabled")
-        attr.set_value(val)
-
-#------------------------------------------------------------------
-#    maxNbImages attribute READ
-#------------------------------------------------------------------
-    def read_maxNbImages(self, attr):
-        val  = _PcoCam.talk("maxNbImages")
-        attr.set_value(val)
-
-#------------------------------------------------------------------
-#    info attribute READ
-#------------------------------------------------------------------
-    def read_info(self, attr):
-        val= _PcoCam.talk("")
-        attr.set_value(val)
-
-#------------------------------------------------------------------
-#    version attribute READ
-#------------------------------------------------------------------
-    def read_version(self, attr):
-        val= _PcoCam.talk("timestamp")
-        attr.set_value(val)
-
-#------------------------------------------------------------------
-#    traceAcq attribute READ
-#------------------------------------------------------------------
-    def read_traceAcq(self, attr):
-        val= _PcoCam.talk("traceAcq")
-        attr.set_value(val)
-
-#------------------------------------------------------------------
-#    pixelRate attribute READ_WRITE
-#------------------------------------------------------------------
-    def read_pixelRate(self, attr):
-        val  = _PcoCam.talk("pixelRate")
-        attr.set_value(val)
-        #print "--- read_pixelRate>",val
-
-    def write_pixelRate(self, attr):
-        value = attr.get_write_value()
-        cmd = '%s %s' % ('pixelRate', value)
-        val  = _PcoCam.talk(cmd)
-        #print "---- write_pixelRate>", cmd, value, val
-        
-#------------------------------------------------------------------
-#    pixelRateInfo attribute READ
-#------------------------------------------------------------------
-    def read_pixelRateInfo(self, attr):
-        val  = _PcoCam.talk("pixelRateInfo")
-        attr.set_value(val)
-        #print "--- read_pixelRateInfo>",val
-
-#------------------------------------------------------------------
-#    pixelRateValidValues attribute READ
-#------------------------------------------------------------------
-    def read_pixelRateValidValues(self, attr):
-        val  = _PcoCam.talk("pixelRateValidValues")
-        attr.set_value(val)
-        #print "--- read_pixelRateInfo>",val
-
-#------------------------------------------------------------------
-#    adc attribute READ_WRITE
-#------------------------------------------------------------------
-    def read_adc(self, attr):
-        val  = _PcoCam.talk("adc")
-        attr.set_value(val)
-        #print "--- read_pixelRate>",val
-
-    def write_adc(self, attr):
-        value = attr.get_write_value()
-        cmd = '%s %s' % ('adc', value)
-        val  = _PcoCam.talk(cmd)
-        #print "---- write_pixelRate>", cmd, key, value, val
-        
-#------------------------------------------------------------------
-#    adcMax attribute READ
-#------------------------------------------------------------------
-    def read_adcMax(self, attr):
-        val  = _PcoCam.talk("adcMax")
-        attr.set_value(val)
-        #print "--- read_pixelRate>",val
-
-#------------------------------------------------------------------
-#    rollingShutter attribute READ_WRITE
-#------------------------------------------------------------------
-    def read_rollingShutter(self, attr):
-        val  = _PcoCam.talk("rollingShutter")
-        key= _getDictKey(self._Pco__Rollingshutter, val)
-        attr.set_value(key)
-        #print "---- read_rollingShutter>", val, key
-
-    def write_rollingShutter(self, attr):
-        data = attr.get_write_value()
-        key = data
-        value= _getDictValue(self._Pco__Rollingshutter, key)
-        cmd = '%s %s' % ('rollingShutter', value)
-        val  = _PcoCam.talk(cmd)
-        #print "---- write_rollingShutter>", cmd, key, value
         
 
 #==================================================================
@@ -313,82 +180,151 @@ class PcoClass(PyTango.DeviceClass):
 
     #    Attribute definitions
     attr_list = {
-         'rollingShutter':	  
+         'acqTimeoutRetry':	  
+         [[PyTango.DevLong,
+           PyTango.SCALAR,
+           PyTango.READ_WRITE],
+           {
+             'unit': 'number',
+             'format': '%d',
+             'description': 'max Timeout retries during acq (0 - infinite)'
+             }],
+
+         'adc':	  
+         [[PyTango.DevLong,
+           PyTango.SCALAR,
+           PyTango.READ_WRITE],
+           {
+             'unit': 'number',
+             'format': '%d',
+             'description': 'number of ADC'
+             }],
+
+         'adcMax':	  
+         [[PyTango.DevLong,
+           PyTango.SCALAR,
+           PyTango.READ],
+           {
+             'unit': 'number',
+             'format': '%d',
+             'description': 'max number of ADC'
+             }],
+
+         'camInfo':	  
          [[PyTango.DevString,
            PyTango.SCALAR,
-           PyTango.READ_WRITE]],
+           PyTango.READ],
+           {
+             'unit': 'N/A',
+             'format': '%s',
+             'description': 'general cam information'
+             }],
+
+         'info':	  
+         [[PyTango.DevString,
+           PyTango.SCALAR,
+           PyTango.READ],
+           {
+             'unit': 'N/A',
+             'format': '%s',
+             'description': 'general cam information'
+             }],
+
+         'camType':	  
+         [[PyTango.DevString,
+           PyTango.SCALAR,
+           PyTango.READ],
+           {
+             'unit': 'N/A',
+             'format': '%s',
+             'description': 'camera type'
+             }],
+
+         'clXferPar':	  
+         [[PyTango.DevString,
+           PyTango.SCALAR,
+           PyTango.READ],
+           {
+             'unit': 'N/A',
+             'format': '%s',
+             'description': 'cameralink transfere parameters'
+             }],
+
+         'cocRunTime':	  
+         [[PyTango.DevDouble,
+           PyTango.SCALAR,
+           PyTango.READ],
+           {
+             'unit': 's',
+             'format': '%g',
+             'description': 'coc Runtime'
+             }],
+
+         'frameRate':	  
+         [[PyTango.DevDouble,
+           PyTango.SCALAR,
+           PyTango.READ],
+           {
+             'unit': 'frames/s',
+             'format': '%g',
+             'description': 'frames per second (= 1/cocRuntime)'
+             }],
+
          'lastError':	  
          [[PyTango.DevString,
            PyTango.SCALAR,
            PyTango.READ]],
-         'camInfo':	  
-         [[PyTango.DevString,
-           PyTango.SCALAR,
-           PyTango.READ]],
-         'camType':	  
-         [[PyTango.DevString,
-           PyTango.SCALAR,
-           PyTango.READ]],
-         'clXferPar':	  
-         [[PyTango.DevString,
-           PyTango.SCALAR,
-           PyTango.READ]],
-         'cocRunTime':	  
-         [[PyTango.DevString,
-           PyTango.SCALAR,
-           PyTango.READ]],
-         'frameRate':	  
-         [[PyTango.DevString,
-           PyTango.SCALAR,
-           PyTango.READ]],
+
          'lastImgRecorded':	  
-         [[PyTango.DevString,
+         [[PyTango.DevLong,
            PyTango.SCALAR,
            PyTango.READ]],
+
          'lastImgAcquired':	  
-         [[PyTango.DevString,
+         [[PyTango.DevLong,
            PyTango.SCALAR,
            PyTango.READ]],
+
+         'maxNbImages':	  
+         [[PyTango.DevLong,
+           PyTango.SCALAR,
+           PyTango.READ]],
+
          'pcoLogsEnabled':	  
-         [[PyTango.DevString,
+         [[PyTango.DevLong,
            PyTango.SCALAR,
            PyTango.READ]],
-         'pixelRate':	  
-         [[PyTango.DevString,
-           PyTango.SCALAR,
-           PyTango.READ_WRITE]],
+
          'pixelRateInfo':	  
          [[PyTango.DevString,
            PyTango.SCALAR,
            PyTango.READ]],
+
+         'pixelRate':	  
+         [[PyTango.DevLong,
+           PyTango.SCALAR,
+           PyTango.READ_WRITE]],
+
+         'rollingShutter':	  
+         [[PyTango.DevLong,
+           PyTango.SCALAR,
+           PyTango.READ_WRITE]],
+
          'pixelRateValidValues':	  
          [[PyTango.DevString,
            PyTango.SCALAR,
            PyTango.READ]],
-         'adcMax':	  
-         [[PyTango.DevString,
-           PyTango.SCALAR,
-           PyTango.READ]],
-         'adc':	  
-         [[PyTango.DevString,
-           PyTango.SCALAR,
-           PyTango.READ_WRITE]],
-         'maxNbImages':	  
-         [[PyTango.DevString,
-           PyTango.SCALAR,
-           PyTango.READ]],
-         'info':	  
-         [[PyTango.DevString,
-           PyTango.SCALAR,
-           PyTango.READ]],
-         'version':	  
-         [[PyTango.DevString,
-           PyTango.SCALAR,
-           PyTango.READ]],
+
          'traceAcq':	  
          [[PyTango.DevString,
            PyTango.SCALAR,
            PyTango.READ]],
+
+         'version':	  
+         [[PyTango.DevString,
+           PyTango.SCALAR,
+           PyTango.READ]],
+
         }
 
 #------------------------------------------------------------------
