@@ -896,7 +896,7 @@ class LimaCCDs(PyTango.Device_4Impl) :
     #
     @Core.DEB_MEMBER_FUNCT
     def write_acc_saturated_threshold(self,attr) :        
-        data = attr.get_write_
+        data = attr.get_write_value()
         acc = self.__control.accumulation()
         acc.setPixelThresholdValue(data)
 
