@@ -374,17 +374,12 @@ class LimaCCDs(PyTango.Device_4Impl) :
 
         self.__control = _get_control()
 
-        try:
-            nb_thread = int(self.NbProcessingThread)
-        except ValueError:
-            pass
-        else:
-            Core.Processlib.PoolThreadMgr.get().setNumberOfThread(nb_thread)
-        try:
-            max_concurrent_writing_task = int(self.SavingMaxConcurrentWritingTask)
-        except ValueError:
-            pass
-        else:
+        # For performance settings Pool thread (default 2) and Writing tasks (default 1)
+        nb_thread = int(self.NbProcessingThread)
+        Core.Processlib.PoolThreadMgr.get().setNumberOfThread(nb_thread)
+
+        max_concurrent_writing_task = int(self.SavingMaxConcurrentWritingTask)
+        if SystemHasFeature('Core.CtSaving.setMaxConcurrentWritingTask'):
             saving = self.__control.saving()
             saving.setMaxConcurrentWritingTask(max_concurrent_writing_task)
 
@@ -443,7 +438,6 @@ class LimaCCDs(PyTango.Device_4Impl) :
                                          'saving_overwrite_policy' : 'OverwritePolicy',
                                          'saving_format' : 'Format',
                                          'saving_managed_mode' : 'ManagedMode',
-                                         'saving_max_concurrent_writing_task': 'MaxConcurrentWritingTask',
                                          'shutter_mode' : 'Mode',
 					 'image_rotation':'Rotation',
                                          'video_mode':'Mode',
@@ -553,6 +547,13 @@ class LimaCCDs(PyTango.Device_4Impl) :
 	    self.__VideoMode['BAYER_BG8'] = Core.BAYER_BG8
 	    self.__VideoMode['BAYER_BG16'] = Core.BAYER_BG16
 
+        #new formats added in core 1.7
+        if SystemHasFeature('Core.YUV411PACKED'):
+            self.__VideoMode['YUV411PACKED'] = Core.YUV411PACKED
+            self.__VideoMode['YUV422PACKED'] = Core.YUV422PACKED
+            self.__VideoMode['YUV444PACKED'] = Core.YUV444PACKED
+
+                
         self.__VideoSource = {}
         if SystemHasFeature('Core.CtVideo.BASE_IMAGE'):
             self.__VideoSource = {'BASE_IMAGE': Core.CtVideo.BASE_IMAGE,
@@ -1399,7 +1400,26 @@ class LimaCCDs(PyTango.Device_4Impl) :
             defaultSuffix = self.__SavingFormatDefaultSuffix.get(value,'.unknown')
             saving.setSuffix(defaultSuffix)
 
-    ##@biref Read possible modules
+    
+    ## @brief get the maximum number of task for concurrent writing (saving)
+    #
+    @RequiresSystemFeature('Core.CtSaving.setMaxConcurrentWritingTask')
+    @Core.DEB_MEMBER_FUNCT
+    def read_saving_max_concurrent_writing_task(self, attr):
+        saving = self.__control.saving()
+        attr.set_value(saving.getMaxConcurrentWritingTask())
+        
+    ## @brief set the maximum number of task for concurrent writing (saving)
+    #
+    @RequiresSystemFeature('Core.CtSaving.getMaxConcurrentWritingTask')
+    @Core.DEB_MEMBER_FUNCT
+    def write_saving_max_concurrent_writing_task(self,attr) :
+        data = attr.get_write_value()
+        saving = self.__control.saving()
+
+        saving.setMaxConcurrentWritingTask(data)
+
+    ##@brief Read possible modules
     #
     def read_debug_modules_possible(self,attr) :
         attr.set_value(LimaCCDs._debugModuleList,len(LimaCCDs._debugModuleList))
