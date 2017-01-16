@@ -303,7 +303,10 @@ class PcoClass(PyTango.DeviceClass):
          'pixelRate':	  
          [[PyTango.DevLong,
            PyTango.SCALAR,
-           PyTango.READ_WRITE]],
+           PyTango.READ_WRITE], 
+           {
+    			"memorized":"true"
+			}],
 
          'rollingShutter':	  
          [[PyTango.DevLong,
