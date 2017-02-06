@@ -1215,14 +1215,14 @@ class LimaCCDs(PyTango.Device_4Impl) :
     #
     # return saving_speed,compression_speed, compression_ratio,incoming_speed
     @Core.DEB_MEMBER_FUNCT
-    def read_write_average_statistic(self,attr) :
+    def read_saving_statistics(self,attr) :
         saving = self.__control.saving()
         attr.set_value(saving.getStatisticCounters(),4)
 	
     ## @brief get the write statistics history size
     #
     @Core.DEB_MEMBER_FUNCT
-    def read_write_average_statistic_history(self,attr) :
+    def read_saving_statistics_history(self,attr) :
         saving = self.__control.saving()
         attr.set_value(saving.getStatisticHistorySize())
 
@@ -1230,7 +1230,7 @@ class LimaCCDs(PyTango.Device_4Impl) :
     ## @brief set the write statistics history size
     #
     @Core.DEB_MEMBER_FUNCT
-    def write_image_events_max_rate(self,attr) :
+    def write_saving_statistics_history(self,attr) :
         stat_size = attr.get_write_value()
         saving = self.__control.saving()
         saving.setStatisticHistorySize(stat_size)
@@ -1405,7 +1405,7 @@ class LimaCCDs(PyTango.Device_4Impl) :
     #
     @RequiresSystemFeature('Core.CtSaving.setMaxConcurrentWritingTask')
     @Core.DEB_MEMBER_FUNCT
-    def read_saving_max_concurrent_writing_task(self, attr):
+    def read_saving_max_writing_task(self, attr):
         saving = self.__control.saving()
         attr.set_value(saving.getMaxConcurrentWritingTask())
         
@@ -1413,7 +1413,7 @@ class LimaCCDs(PyTango.Device_4Impl) :
     #
     @RequiresSystemFeature('Core.CtSaving.getMaxConcurrentWritingTask')
     @Core.DEB_MEMBER_FUNCT
-    def write_saving_max_concurrent_writing_task(self,attr) :
+    def write_saving_max_writing_task(self,attr) :
         data = attr.get_write_value()
         saving = self.__control.saving()
 
@@ -2272,14 +2272,6 @@ class LimaCCDsClass(PyTango.DeviceClass) :
         [[PyTango.DevBoolean,
           PyTango.SCALAR,
           PyTango.READ]],
-        'write_average_statistic':
-        [[PyTango.DevDouble,
-          PyTango.SPECTRUM,
-          PyTango.READ,4]],
-        'write_average_statistic_history':
-        [[PyTango.DevLong,
-          PyTango.SCALAR,
-          PyTango.READ_WRITE]],
         'shutter_mode':
         [[PyTango.DevString,
           PyTango.SCALAR,
@@ -2344,7 +2336,15 @@ class LimaCCDsClass(PyTango.DeviceClass) :
 	[[PyTango.DevString,
 	  PyTango.SCALAR,
 	  PyTango.READ_WRITE]],
-        'saving_max_concurrent_writing_task':
+        'saving_statistics':
+        [[PyTango.DevDouble,
+          PyTango.SPECTRUM,
+          PyTango.READ,4]],
+        'saving_statistics_history':
+        [[PyTango.DevLong,
+          PyTango.SCALAR,
+          PyTango.READ_WRITE]],
+        'saving_max_writing_task':
         [[PyTango.DevShort,
           PyTango.SCALAR,
           PyTango.READ_WRITE]],
