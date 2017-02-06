@@ -14,6 +14,7 @@ Properties
 Property name	         Mandatory	 Default value	                   Description
 ======================== =============== ================================= =====================================
 camera_id                No              uname://*<server instance name>*  The camera ID (see details below)
+packet_size              No              8000                              the packet size
 inter_packet_delay       No              0                                 The inter packet delay
 frame_transmission_delay No              0                                 The frame transmission delay
 ======================== =============== ================================= =====================================
