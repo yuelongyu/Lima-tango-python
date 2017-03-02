@@ -180,10 +180,7 @@ class Xspress3(PyTango.Device_4Impl):
     def ReadScalers(self, argin):
         data = _Xspress3Camera.readScalers(*argin)
         __dataflat_cache = numpy.array(data.buffer.ravel())
-        if _Xspress3Camera.getUseDtc():
-            __dataflat_cache.dtype = numpy.double
-        else:
-            __dataflat_cache.dtype = numpy.uint32
+        __dataflat_cache.dtype = numpy.double
         data.releaseBuffer()
         return __dataflat_cache
 
@@ -468,7 +465,7 @@ class Xspress3Class(PyTango.DeviceClass):
             [PyTango.DevVarULongArray,"the histogram data"]],
         'ReadScalers':
             [[PyTango.DevVarLongArray,"frame, channel"],
-            [PyTango.DevVarULongArray,"the scaler data"]],
+            [PyTango.DevVarDoubleArray,"the scaler data"]],
         'StartScope':
             [[PyTango.DevVoid, "none"],
             [PyTango.DevVoid, "none"]],
