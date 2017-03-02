@@ -356,10 +356,6 @@ class Xspress3(PyTango.Device_4Impl):
         data=attr.get_write_value()
         _Xspress3Camera.setItfgTiming(data[0], data[1], data[2]);
 
-    def write_saveChannels(self, attr):
-        data=attr.get_write_value()
-        _Xspress3Camera.setSaveChannels(data.tolist());
-
     def read_histogram(self, attr):
         data = _Xspress3Camera.readRawHistogram(self.attr_channel,0)
         __dataflat_cache = numpy.array(data.buffer.ravel())
@@ -607,11 +603,6 @@ class Xspress3Class(PyTango.DeviceClass):
             [[PyTango.DevLong,
               PyTango.SPECTRUM,
               PyTango.WRITE, 3]],
-
-         'saveChannels':
-            [[PyTango.DevLong,
-              PyTango.SPECTRUM,
-              PyTango.WRITE, 128]],
      }
 
     def __init__(self, name) :
