@@ -241,6 +241,13 @@ class Pilatus(PyTango.Device_4Impl):
 #
 #==================================================================
 
+#------------------------------------------------------------------
+#    sendCamserverCommand  command
+#------------------------------------------------------------------
+    @Core.DEB_MEMBER_FUNCT
+    def sendCamserverCmd(self, cmd):
+        _PilatusCamera.sendAnyCommand(cmd)
+
 #==================================================================
 #
 #    PilatusClass class definition
@@ -264,6 +271,9 @@ class PilatusClass(PyTango.DeviceClass):
         'getAttrStringValueList':
         [[PyTango.DevString, "Attribute name"],
          [PyTango.DevVarStringArray, "Authorized String value list"]],
+        'sendCamserverCmd':
+        [[PyTango.DevString, "Camserver command to send"],
+         [PyTango.DevVoid, "None"]],
         }
 
 
