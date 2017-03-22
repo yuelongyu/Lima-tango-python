@@ -91,7 +91,7 @@ class Pilatus(PyTango.Device_4Impl):
         self.get_device_properties(self.get_device_class())
 
         if self.TmpfsSize:
-            buffer = _PilatusIterface.buffer()
+            buffer = _PilatusInterface.buffer()
             buffer.setTmpfsSize(self.TmpfsSize * 1024 * 1024)
             
 #------------------------------------------------------------------
@@ -303,15 +303,15 @@ def _getDictValue(dict, key):
 #----------------------------------------------------------------------------
 from Lima import Pilatus as PilatusAcq
 
-_PilatusIterface = None
+_PilatusInterface = None
 _PilatusCamera = None
 
 def get_control(**keys) :
-    global _PilatusIterface
+    global _PilatusInterface
     global _PilatusCamera
-    if _PilatusIterface is None:
+    if _PilatusInterface is None:
         _PilatusCamera = PilatusAcq.Camera()
-        _PilatusIterface = PilatusAcq.Interface(_PilatusCamera)
+        _PilatusInterface = PilatusAcq.Interface(_PilatusCamera)
     return Core.CtControl(_PilatusIterface)
 
 def get_tango_specific_class_n_device() :
