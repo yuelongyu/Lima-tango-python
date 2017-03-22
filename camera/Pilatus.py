@@ -92,6 +92,12 @@ class Pilatus(PyTango.Device_4Impl):
                             'ANYCMD' : 13
                             }
 
+        self.__ReadoutRoi = {'C60': Core.Roi(0,0,2463,2527),    #Full frame for 6M
+                             'C2' : Core.Roi(988,1060,487,407), #C2 for 6M
+                             'C18': Core.Roi(494,636,1475,1255) #C18 for 6M
+                             }
+
+
 #------------------------------------------------------------------
 #    Device destructor
 #------------------------------------------------------------------
@@ -248,6 +254,29 @@ class Pilatus(PyTango.Device_4Impl):
     def sendCamserverCmd(self, cmd):
         _PilatusCamera.sendAnyCommand(cmd)
 
+#------------------------------------------------------------------
+#    set ReadoutGeometry command
+#------------------------------------------------------------------
+    @Core.DEB_MEMBER_FUNCT
+    def setReadoutGeometryCmd(self, rmode):
+        if _PilatusCamera.hasRoiCapability():
+            image = _CtControl.image()
+            roi = _getDictValue(self.__ReadoutRoi, rmode)
+            image.setRoi(roi)
+
+#------------------------------------------------------------------
+#    get ReadoutGeometry command
+#------------------------------------------------------------------
+    @Core.DEB_MEMBER_FUNCT
+    def getReadoutGeometryCmd(self):
+        if _PilatusCamera.hasRoiCapability():
+            image = _CtControl.image()
+            roi = image.getRoi()
+            rmode = _getDictKey(self.__ReadoutRoi, roi)
+            return str(rmode)
+        else:
+            return 'UNKNOWN'
+
 #==================================================================
 #
 #    PilatusClass class definition
@@ -274,8 +303,13 @@ class PilatusClass(PyTango.DeviceClass):
         'sendCamserverCmd':
         [[PyTango.DevString, "Camserver command to send"],
          [PyTango.DevVoid, "None"]],
+        'setReadoutGeometryCmd':
+        [[PyTango.DevString, "Set readout geometry"],
+         [PyTango.DevVoid, "None"]],
+        'getReadoutGeometryCmd':
+        [[PyTango.DevVoid, "Get readout geometry"],
+         [PyTango.DevString, "Readout geometry mode"]],
         }
-
 
     #    Attribute definitions
     attr_list = {
@@ -337,14 +371,17 @@ from Lima import Pilatus as PilatusAcq
 
 _PilatusInterface = None
 _PilatusCamera = None
+_CtControl = None
 
 def get_control(**keys) :
     global _PilatusInterface
     global _PilatusCamera
+    global _CtControl
     if _PilatusInterface is None:
         _PilatusCamera = PilatusAcq.Camera()
         _PilatusInterface = PilatusAcq.Interface(_PilatusCamera)
-    return Core.CtControl(_PilatusIterface)
+        _CtControl = Core.CtControl(_PilatusInterface)
+    return _CtControl 
 
 def get_tango_specific_class_n_device() :
     return PilatusClass,Pilatus
