@@ -76,12 +76,27 @@ class Pilatus(PyTango.Device_4Impl):
                                 'HIGH' : 3,
                                 'ULTRA HIGH' : 4}
 
+	self.__CamStatus = {'ERROR' : 0,
+                            'DISCONNECTED' : 1,
+                            'STANDBY' : 2,
+                            'SETTING_ENERGY' :3,
+                            'SETTING_THRESHOLD' : 4,
+                            'SETTING_EXPOSURE' : 5,
+                            'SETTING_NB_IMAGE_IN_SEQUENCE' :6,
+                            'SETTING_EXPOSURE_PERIOD' :7,
+                            'SETTING_HARDWARE_TRIGGER_DELAY' : 8,
+                            'SETTING_EXPOSURE_PER_FRAME' : 9,
+                            'SETTING_ROI' : 10,
+                            'KILL_ACQUISITION' : 11,
+                            'RUNNING' : 12,
+                            'ANYCMD' : 13
+                            }
+
 #------------------------------------------------------------------
 #    Device destructor
 #------------------------------------------------------------------
     def delete_device(self):
         pass
-
 
 #------------------------------------------------------------------
 #    Device initialization
@@ -108,6 +123,7 @@ class Pilatus(PyTango.Device_4Impl):
         if d:
             valueList = d.keys()
         return valueList
+
 #==================================================================
 #
 #    Pilatus read/write attribute methods
@@ -124,7 +140,6 @@ class Pilatus(PyTango.Device_4Impl):
         else:
             gain = _getDictKey(self.__ThresholdGain,gain)
         attr.set_value(gain)
-
 
 #------------------------------------------------------------------
 #    Write threshold_gain attribute
@@ -196,8 +211,6 @@ class Pilatus(PyTango.Device_4Impl):
         
         _PilatusCamera.setNbExposurePerFrame(nb_frames)
 
-
-
 #------------------------------------------------------------------
 #    Read gapfill attribute
 #------------------------------------------------------------------
@@ -213,6 +226,14 @@ class Pilatus(PyTango.Device_4Impl):
         data = attr.get_write_value()
         gapfill = _getDictValue(self.__FillMode,data)
         _PilatusCamera.setGapfill(gapfill)
+
+#------------------------------------------------------------------
+#    Read cam_state attribute
+#------------------------------------------------------------------
+    def read_cam_state(self, attr):
+        status = _PilatusCamera.status()
+        status = _getDictKey(self.__CamStatus, status)
+        attr.set_value(status)
 
 #==================================================================
 #
@@ -231,14 +252,12 @@ class PilatusClass(PyTango.DeviceClass):
     class_property_list = {
         }
 
-
     #    Device Properties
     device_property_list = {
         'TmpfsSize' :
         [PyTango.DevInt,
          "Size of communication temp. filesystem (in MB)",0],
         }
-
 
     #    Command definitions
     cmd_list = {
@@ -274,8 +293,11 @@ class PilatusClass(PyTango.DeviceClass):
             [[PyTango.DevLong,
             PyTango.SCALAR,
             PyTango.READ_WRITE]],
+        'cam_state':
+            [[PyTango.DevString,
+            PyTango.SCALAR,
+            PyTango.READ]]
         }
-
 
 #------------------------------------------------------------------
 #    PilatusClass Constructor
