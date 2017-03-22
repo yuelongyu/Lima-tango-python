@@ -168,7 +168,7 @@ class Pilatus(PyTango.Device_4Impl):
 #     Read delay attribute
 #----------------------------------------------------------------------------
     def read_trigger_delay(self,attr) :
-        delay = communication.hardwareTriggerDelay()
+        delay = _PilatusCamera.hardwareTriggerDelay()
         attr.set_value(delay)
 
 #----------------------------------------------------------------------------
