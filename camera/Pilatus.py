@@ -92,7 +92,7 @@ class Pilatus(PyTango.Device_4Impl):
                             'ANYCMD' : 13
                             }
 
-        self.__ReadoutRoi = {'C60': Core.Roi(0,0,2463,2527),    #Full frame for 6M
+        self.__ReadoutRoi = {'C60': Core.Roi(0,0,0,0),    #Full frame for 6M (0,0,2463,2527)
                              'C2' : Core.Roi(988,1060,487,407), #C2 for 6M
                              'C18': Core.Roi(494,636,1475,1255) #C18 for 6M
                              }
@@ -241,6 +241,29 @@ class Pilatus(PyTango.Device_4Impl):
         status = _getDictKey(self.__CamStatus, status)
         attr.set_value(status)
 
+#------------------------------------------------------------------
+#    Read readout_geometry attribute
+#------------------------------------------------------------------
+    def read_readout_geometry(self, attr):
+        if _PilatusCamera.hasRoiCapability():
+            image = _CtControl.image()
+            hw_image = image.getHard()
+            roi = hw_image.getRealRoi()
+            rmode = _getDictKey(self.__ReadoutRoi, roi)
+            attr.set_value(rmode)
+        else:
+            attr.set_value('UNKNOWN')
+
+#------------------------------------------------------------------
+#    Write readout_geometry attribute
+#------------------------------------------------------------------
+    def write_readout_geometry(self, attr):
+        if _PilatusCamera.hasRoiCapability():
+            data = attr.get_write_value()
+            image = _CtControl.image()
+            roi = _getDictValue(self.__ReadoutRoi, data)
+            image.setRoi(roi)
+
 #==================================================================
 #
 #    Pilatus command methods
@@ -253,29 +276,6 @@ class Pilatus(PyTango.Device_4Impl):
     @Core.DEB_MEMBER_FUNCT
     def sendCamserverCmd(self, cmd):
         _PilatusCamera.sendAnyCommand(cmd)
-
-#------------------------------------------------------------------
-#    set ReadoutGeometry command
-#------------------------------------------------------------------
-    @Core.DEB_MEMBER_FUNCT
-    def setReadoutGeometryCmd(self, rmode):
-        if _PilatusCamera.hasRoiCapability():
-            image = _CtControl.image()
-            roi = _getDictValue(self.__ReadoutRoi, rmode)
-            image.setRoi(roi)
-
-#------------------------------------------------------------------
-#    get ReadoutGeometry command
-#------------------------------------------------------------------
-    @Core.DEB_MEMBER_FUNCT
-    def getReadoutGeometryCmd(self):
-        if _PilatusCamera.hasRoiCapability():
-            image = _CtControl.image()
-            roi = image.getRoi()
-            rmode = _getDictKey(self.__ReadoutRoi, roi)
-            return str(rmode)
-        else:
-            return 'UNKNOWN'
 
 #==================================================================
 #
@@ -303,12 +303,6 @@ class PilatusClass(PyTango.DeviceClass):
         'sendCamserverCmd':
         [[PyTango.DevString, "Camserver command to send"],
          [PyTango.DevVoid, "None"]],
-        'setReadoutGeometryCmd':
-        [[PyTango.DevString, "Set readout geometry"],
-         [PyTango.DevVoid, "None"]],
-        'getReadoutGeometryCmd':
-        [[PyTango.DevVoid, "Get readout geometry"],
-         [PyTango.DevString, "Readout geometry mode"]],
         }
 
     #    Attribute definitions
@@ -340,7 +334,11 @@ class PilatusClass(PyTango.DeviceClass):
         'cam_state':
             [[PyTango.DevString,
             PyTango.SCALAR,
-            PyTango.READ]]
+            PyTango.READ]],
+        'readout_geometry':
+            [[PyTango.DevString,
+            PyTango.SCALAR,
+            PyTango.READ_WRITE]],
         }
 
 #------------------------------------------------------------------
