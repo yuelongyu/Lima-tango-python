@@ -76,12 +76,33 @@ class Pilatus(PyTango.Device_4Impl):
                                 'HIGH' : 3,
                                 'ULTRA HIGH' : 4}
 
+	self.__CamStatus = {'ERROR' : 0,
+                            'DISCONNECTED' : 1,
+                            'STANDBY' : 2,
+                            'SETTING_ENERGY' :3,
+                            'SETTING_THRESHOLD' : 4,
+                            'SETTING_EXPOSURE' : 5,
+                            'SETTING_NB_IMAGE_IN_SEQUENCE' :6,
+                            'SETTING_EXPOSURE_PERIOD' :7,
+                            'SETTING_HARDWARE_TRIGGER_DELAY' : 8,
+                            'SETTING_EXPOSURE_PER_FRAME' : 9,
+                            'SETTING_ROI' : 10,
+                            'KILL_ACQUISITION' : 11,
+                            'RUNNING' : 12,
+                            'ANYCMD' : 13
+                            }
+
+        self.__ReadoutRoi = {'C60': Core.Roi(0,0,0,0),    #Full frame for 6M (0,0,2463,2527)
+                             'C2' : Core.Roi(988,1060,487,407), #C2 for 6M
+                             'C18': Core.Roi(494,636,1475,1255) #C18 for 6M
+                             }
+
+
 #------------------------------------------------------------------
 #    Device destructor
 #------------------------------------------------------------------
     def delete_device(self):
         pass
-
 
 #------------------------------------------------------------------
 #    Device initialization
@@ -91,7 +112,7 @@ class Pilatus(PyTango.Device_4Impl):
         self.get_device_properties(self.get_device_class())
 
         if self.TmpfsSize:
-            buffer = _PilatusIterface.buffer()
+            buffer = _PilatusInterface.buffer()
             buffer.setTmpfsSize(self.TmpfsSize * 1024 * 1024)
             
 #------------------------------------------------------------------
@@ -108,6 +129,7 @@ class Pilatus(PyTango.Device_4Impl):
         if d:
             valueList = d.keys()
         return valueList
+
 #==================================================================
 #
 #    Pilatus read/write attribute methods
@@ -124,7 +146,6 @@ class Pilatus(PyTango.Device_4Impl):
         else:
             gain = _getDictKey(self.__ThresholdGain,gain)
         attr.set_value(gain)
-
 
 #------------------------------------------------------------------
 #    Write threshold_gain attribute
@@ -168,7 +189,7 @@ class Pilatus(PyTango.Device_4Impl):
 #     Read delay attribute
 #----------------------------------------------------------------------------
     def read_trigger_delay(self,attr) :
-        delay = communication.hardwareTriggerDelay()
+        delay = _PilatusCamera.hardwareTriggerDelay()
         attr.set_value(delay)
 
 #----------------------------------------------------------------------------
@@ -196,8 +217,6 @@ class Pilatus(PyTango.Device_4Impl):
         
         _PilatusCamera.setNbExposurePerFrame(nb_frames)
 
-
-
 #------------------------------------------------------------------
 #    Read gapfill attribute
 #------------------------------------------------------------------
@@ -214,11 +233,49 @@ class Pilatus(PyTango.Device_4Impl):
         gapfill = _getDictValue(self.__FillMode,data)
         _PilatusCamera.setGapfill(gapfill)
 
+#------------------------------------------------------------------
+#    Read cam_state attribute
+#------------------------------------------------------------------
+    def read_cam_state(self, attr):
+        status = _PilatusCamera.status()
+        status = _getDictKey(self.__CamStatus, status)
+        attr.set_value(status)
+
+#------------------------------------------------------------------
+#    Read readout_geometry attribute
+#------------------------------------------------------------------
+    def read_readout_geometry(self, attr):
+        if _PilatusCamera.hasRoiCapability():
+            image = _CtControl.image()
+            hw_image = image.getHard()
+            roi = hw_image.getRealRoi()
+            rmode = _getDictKey(self.__ReadoutRoi, roi)
+            attr.set_value(rmode)
+        else:
+            attr.set_value('UNKNOWN')
+
+#------------------------------------------------------------------
+#    Write readout_geometry attribute
+#------------------------------------------------------------------
+    def write_readout_geometry(self, attr):
+        if _PilatusCamera.hasRoiCapability():
+            data = attr.get_write_value()
+            image = _CtControl.image()
+            roi = _getDictValue(self.__ReadoutRoi, data)
+            image.setRoi(roi)
+
 #==================================================================
 #
 #    Pilatus command methods
 #
 #==================================================================
+
+#------------------------------------------------------------------
+#    sendCamserverCommand  command
+#------------------------------------------------------------------
+    @Core.DEB_MEMBER_FUNCT
+    def sendCamserverCmd(self, cmd):
+        _PilatusCamera.sendAnyCommand(cmd)
 
 #==================================================================
 #
@@ -231,7 +288,6 @@ class PilatusClass(PyTango.DeviceClass):
     class_property_list = {
         }
 
-
     #    Device Properties
     device_property_list = {
         'TmpfsSize' :
@@ -239,14 +295,15 @@ class PilatusClass(PyTango.DeviceClass):
          "Size of communication temp. filesystem (in MB)",0],
         }
 
-
     #    Command definitions
     cmd_list = {
         'getAttrStringValueList':
         [[PyTango.DevString, "Attribute name"],
          [PyTango.DevVarStringArray, "Authorized String value list"]],
+        'sendCamserverCmd':
+        [[PyTango.DevString, "Camserver command to send"],
+         [PyTango.DevVoid, "None"]],
         }
-
 
     #    Attribute definitions
     attr_list = {
@@ -274,8 +331,15 @@ class PilatusClass(PyTango.DeviceClass):
             [[PyTango.DevLong,
             PyTango.SCALAR,
             PyTango.READ_WRITE]],
+        'cam_state':
+            [[PyTango.DevString,
+            PyTango.SCALAR,
+            PyTango.READ]],
+        'readout_geometry':
+            [[PyTango.DevString,
+            PyTango.SCALAR,
+            PyTango.READ_WRITE]],
         }
-
 
 #------------------------------------------------------------------
 #    PilatusClass Constructor
@@ -303,16 +367,19 @@ def _getDictValue(dict, key):
 #----------------------------------------------------------------------------
 from Lima import Pilatus as PilatusAcq
 
-_PilatusIterface = None
+_PilatusInterface = None
 _PilatusCamera = None
+_CtControl = None
 
 def get_control(**keys) :
-    global _PilatusIterface
+    global _PilatusInterface
     global _PilatusCamera
-    if _PilatusIterface is None:
+    global _CtControl
+    if _PilatusInterface is None:
         _PilatusCamera = PilatusAcq.Camera()
-        _PilatusIterface = PilatusAcq.Interface(_PilatusCamera)
-    return Core.CtControl(_PilatusIterface)
+        _PilatusInterface = PilatusAcq.Interface(_PilatusCamera)
+        _CtControl = Core.CtControl(_PilatusInterface)
+    return _CtControl 
 
 def get_tango_specific_class_n_device() :
     return PilatusClass,Pilatus
