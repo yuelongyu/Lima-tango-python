@@ -71,23 +71,27 @@ class Pco(PyTango.Device_4Impl):
 											'acqTimeoutRetry': 'AcqTimeoutRetry',
 											'adc': 'Adc',
 											'adcMax': 'AdcMax',
+											'bytesPerPixel': 'BytesPerPixel',
+											'camInfo': 'CamInfo',
+											'camType': 'CamType',
+											'cdiMode': 'CDIMode',
+											'clXferPar': 'ClTransferParam',
 											'cocRunTime': 'CocRunTime',
 											'frameRate': 'FrameRate',
+											'info': 'CamInfo',
+											'lastError': 'LastError',
+											'lastFixedRoi': 'LastFixedRoi',
 											'lastImgAcquired': 'LastImgAcquired',
 											'lastImgRecorded': 'LastImgRecorded',
 											'maxNbImages': 'MaxNbImages',
 											'pcoLogsEnabled': 'PcoLogsEnabled',
-											'info': 'CamInfo',
-											'camInfo': 'CamInfo',
-											'camType': 'CamType',
-											'version': 'Version',
-											'clXferPar': 'ClTransferParam',
-											'lastError': 'LastError',
-											'pixelRateValidValues': 'PixelRateValidValues',
-											'pixelRateInfo': 'PixelRateInfo',
 											'pixelRate': 'PixelRate',
+											'pixelRateInfo': 'PixelRateInfo',
+											'pixelRateValidValues': 'PixelRateValidValues',
 											'rollingShutter': 'RollingShutter',
+											'rollingShutterInfo': 'RollingShutterInfo',
 											'traceAcq': 'TraceAcq',
+											'version': 'Version',
                                             }
         
         
@@ -197,7 +201,7 @@ class PcoClass(PyTango.DeviceClass):
            {
              'unit': 'number',
              'format': '%d',
-             'description': 'number of ADC'
+             'description': 'number of working ADC'
              }],
 
          'adcMax':	  
@@ -208,6 +212,16 @@ class PcoClass(PyTango.DeviceClass):
              'unit': 'number',
              'format': '%d',
              'description': 'max number of ADC'
+             }],
+
+         'bytesPerPixel':	  
+         [[PyTango.DevLong,
+           PyTango.SCALAR,
+           PyTango.READ],
+           {
+             'unit': 'byte',
+             'format': '%d',
+             'description': 'bytes per pixel'
              }],
 
          'camInfo':	  
@@ -239,6 +253,14 @@ class PcoClass(PyTango.DeviceClass):
              'format': '%s',
              'description': 'camera type'
              }],
+
+         'cdiMode':	  
+         [[PyTango.DevLong,
+           PyTango.SCALAR,
+           PyTango.READ_WRITE], 
+           {
+    			"memorized":"true"
+			}],
 
          'clXferPar':	  
          [[PyTango.DevString,
@@ -273,60 +295,135 @@ class PcoClass(PyTango.DeviceClass):
          'lastError':	  
          [[PyTango.DevString,
            PyTango.SCALAR,
-           PyTango.READ]],
+           PyTango.READ],
+           {
+             'unit': 'N/A',
+             'format': '%s',
+             'description': 'last PCO error'
+             }],
+
+         'lastFixedRoi':	  
+         [[PyTango.DevString,
+           PyTango.SCALAR,
+           PyTango.READ],
+           {
+             'unit': 'N/A',
+             'format': '%s',
+             'description': 'last fixed roi info'
+             }],
 
          'lastImgRecorded':	  
          [[PyTango.DevLong,
            PyTango.SCALAR,
-           PyTango.READ]],
+           PyTango.READ],
+           {
+             'unit': 'N/A',
+             'format': '%ld',
+             'description': 'last image recorded in camera RAM (not for all cams)'
+             }],
 
          'lastImgAcquired':	  
          [[PyTango.DevLong,
            PyTango.SCALAR,
-           PyTango.READ]],
+           PyTango.READ],
+           {
+             'unit': 'N/A',
+             'format': '%ld',
+             'description': 'last image acquired'
+             }],
 
          'maxNbImages':	  
          [[PyTango.DevLong,
            PyTango.SCALAR,
-           PyTango.READ]],
+           PyTango.READ],
+           {
+             'unit': 'N/A',
+             'format': '%ld',
+             'description': 'max nr of images in camera RAM (not for all cams)'
+             }],
 
          'pcoLogsEnabled':	  
          [[PyTango.DevLong,
            PyTango.SCALAR,
-           PyTango.READ]],
+           PyTango.READ],
+           {
+             'unit': 'N/A',
+             'format': '%d',
+             'description': 'PCO logs are enabled'
+           }],
 
          'pixelRateInfo':	  
          [[PyTango.DevString,
            PyTango.SCALAR,
-           PyTango.READ]],
+           PyTango.READ],
+           {
+             'unit': 'N/A',
+             'format': '%s',
+             'description': 'pixel rate info'
+             }],
 
          'pixelRate':	  
          [[PyTango.DevLong,
            PyTango.SCALAR,
-           PyTango.READ_WRITE], 
+           PyTango.READ_WRITE],
            {
-    			"memorized":"true"
-			}],
-
-         'rollingShutter':	  
-         [[PyTango.DevLong,
-           PyTango.SCALAR,
-           PyTango.READ_WRITE]],
+             'unit': 'Hz',
+             'format': '%ld',
+             'description': 'pixel rate in Hz'
+           }],
 
          'pixelRateValidValues':	  
          [[PyTango.DevString,
            PyTango.SCALAR,
-           PyTango.READ]],
+           PyTango.READ],
+           {
+             'unit': 'Hz',
+             'format': '%s',
+             'description': 'pixel rate valid values in Hz'
+             }],
+
+
+
+         'rollingShutter':	  
+         [[PyTango.DevLong,
+           PyTango.SCALAR,
+           PyTango.READ_WRITE],
+           {
+             'unit': 'N/A',
+             'format': '%d',
+             'description': '1(Rolling), 2(Global), 4(Global Reset)'
+           }],
+
+
+         'rollingShutterInfo':	  
+         [[PyTango.DevString,
+           PyTango.SCALAR,
+           PyTango.READ],
+           {
+             'unit': 'N/A',
+             'format': '%s',
+             'description': 'rolling shutter info'
+             }],
 
          'traceAcq':	  
          [[PyTango.DevString,
            PyTango.SCALAR,
-           PyTango.READ]],
+           PyTango.READ],
+           {
+             'unit': 'N/A',
+             'format': '%s',
+             'description': 'trace info during acq for some cameras'
+             }],
 
          'version':	  
          [[PyTango.DevString,
            PyTango.SCALAR,
-           PyTango.READ]],
+           PyTango.READ],
+           {
+             'unit': 'N/A',
+             'format': '%s',
+             'description': 'complete version info'
+             }],
 
         }
 
