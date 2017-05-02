@@ -22,7 +22,7 @@ Property
 ========================== =============== ====================== =====================================================
 Property name		   Mandatory       Default value          Description
 ========================== =============== ====================== =====================================================
-AccThresholdCallbackModule No              ""                     Plugin file name which manages threshold
+AccThresholdCallbackModule No              ""                     Plugin file name which manages threshold, see acc_saturated\_\* attributes and the \*AccSaturated\* commands to activate and use  this feature
 BufferMaxMemory		   No		   70			  The maximum among of memory in percent of the available RAM
 			   		   			  that Lima is using to allocate frame buffer.
 ConfigurationFilePath      No              ~/lima_<serv-name>.cfg The default configuration file path
@@ -209,9 +209,8 @@ acc_live_time		    ro	    DevDouble		    Total accumulation live time which corr
 							    detector total counting time.
 acc_offset_before           rw      DevLong                 Set a offset value to be added to each pixel value
 acc_saturated_active        rw      DevBoolean              To activate the saturation counters (i.e. readAccSaturated commands)
-acc_saturated_cblevel       rw      DevLong                 Set at which level in the process task chain this task will be called
-acc_saturated_threshold     rw      DevLong                 To fix the threshold for saturation counting
-                                                            (default is 0,ie before other calculation task(mask,bg,flatfield ...) 
+acc_saturated_cblevel       rw      DevLong                 Set at which level of total saturated pixels the callback plugin (if set with the AccThresholdCallbackModule property) will be called
+acc_saturated_threshold     rw      DevLong                 The threshold for counting saturated pixels
 acc_threshold_before        rw      DevLong                 Set a threshold value to be substract to each pixel value
 \                           \       \                       \
 \                           \       **SAVING**              \
