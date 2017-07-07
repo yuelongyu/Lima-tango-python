@@ -464,6 +464,7 @@ For more details about the camera device interface, please have a look on the fo
   Rayonix HS <camera/rayonixhs>
   Roper Scientific <camera/roperscientific>
   Simulator <camera/simulator>
+  SlsDetector <camera/slsdetector>
   Ueye <camera/ueye>
   Ultra <camera/ultra>
   V4l2 <camera/v4l2>
