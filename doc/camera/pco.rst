@@ -46,6 +46,9 @@ debug_type      No              0               To set the debug type (in hex fo
                                                  - Return  = 0x040
                                                  - Always  = 0x080
 params          No              empty            List of parameters/options (one per line)
+                                                  - sn = <camera serial number>
+                                                    if it is 0 or doesn't exist, the first camera found will be opened
+                                                    if the serial number is not found, OpenCam will fail
                                                   - trigSingleMulti = 1 
                                                     (enable TriggerSingleMulti as TriggerMulti for compability
                                                     with SPEC START)  
@@ -65,6 +68,7 @@ adc                     rw      DevLong                 Number of working ADC's
 adcMax                  ro      DevLong                 Maximum number of ADC's
 binInfo                 ro      DevLong                 PCO hw binning info
 bytesPerPixel           ro      DevLong                 Bytes per Pixel
+camerasFound            ro      DevString               List of cameras found during the Open search
 camInfo                 ro      DevString               General camera parameters information
 camName                 ro      DevString               Camera Name
 camNameBase             ro      DevString               Camera Name (Pco)

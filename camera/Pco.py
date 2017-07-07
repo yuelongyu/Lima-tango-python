@@ -52,7 +52,7 @@ from Lima import Pco as PcoAcq
 #from LimaCCDs import CallableReadEnum,CallableWriteEnum
 from AttrHelper import get_attr_4u, get_attr_string_value_list,_getDictKey, _getDictValue
 
-VERSION_ATT ="20170620"
+VERSION_ATT ="20170707"
 
 RESET_CLOSE_INTERFACE	= 100
 
@@ -103,6 +103,7 @@ class Pco(PyTango.Device_4Impl):
 											'traceAcq': 'TraceAcq',
 											'version': 'Version',
 											'versionSdk': 'SdkRelease',
+											'camerasFound': 'CamerasFound',
                                             }
         
         
@@ -542,6 +543,16 @@ class PcoClass(PyTango.DeviceClass):
              'unit': 'N/A',
              'format': '%s',
              'description': 'pco sdk release'
+             }],
+
+         'camerasFound':	  
+         [[PyTango.DevString,
+           PyTango.SCALAR,
+           PyTango.READ],
+           {
+             'unit': 'N/A',
+             'format': '%s',
+             'description': 'cameras found during the Open search'
              }],
 
         }
