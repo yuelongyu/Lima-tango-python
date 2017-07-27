@@ -44,7 +44,7 @@ from Lima import Core
 from Lima import Xh as XhAcq
 # import some useful helpers to create direct mapping between tango attributes
 # and Lima interfaces.
-from AttrHelper import get_attr_4u, get_attr_string_value_list
+from Lima.Server import AttrHelper
 
 #------------------------------------------------------------------
 #------------------------------------------------------------------
@@ -92,28 +92,7 @@ class Xh(PyTango.Device_4Impl):
 #------------------------------------------------------------------
     @Core.DEB_MEMBER_FUNCT
     def getAttrStringValueList(self, attr_name):
-        valueList=[]
-        dict_name = '_' + self.__class__.__name__ + '__' + ''.join([x.title() for x in attr_name.split('_')])
-        d = getattr(self,dict_name,None)
-        if d:
-            valueList = d.keys()
-
-        return valueList
-
-    def __getDictKey(self,dict, value):
-        try:
-            ind = dict.values().index(value)                            
-        except ValueError:
-            return None
-        return dict.keys()[ind]
-
-    def __getDictValue(self,dict, key):
-        try:
-            value = dict[key]
-        except KeyError:
-            return None
-        return value
-
+        return AttrHelper.get_attr_string_value_list(self, attr_name)
 
 #------------------------------------------------------------------
 #    reset command:
@@ -166,7 +145,7 @@ class Xh(PyTango.Device_4Impl):
 
 
     def __getattr__(self,name) :
-        return get_attr_4u(self, name, _XhInterface)
+        return AttrHelper.get_attr_4u(self, name, _XhInterface)
 	
 	
 
@@ -180,7 +159,7 @@ class Xh(PyTango.Device_4Impl):
     def write_clockmode(self,attr):
 	data = attr.get_write_value()
 	print data
-	clockmode = self.__getDictValue(self.__clockmode,data)
+	clockmode = AttrHelper.getDictValue(self.__clockmode,data)
 	print clockmode
 	_XhCam.setupClock(clockmode)
 

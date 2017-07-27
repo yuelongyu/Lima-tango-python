@@ -42,8 +42,7 @@
 import PyTango
 from Lima import Core
 from Lima import Prosilica as ProsilicaAcq
-from AttrHelper import get_attr_4u, get_attr_string_value_list
-import AttrHelper
+import Lima.Server import AttrHelper
 
 
 class Prosilica(PyTango.Device_4Impl):
@@ -75,10 +74,10 @@ class Prosilica(PyTango.Device_4Impl):
 
     @Core.DEB_MEMBER_FUNCT
     def getAttrStringValueList(self, attr_name):
-        return get_attr_string_value_list(self, attr_name)
+        return AttrHelper.get_attr_string_value_list(self, attr_name)
 
     def __getattr__(self,name) :
-        return get_attr_4u(self, name, ProsilicaAcq)
+        return AttrHelper.get_attr_4u(self, name, ProsilicaAcq)
 
 
 class ProsilicaClass(PyTango.DeviceClass):

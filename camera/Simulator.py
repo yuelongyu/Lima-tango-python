@@ -26,7 +26,7 @@
 import itertools
 import PyTango
 
-from AttrHelper import get_attr_4u, get_attr_string_value_list
+from Lima.Server import AttrHelper
 
 from Lima import Core
 from Lima import Simulator as SimuMod
@@ -73,10 +73,10 @@ class Simulator(PyTango.Device_4Impl):
 
     @Core.DEB_MEMBER_FUNCT
     def getAttrStringValueList(self, attr_name):
-        return get_attr_string_value_list(self, attr_name)
+        return AttrHelper.get_attr_string_value_list(self, attr_name)
 
     def __getattr__(self,name) :
-        return get_attr_4u(self, name, _SimuFrameBuilder)
+        return AttrHelper.get_attr_4u(self, name, _SimuFrameBuilder)
 
     @staticmethod
     def getGaussPeaksFromFloatArray(peak_list_flat):

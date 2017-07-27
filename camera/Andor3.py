@@ -46,7 +46,7 @@ from Lima import Core
 from Lima import Andor3 as Andor3Module
 # import some useful helpers to create direct mapping between tango attributes
 # and Lima interfaces.
-from AttrHelper import get_attr_4u, get_attr_string_value_list
+from Lima.Server import AttrHelper
 
 class Andor3(PyTango.Device_4Impl):
 
@@ -148,9 +148,9 @@ class Andor3(PyTango.Device_4Impl):
 
     def __getattr__(self,name) :
         try:
-            return get_attr_4u(self, name, _Andor3Interface)
+            return AttrHelper.get_attr_4u(self, name, _Andor3Interface)
         except:
-            return get_attr_4u(self, name, _Andor3Camera)
+            return AttrHelper.get_attr_4u(self, name, _Andor3Camera)
 
 
 #==================================================================
@@ -167,7 +167,7 @@ class Andor3(PyTango.Device_4Impl):
 #------------------------------------------------------------------
     @Core.DEB_MEMBER_FUNCT
     def getAttrStringValueList(self, attr_name):
-        return get_attr_string_value_list(self, attr_name)
+        return AttrHelper.get_attr_string_value_list(self, attr_name)
     
 
 #==================================================================

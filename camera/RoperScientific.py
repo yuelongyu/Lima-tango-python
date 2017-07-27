@@ -42,8 +42,7 @@
 import PyTango
 from Lima import Core
 from Lima import RoperScientific as RoperScientificAcq
-from AttrHelper import get_attr_4u, get_attr_string_value_list
-import AttrHelper
+from Lima.Server import AttrHelper
 
 class RoperScientific(PyTango.Device_4Impl):
 
@@ -82,10 +81,10 @@ class RoperScientific(PyTango.Device_4Impl):
 
     @Core.DEB_MEMBER_FUNCT
     def getAttrStringValueList(self, attr_name):
-        return get_attr_string_value_list(self, attr_name)
+        return AttrHelper.get_attr_string_value_list(self, attr_name)
 
     def __getattr__(self,name) :
-        return get_attr_4u(self, name, _RoperScientificCam)
+        return AttrHelper.get_attr_4u(self, name, _RoperScientificCam)
 
 
     def read_InternalAcqMode(self, attr):

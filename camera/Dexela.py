@@ -43,7 +43,7 @@ import os
 import PyTango
 from Lima import Core
 from Lima import Dexela as DexelaAcq
-from AttrHelper import get_attr_4u, get_attr_string_value_list
+from Lima.Server import AttrHelper
 
 
 class Dexela(PyTango.Device_4Impl):
@@ -90,7 +90,7 @@ class Dexela(PyTango.Device_4Impl):
     @Core.DEB_MEMBER_FUNCT
     def getAttrStringValueList(self, attr_name):
         #use AttrHelper
-        return get_attr_string_value_list(self, attr_name)
+        return AttrHelper.get_attr_string_value_list(self, attr_name)
 #==================================================================
 #
 #    Dexela read/write attribute methods
@@ -98,7 +98,7 @@ class Dexela(PyTango.Device_4Impl):
 #==================================================================
     def __getattr__(self,name) :
         #use AttrHelper
-        return get_attr_4u(self,name,_DexelaInterface)
+        return AttrHelper.get_attr_4u(self,name,_DexelaInterface)
 
 
 #==================================================================

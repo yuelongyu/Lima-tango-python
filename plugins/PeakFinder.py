@@ -28,6 +28,7 @@ import numpy
 import processlib
 from Lima import Core
 from Utils import getDataFromFile,BasePostProcess
+from Lima.Server import AttrHelper
 
 def grouper(n, iterable, padvalue=None):
     return itertools.izip(*[itertools.chain(iterable, itertools.repeat(padvalue, n-1))]*n)
@@ -96,7 +97,7 @@ class PeakFinderDeviceServer(BasePostProcess) :
 #------------------------------------------------------------------
     def read_ComputingMode(self, attr):
 	value_read = self.__peakFinderMgr.getComputingMode()
-        attr.set_value(_getDictKey(self.__ComputingMode,value_read))
+        attr.set_value(AttrHelper.getDictKey(self.__ComputingMode,value_read))
 
 
 #------------------------------------------------------------------
@@ -104,7 +105,7 @@ class PeakFinderDeviceServer(BasePostProcess) :
 #------------------------------------------------------------------
     def write_ComputingMode(self, attr):
 	data = attr.get_write_value()
-        t = _getDictValue(self.__ComputingMode,data)
+        t = AttrHelper.getDictValue(self.__ComputingMode,data)
         self.__peakFinderMgr.setComputingMode(t)
             
 #------------------------------------------------------------------
@@ -211,17 +212,3 @@ def set_control_ref(control_class_ref) :
 
 def get_tango_specific_class_n_device() :
    return PeakFinderDeviceServerClass,PeakFinderDeviceServer
-
-def _getDictKey(dict, value):
-    try:
-        ind = dict.values().index(value)                            
-    except ValueError:
-        return None
-    return dict.keys()[ind]
-
-def _getDictValue(dict, key):
-    try:
-        value = dict[key.upper()]
-    except KeyError:
-        return None
-    return value

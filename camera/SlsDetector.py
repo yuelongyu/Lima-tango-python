@@ -46,7 +46,7 @@ from collections import OrderedDict
 
 from Lima import Core
 from Lima import SlsDetector as SlsDetectorHw
-from AttrHelper import get_attr_4u, get_attr_string_value_list
+from Lima.Server import AttrHelper
 
 def ConstListAttr(nl, vl=None, Defs=SlsDetectorHw.Defs):
     def g(x):
@@ -151,10 +151,10 @@ class SlsDetector(PyTango.Device_4Impl):
 
     @Core.DEB_MEMBER_FUNCT
     def getAttrStringValueList(self, attr_name):
-        return get_attr_string_value_list(self, attr_name)
+        return AttrHelper.get_attr_string_value_list(self, attr_name)
 
     def __getattr__(self,name):
-        return get_attr_4u(self, name, self.cam)
+        return AttrHelper.get_attr_4u(self, name, self.cam)
 
     @Core.DEB_MEMBER_FUNCT
     def read_config_fname(self, attr):

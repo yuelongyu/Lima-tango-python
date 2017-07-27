@@ -42,8 +42,7 @@
 import PyTango
 from Lima import Core
 from Lima import PhotonicScience as PhotonicScienceAcq
-from AttrHelper import get_attr_4u, get_attr_string_value_list
-import AttrHelper
+from Lima.Server import AttrHelper
 
 
 class PhotonicScience(PyTango.Device_4Impl):
@@ -76,10 +75,10 @@ class PhotonicScience(PyTango.Device_4Impl):
 
     @Core.DEB_MEMBER_FUNCT
     def getAttrStringValueList(self, attr_name):
-        return get_attr_string_value_list(self, attr_name)
+        return AttrHelper.get_attr_string_value_list(self, attr_name)
 
     def __getattr__(self,name) :
-        return get_attr_4u(self, name, PhotonicScienceAcq)
+        return AttrHelper.get_attr_4u(self, name, PhotonicScienceAcq)
 
 class PhotonicScienceClass(PyTango.DeviceClass):
 

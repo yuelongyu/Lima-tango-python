@@ -2,10 +2,11 @@
 ############################################################################
 # This file is part of LImA, a Library for Image Acquisition
 #
-# Copyright (C) : 2009-2015
+# Copyright (C) : 2009-2017
 # European Synchrotron Radiation Facility
-# BP 220, Grenoble 38043
+# CS40220 38043 Grenoble Cedex 9 
 # FRANCE
+# Contact: lima@esrf.fr
 #
 # This is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -56,19 +57,22 @@ import re
 # Before loading Lima.Core, must find out the version the plug-in
 # was compiled with - horrible hack ...
 LimaCameraType = None
-if 'linux' in sys.platform:
-    from EnvHelper import setup_lima_env
-    LimaCameraType = setup_lima_env(sys.argv)
+#if 'linux' in sys.platform:
+#    from EnvHelper import setup_lima_env
+#    LimaCameraType = setup_lima_env(sys.argv)
 
 from EnvHelper import get_sub_devices
 from EnvHelper import get_lima_camera_type, get_lima_device_name
 from EnvHelper import create_tango_objects
 from AttrHelper import get_attr_4u
-from AttrHelper import _getDictKey, _getDictValue
+from AttrHelper import getDictKey, getDictValue
 from Lima import Core
 
 import plugins
 import camera
+if len(sys.argv) >1: instance_name=sys.argv[1]
+else: instance_name = ''
+
 try:
     import EdfFile
 except ImportError:
@@ -394,8 +398,8 @@ class LimaCCDs(PyTango.Device_4Impl) :
             pass
         else:
             try:
-                m = __import__('plugins.%s' % (accThresholdCallbackModule),None,None,
-                               'plugins.%s' % (accThresholdCallbackModule))
+                m = __import__('Lima.Server.plugins.%s' % (accThresholdCallbackModule),None,None,
+                               'Lima.Server.plugins.%s' % (accThresholdCallbackModule))
             except ImportError:
                 deb.Error("Couldn't import plugins.%s" % accThresholdCallbackModule)
             else:
@@ -561,7 +565,7 @@ class LimaCCDs(PyTango.Device_4Impl) :
 
         #INIT display shared memory
         try:
-            self.__shared_memory_names = ['LimaCCds',sys.argv[1]]
+            self.__shared_memory_names = ['LimaCCds',instance_name]
             shared_memory = self.__control.display()
             shared_memory.setNames(*self.__shared_memory_names)
         except AttributeError:
@@ -1390,7 +1394,7 @@ class LimaCCDs(PyTango.Device_4Impl) :
         data = attr.get_write_value()
         saving = self.__control.saving()
 
-        value = _getDictValue(self.__SavingFormat,data.upper())
+        value = getDictValue(self.__SavingFormat,data.upper())
         if value is None:
             PyTango.Except.throw_exception('WrongData',\
                                            'Wrong value %s: %s'%('saving_format',data.upper()),\
@@ -1601,16 +1605,16 @@ class LimaCCDs(PyTango.Device_4Impl) :
             if shutter.hasCapability():
                 #Depending of the camera only a subset of the mode list can be supported
                 values = shutter.getModeList()
-                valueList = [_getDictKey(self.__ShutterMode,val) for val in values]
+                valueList = [getDictKey(self.__ShutterMode,val) for val in values]
         elif attr_name == 'video_mode':
             video = self.__control.video()
             values = video.getSupportedVideoMode()
-            valueList = [_getDictKey(self.__VideoMode,val) for val in values]
+            valueList = [getDictKey(self.__VideoMode,val) for val in values]
         elif attr_name == 'acq_trigger_mode':
             acq = self.__control.acquisition()
             try:
                 values = acq.getTriggerModeList()
-                valueList = [_getDictKey(self.__AcqTriggerMode,val) for val in values]
+                valueList = [getDictKey(self.__AcqTriggerMode,val) for val in values]
             except:
                 valueList = self.__AcqTriggerMode.keys()
         else:
@@ -1949,7 +1953,7 @@ class LimaCCDsClass(PyTango.DeviceClass) :
          "Plugin name file which manage threshold",[]],
         'ConfigurationFilePath' :
         [PyTango.DevString,
-         "Configuration file path",[os.path.join(os.path.expanduser('~'),'lima_%s.cfg' % sys.argv[1])]],
+         "Configuration file path",[os.path.join(os.path.expanduser('~'),'lima_%s.cfg' % instance_name)]],
         'ConfigurationDefaultName' :
         [PyTango.DevString,
          "Default configuration name",["default"]],
@@ -2469,7 +2473,7 @@ def declare_camera_n_commun_to_tango_world(util) :
     warningFlag = False
     for module_name in plugins.__all__:
         try:
-            m = __import__('plugins.%s' % (module_name),None,None,'plugins.%s' % (module_name))
+            m = __import__('Lima.Server.plugins.%s' % (module_name),None,None,'Lima.Server.plugins.%s' % (module_name))
         except ImportError:
             print "Warning optional plugin %s can't be load, dependency not satisfied." % module_name
             warningFlag = True
@@ -2504,7 +2508,7 @@ def export_default_plugins() :
         beamlineName,_,cameraName = masterDeviceName.split('/')
         for module_name in plugins.__all__:
             try:
-                m = __import__('plugins.%s' % (module_name),None,None,'plugins.%s' % (module_name))
+                m = __import__('Lima.Server.plugins.%s' % (module_name),None,None,'Lima.Server.plugins.%s' % (module_name))
             except ImportError:
                 continue
             else:
@@ -2544,7 +2548,7 @@ def export_ct_control(ct_map):
 def _set_control_ref(ctrl_ref) :
     for module_name in plugins.__all__:
         try:
-            m = __import__('plugins.%s' % (module_name),None,None,'plugins.%s' % (module_name))
+            m = __import__('Lima.Server.plugins.%s' % (module_name),None,None,'Lima.Server.plugins.%s' % (module_name))
         except ImportError:
             continue
         else:
@@ -2573,20 +2577,6 @@ def _getLastFileNumber(prefix,suffix,filesPath) :
             if number > lastNumber:
                 lastNumber = number
     return lastNumber
-
-def _getDictKey(dict, value):
-    try:
-        ind = dict.values().index(value)                            
-    except ValueError:
-        return None
-    return dict.keys()[ind]
-
-def _getDictValue(dict, key):
-    try:
-        value = dict[key.upper()]
-    except KeyError:
-        return None
-    return value
 
 def _allowed(*args) :
     return True
@@ -2620,7 +2610,7 @@ def _get_control():
     except KeyError:            # wizard mode
         return None
 
-    mod_name = 'camera.' + camera_type
+    mod_name = 'Lima.Server.camera.' + camera_type
     try:
         m = __import__(mod_name, None, None, mod_name)
     except ImportError:

@@ -43,7 +43,7 @@ import time, string
 import PyTango
 from Lima import Core
 from Lima import Frelon as FrelonAcq
-from AttrHelper import get_attr_4u, get_attr_string_value_list
+from Lima.Server import AttrHelper
 
 class Frelon(PyTango.Device_4Impl):
 
@@ -104,10 +104,10 @@ class Frelon(PyTango.Device_4Impl):
 
     @Core.DEB_MEMBER_FUNCT
     def getAttrStringValueList(self, attr_name):
-        return get_attr_string_value_list(self, attr_name)
+        return AttrHelper.get_attr_string_value_list(self, attr_name)
 
     def __getattr__(self,name) :
-        return get_attr_4u(self, name, _FrelonAcq)
+        return AttrHelper.get_attr_4u(self, name, _FrelonAcq)
 
     @Core.DEB_MEMBER_FUNCT
     def execSerialCommand(self, command_string) :
