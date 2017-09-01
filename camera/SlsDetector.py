@@ -256,6 +256,12 @@ class SlsDetector(PyTango.Device_4Impl):
         deb.Return("out_arr=%s" % out_arr)
         attr.set_value(out_arr)
 
+    @Core.DEB_MEMBER_FUNCT
+    def read_nb_bad_frames(self, attr):
+        nb_bad_frames = len(self.cam.getBadFrameList())
+        deb.Return("nb_bad_frames=%s" % nb_bad_frames)
+        attr.set_value(nb_bad_frames)
+
 
 class SlsDetectorClass(PyTango.DeviceClass):
 
@@ -324,6 +330,18 @@ class SlsDetectorClass(PyTango.DeviceClass):
         [[PyTango.DevString,
           PyTango.SCALAR,
           PyTango.READ_WRITE]],
+        'tolerate_lost_packets':
+        [[PyTango.DevBoolean,
+          PyTango.SCALAR,
+          PyTango.READ_WRITE]],
+        'nb_bad_frames':
+        [[PyTango.DevLong,
+          PyTango.SCALAR,
+          PyTango.READ]],
+        'bad_frame_list':
+        [[PyTango.DevLong,
+          PyTango.SPECTRUM,
+          PyTango.READ, 100000]],
         }
 
     def __init__(self,name) :
