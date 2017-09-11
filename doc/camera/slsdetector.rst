@@ -49,6 +49,7 @@ readout_flags		rw	DevString		The flags affecting the readout mode (Parallel|NonP
 							 - **NON_PARALLEL + CONTINUOUS**
 							 - **SAFE + STORE_IN_RAM**
 							 - **SAFE + CONTINUOUS**
+max_frame_rate		ro	DevDouble		Maximum number of frames per second (kHz)
 tolerate_lost_packets	rw	DevBoolean		Allow acquisitions with incomplete frames due to overrun
 nb_bad_frames		ro	DevLong			Number of bad frames in the current (or last) acquisition
 bad_frame_list		ro	DevVarLongArray		List of bad frames in the current (or last) acquisition
