@@ -43,6 +43,7 @@ import time, string
 import numpy as np
 import PyTango
 from collections import OrderedDict
+import functools
 
 from Lima import Core
 from Lima import SlsDetector as SlsDetectorHw
@@ -153,7 +154,10 @@ class SlsDetector(PyTango.Device_4Impl):
     def getAttrStringValueList(self, attr_name):
         return get_attr_string_value_list(self, attr_name)
 
-    def __getattr__(self,name):
+    def __getattr__(self, name):
+        prefix = 'read_stats_'
+        if name.startswith(prefix):
+            return functools.partial(self.read_stats, name=name[len(prefix):])
         return get_attr_4u(self, name, self.cam)
 
     @Core.DEB_MEMBER_FUNCT
@@ -269,6 +273,14 @@ class SlsDetector(PyTango.Device_4Impl):
         deb.Return("nb_bad_frames=%s" % nb_bad_frames)
         attr.set_value(nb_bad_frames)
 
+    @Core.DEB_MEMBER_FUNCT
+    def read_stats(self, attr, name):
+        stats = self.cam.getStats()
+        stat = getattr(stats, name)
+        stat_data = [stat.min(), stat.max(), stat.ave(), stat.std(), stat.n()]
+        deb.Return("stats_%s=%s" % (name, stat_data))
+        attr.set_value(stat_data)
+
 
 class SlsDetectorClass(PyTango.DeviceClass):
 
@@ -353,6 +365,22 @@ class SlsDetectorClass(PyTango.DeviceClass):
         [[PyTango.DevLong,
           PyTango.SPECTRUM,
           PyTango.READ, 100000]],
+        'stats_cb_period':
+        [[PyTango.DevDouble,
+          PyTango.SPECTRUM,
+          PyTango.READ, 5]],
+        'stats_new_finish':
+        [[PyTango.DevDouble,
+          PyTango.SPECTRUM,
+          PyTango.READ, 5]],
+        'stats_cb_exec':
+        [[PyTango.DevDouble,
+          PyTango.SPECTRUM,
+          PyTango.READ, 5]],
+        'stats_recv_exec':
+        [[PyTango.DevDouble,
+          PyTango.SPECTRUM,
+          PyTango.READ, 5]],
         }
 
     def __init__(self,name) :
