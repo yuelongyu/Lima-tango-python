@@ -1,4 +1,4 @@
-############################################################################
+# ###########################################################################
 # This file is part of LImA, a Library for Image Acquisition
 #
 # Copyright (C) : 2009-2017
@@ -18,14 +18,14 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, see <http://www.gnu.org/licenses/>.
-############################################################################
-##############################################################################
-## license :
-#=============================================================================
+# ###########################################################################
+# #############################################################################
+# license :
+# =============================================================================
 #
 # file :        Hexitec.py
 #
-# description : Python source for the Hexitec and its commands. 
+# description : Python source for the Hexitec and its commands.
 #                The class is derived from Device. It represents the
 #                CORBA servant object which will be accessed from the
 #                network. All commands which can be executed on the
@@ -37,33 +37,23 @@
 #               BP 220, Grenoble 38043
 #               FRANCE
 #
-#=============================================================================
+# =============================================================================
 # (c) - Bliss - ESRF
-#=============================================================================
+# =============================================================================
 #
 import PyTango
-import sys
-
-from Lima import Core
-# import some useful helpers to create direct mapping between tango attributes
-# and Lima interfaces.
 import AttrHelper
+from Lima import Core
 from AttrHelper import get_attr_string_value_list
+from Lima import Hexitec as HexitecAcq
 
-#==================================================================
-# Hexitec Class Description:
-#==================================================================
 
 class Hexitec(PyTango.Device_4Impl):
 
-#--------- Add you global variables here --------------------------
     Core.DEB_CLASS(Core.DebModApplication, 'LimaCCDs')
 
-#------------------------------------------------------------------
-#    Device constructor
-#------------------------------------------------------------------
-    def __init__(self,cl, name):
-        PyTango.Device_4Impl.__init__(self,cl,name)
+    def __init__(self, cl, name):
+        PyTango.Device_4Impl.__init__(self, cl, name)
 
         self.__ProcessType = {'RAW': HexitecAcq.Camera.RAW,
                               'SORT': HexitecAcq.Camera.SORT,
@@ -78,36 +68,25 @@ class Hexitec(PyTango.Device_4Impl):
 
         self.init_device()
 
-#------------------------------------------------------------------
-#    Device destructor
-#------------------------------------------------------------------
-    def delete_device(self):
-        pass
-
-
-#------------------------------------------------------------------
-#    Device initialization
-#------------------------------------------------------------------
     def init_device(self):
         self.set_state(PyTango.DevState.ON)
-        # Load the properties
         self.get_device_properties(self.get_device_class())
-            
-#------------------------------------------------------------------
+
+# ------------------------------------------------------------------
 #    getAttrStringValueList command:
 #
 #    Description: return a list of authorized values if any
-#    argout: DevVarStringArray   
-#------------------------------------------------------------------
+#    argout: DevVarStringArray
+# ------------------------------------------------------------------
     @Core.DEB_MEMBER_FUNCT
     def getAttrStringValueList(self, attr_name):
-        return get_attr_string_value_list(self,attr_name)
+        return get_attr_string_value_list(self, attr_name)
 
-#==================================================================
+# ==================================================================
 #
 #    Hexitec read/write attribute methods
 #
-#==================================================================
+# ==================================================================
     @Core.DEB_MEMBER_FUNCT
     def read_environmentValues(self, attr):
         returnList = []
@@ -118,7 +97,7 @@ class Hexitec(PyTango.Device_4Impl):
         returnList.append(ev.adcTemperature)
         returnList.append(ev.ntcTemperature)
         attr.set_value(returnList)
-  
+
     @Core.DEB_MEMBER_FUNCT
     def read_operatingValues(self, attr):
         returnList = []
@@ -144,18 +123,18 @@ class Hexitec(PyTango.Device_4Impl):
 
     @Core.DEB_MEMBER_FUNCT
     def write_collectDcTimeout(self, attr):
-        data=attr.get_write_value()
+        data = attr.get_write_value()
         _HexitecCamera.setcollectDcTimeout(data)
 
     @Core.DEB_MEMBER_FUNCT
     def read_type(self, attr):
         type = _HexitecCamera.getType()
-        attr.set_value(AttrHelper._getDictKey(self.__ProcessType,type))
- 
+        attr.set_value(AttrHelper._getDictKey(self.__ProcessType, type))
+
     @Core.DEB_MEMBER_FUNCT
     def write_type(self, attr):
-        data=attr.get_write_value()
-        type = AttrHelper._getDictValue(self.__ProcessType,data)
+        data = attr.get_write_value()
+        type = AttrHelper._getDictValue(self.__ProcessType, data)
         _HexitecCamera.setType(type)
 
     @Core.DEB_MEMBER_FUNCT
@@ -164,13 +143,8 @@ class Hexitec(PyTango.Device_4Impl):
 
     @Core.DEB_MEMBER_FUNCT
     def write_binWidth(self, attr):
-        data=attr.get_write_value()
+        data = attr.get_write_value()
         _HexitecCamera.setBinWidth(data)
-
-    @Core.DEB_MEMBER_FUNCT
-    def write_specLen(self, attr):
-        data=attr.get_write_value()
-        _HexitecCamera.setSpecLen(data)
 
     @Core.DEB_MEMBER_FUNCT
     def read_specLen(self, attr):
@@ -178,7 +152,7 @@ class Hexitec(PyTango.Device_4Impl):
 
     @Core.DEB_MEMBER_FUNCT
     def write_specLen(self, attr):
-        data=attr.get_write_value()
+        data = attr.get_write_value()
         _HexitecCamera.setSpecLen(data)
 
     @Core.DEB_MEMBER_FUNCT
@@ -187,7 +161,7 @@ class Hexitec(PyTango.Device_4Impl):
 
     @Core.DEB_MEMBER_FUNCT
     def write_lowThreshold(self, attr):
-        data=attr.get_write_value()
+        data = attr.get_write_value()
         _HexitecCamera.setLowThreshold(data)
 
     @Core.DEB_MEMBER_FUNCT
@@ -196,7 +170,7 @@ class Hexitec(PyTango.Device_4Impl):
 
     @Core.DEB_MEMBER_FUNCT
     def write_highThreshold(self, attr):
-        data=attr.get_write_value()
+        data = attr.get_write_value()
         _HexitecCamera.setHighThreshold(data)
 
     @Core.DEB_MEMBER_FUNCT
@@ -206,10 +180,10 @@ class Hexitec(PyTango.Device_4Impl):
     @Core.DEB_MEMBER_FUNCT
     def read_saveOpt(self, attr):
         attr.set_value(_HexitecCamera.getSaveOpt())
-  
+
     @Core.DEB_MEMBER_FUNCT
     def write_saveOpt(self, attr):
-        data=attr.get_write_value()
+        data = attr.get_write_value()
         _HexitecCamera.setSaveOpt(data)
 
     @Core.DEB_MEMBER_FUNCT
@@ -218,7 +192,7 @@ class Hexitec(PyTango.Device_4Impl):
 
     @Core.DEB_MEMBER_FUNCT
     def write_biasVoltageRefreshInterval(self, attr):
-        data=attr.get_write_value()
+        data = attr.get_write_value()
         _HexitecCamera.setBiasVoltageRefreshInterval(data)
 
     @Core.DEB_MEMBER_FUNCT
@@ -227,7 +201,7 @@ class Hexitec(PyTango.Device_4Impl):
 
     @Core.DEB_MEMBER_FUNCT
     def write_biasVoltageRefreshTime(self, attr):
-        data=attr.get_write_value()
+        data = attr.get_write_value()
         _HexitecCamera.setBiasVoltageRefreshTime(data)
 
     @Core.DEB_MEMBER_FUNCT
@@ -236,29 +210,32 @@ class Hexitec(PyTango.Device_4Impl):
 
     @Core.DEB_MEMBER_FUNCT
     def write_biasVoltageSettleTime(self, attr):
-        data=attr.get_write_value()
+        data = attr.get_write_value()
         _HexitecCamera.setBiasVoltageSettleTime(data)
 
-#==================================================================
+# ==================================================================
 #
 #    Hexitec command methods
 #
-#==================================================================
+# ==================================================================
     @Core.DEB_MEMBER_FUNCT
     def CollectOffsetValues(self):
-         _HexitecCamera.collectOffsetValues()
+        _HexitecCamera.collectOffsetValues()
+
     @Core.DEB_MEMBER_FUNCT
     def HvBiasOn(self):
-         _HexitecCamera.setHvBiasOn()
+        _HexitecCamera.setHvBiasOn()
+
     @Core.DEB_MEMBER_FUNCT
     def HvBiasOff(self):
-         _HexitecCamera.setBiasOff()
+        _HexitecCamera.setBiasOff()
 
-#==================================================================
+
+# ==================================================================
 #
 #    HexitecClass class definition
 #
-#==================================================================
+# ==================================================================
 class HexitecClass(PyTango.DeviceClass):
 
     #    Class Properties
@@ -269,10 +246,10 @@ class HexitecClass(PyTango.DeviceClass):
     device_property_list = {
         'IPaddress':
             [PyTango.DevString,
-            "Hexitec IP address (e.g. 192.168.0.1)", []],
+             "Hexitec IP address (e.g. 192.168.0.1)", []],
         'configFilename':
             [PyTango.DevString,
-            "Hexitec configuration filename", [] ],
+             "Hexitec configuration filename", []],
         'bufferCount':
             [PyTango.DevLong,
              "Number of buffer available for Hexitec", []],
@@ -286,103 +263,99 @@ class HexitecClass(PyTango.DeviceClass):
 
     #    Command definitions
     cmd_list = {
-         'getAttrStringValueList':
-             [[PyTango.DevString, "Attribute name"],
-              [PyTango.DevVarStringArray, "Authorized String value list"]],
-         'CollectOffsetValues':
-             [[PyTango.DevVoid, "none"],
-              [PyTango.DevVoid, "none"]],
-         'HvBiasOn':
-             [[PyTango.DevVoid, "none"],
-              [PyTango.DevVoid, "none"]],
-         'HvBiasOff':
-             [[PyTango.DevVoid, "none"],
-              [PyTango.DevVoid, "none"]],
+        'getAttrStringValueList':
+            [[PyTango.DevString, "Attribute name"],
+             [PyTango.DevVarStringArray, "Authorized String value list"]],
+        'CollectOffsetValues':
+            [[PyTango.DevVoid, "none"],
+             [PyTango.DevVoid, "none"]],
+        'HvBiasOn':
+            [[PyTango.DevVoid, "none"],
+             [PyTango.DevVoid, "none"]],
+        'HvBiasOff':
+            [[PyTango.DevVoid, "none"],
+             [PyTango.DevVoid, "none"]],
         }
 
     #    Attribute definitions
     attr_list = {
         'environmentValues':
-          [[PyTango.DevDouble,
-            PyTango.SPECTRUM,
-            PyTango.READ_WRITE, 5]],
+            [[PyTango.DevDouble,
+              PyTango.SPECTRUM,
+              PyTango.READ_WRITE, 5]],
         'operatingValues':
-          [[PyTango.DevDouble,
-            PyTango.SPECTRUM,
-            PyTango.READ_WRITE, 13]],
+            [[PyTango.DevDouble,
+              PyTango.SPECTRUM,
+              PyTango.READ_WRITE, 13]],
         'collectDcTimeout':
-          [[PyTango.DevLong,
-            PyTango.SCALAR,
-            PyTango.READ_WRITE]],
+            [[PyTango.DevLong,
+              PyTango.SCALAR,
+              PyTango.READ_WRITE]],
         'type':
-          [[PyTango.DevString,
-            PyTango.SCALAR,
-            PyTango.READ_WRITE]],
+            [[PyTango.DevString,
+              PyTango.SCALAR,
+              PyTango.READ_WRITE]],
         'binWidth':
-          [[PyTango.DevLong,
-            PyTango.SCALAR,
-            PyTango.READ_WRITE]],
+            [[PyTango.DevLong,
+              PyTango.SCALAR,
+              PyTango.READ_WRITE]],
         'specLen':
-             [[PyTango.DevLong,
-               PyTango.SCALAR,
-               PyTango.READ_WRITE]],
+            [[PyTango.DevLong,
+              PyTango.SCALAR,
+              PyTango.READ_WRITE]],
         'lowThreshold':
-          [[PyTango.DevLong,
-            PyTango.SCALAR,
-            PyTango.READ_WRITE]],
+            [[PyTango.DevLong,
+              PyTango.SCALAR,
+              PyTango.READ_WRITE]],
         'highThreshold':
-          [[PyTango.DevLong,
-            PyTango.SCALAR,
-            PyTango.READ_WRITE]],
+            [[PyTango.DevLong,
+              PyTango.SCALAR,
+              PyTango.READ_WRITE]],
         'frameRate':
-          [[PyTango.DevDouble,
-            PyTango.SCALAR,
-            PyTango.READ]],
+            [[PyTango.DevDouble,
+              PyTango.SCALAR,
+              PyTango.READ]],
         'saveOpt':
-          [[PyTango.DevLong,
-            PyTango.SCALAR,
-            PyTango.READ_WRITE]],
+            [[PyTango.DevLong,
+              PyTango.SCALAR,
+              PyTango.READ_WRITE]],
         'biasVoltageRefreshInterval':
-          [[PyTango.DevLong,
-            PyTango.SCALAR,
-            PyTango.READ_WRITE]],
+            [[PyTango.DevLong,
+              PyTango.SCALAR,
+              PyTango.READ_WRITE]],
         'biasVoltageRefreshTime':
-          [[PyTango.DevLong,
-            PyTango.SCALAR,
-            PyTango.READ_WRITE]],
+            [[PyTango.DevLong,
+              PyTango.SCALAR,
+              PyTango.READ_WRITE]],
         'biasVoltageSettleTime':
-          [[PyTango.DevLong,
-            PyTango.SCALAR,
-            PyTango.READ_WRITE]],
+            [[PyTango.DevLong,
+              PyTango.SCALAR,
+              PyTango.READ_WRITE]],
         }
-#------------------------------------------------------------------
-#    HexitecClass Constructor
-#------------------------------------------------------------------
+
     def __init__(self, name):
         PyTango.DeviceClass.__init__(self, name)
         self.set_type(name)
 
-#----------------------------------------------------------------------------
-# Plugins
-#----------------------------------------------------------------------------
-
-from Lima import Hexitec as HexitecAcq
 
 _HexitecInterface = None
 _HexitecCamera = None
+
 
 def get_control(IPaddress="0", configFilename="0", bufferCount=50, timeout=600, asicPitch=250, **keys):
     global _HexitecInterface
     global _HexitecCamera
 #    Core.DebParams.setTypeFlags(Core.DebParams.AllFlags)
     if _HexitecInterface is None:
-        print "IPaddress ",IPaddress
+        print "IPaddress ", IPaddress
         print "full path config file ", configFilename
-        _HexitecCamera = HexitecAcq.Camera(IPaddress, configFilename, int(bufferCount), int(timeout), int(asicPitch))
+        _HexitecCamera = HexitecAcq.Camera(IPaddress, configFilename, int(bufferCount),
+                                           int(timeout), int(asicPitch))
         _HexitecInterface = HexitecAcq.Interface(_HexitecCamera)
     ct = Core.CtControl(_HexitecInterface)
     print "Core.Control done"
     return ct
 
-def get_tango_specific_class_n_device() :
-    return HexitecClass,Hexitec
+
+def get_tango_specific_class_n_device():
+    return HexitecClass, Hexitec
