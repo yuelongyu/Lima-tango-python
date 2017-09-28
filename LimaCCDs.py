@@ -435,8 +435,6 @@ class LimaCCDs(PyTango.Device_4Impl) :
                                   'buffer' : self.__control.buffer}
 
         self.__Attribute2FunctionBase = {'acq_trigger_mode':'TriggerMode',
-#                                         'saving_overwrite_policy' : 'OverwritePolicy',
-#                                         'saving_format' : 'Format',
                                          'saving_managed_mode' : 'ManagedMode',
                                          'shutter_mode' : 'Mode',
 					 'image_rotation':'Rotation',
