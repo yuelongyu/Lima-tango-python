@@ -281,6 +281,34 @@ class SlsDetector(PyTango.Device_4Impl):
         deb.Return("stats_%s=%s" % (name, stat_data))
         attr.set_value(stat_data)
 
+    @Core.DEB_MEMBER_FUNCT
+    def read_pixel_depth_cpu_affinity_map(self, attr):
+        affinity_map = self.cam.getPixelDepthCPUAffinityMap()
+        nb_pixel_depth = len(affinity_map)
+        affinity_array = np.zeros((nb_pixel_depth, 4), 'int')
+        for i, (pixel_depth, sys_affinity) in enumerate(affinity_map.items()):
+            affinity_array[i] = (pixel_depth, 
+                                 sys_affinity.recv, 
+                                 sys_affinity.lima, 
+                                 sys_affinity.other)
+        deb.Return("affinity_array=%s" % affinity_array)
+        attr.set_value(affinity_array)
+
+    @Core.DEB_MEMBER_FUNCT
+    def write_pixel_depth_cpu_affinity_map(self, attr):
+        affinity_array = attr.get_write_value()
+        deb.Param("affinity_array=%s" % affinity_array)
+        affinity_map = {}
+        CPUAffinity = self.cam.CPUAffinity
+        for affinity_data in affinity_array:
+            pixel_depth, recv, lima, other = map(int, affinity_data)
+            sys_affinity = self.cam.SystemCPUAffinity()
+            sys_affinity.recv = CPUAffinity(recv)
+            sys_affinity.lima = CPUAffinity(lima)
+            sys_affinity.other = CPUAffinity(other)
+            affinity_map[pixel_depth] = sys_affinity
+        self.cam.setPixelDepthCPUAffinityMap(affinity_map)
+
 
 class SlsDetectorClass(PyTango.DeviceClass):
 
@@ -381,6 +409,10 @@ class SlsDetectorClass(PyTango.DeviceClass):
         [[PyTango.DevDouble,
           PyTango.SPECTRUM,
           PyTango.READ, 5]],
+        'pixel_depth_cpu_affinity_map':
+        [[PyTango.DevLong,
+          PyTango.IMAGE,
+          PyTango.READ_WRITE, 4, 5]],
         }
 
     def __init__(self,name) :
