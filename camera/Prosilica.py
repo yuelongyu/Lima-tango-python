@@ -42,7 +42,7 @@
 import PyTango
 from Lima import Core
 from Lima import Prosilica as ProsilicaAcq
-import Lima.Server import AttrHelper
+from Lima.Server import AttrHelper
 
 
 class Prosilica(PyTango.Device_4Impl):

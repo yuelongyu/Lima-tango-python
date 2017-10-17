@@ -356,7 +356,7 @@ class LimaCCDs(PyTango.Device_4Impl) :
     @Core.DEB_MEMBER_FUNCT
     def delete_device(self) :
         try:
-            m = __import__('camera.%s' % (self.LimaCameraType),None,None,'camera.%s' % (self.LimaCameraType))
+            m = __import__('Lima.Server.camera.%s' % (self.LimaCameraType),None,None,'Lima.Server.camera.%s' % (self.LimaCameraType))
         except ImportError:
             pass
         else:
@@ -2452,7 +2452,7 @@ def declare_camera_n_commun_to_tango_world(util) :
         try:
             if LimaCameraType and (module_name != LimaCameraType):
                 continue
-            m = __import__('camera.%s' % (module_name),None,None,'camera.%s' % (module_name))
+            m = __import__('Lima.Server.camera.%s' % (module_name),None,None,'Lima.Server.camera.%s' % (module_name))
         except ImportError:
             continue
         else:
@@ -2622,6 +2622,8 @@ def _get_control():
         try:
             _, specificDevice = m.get_tango_specific_class_n_device()
         except AttributeError:
+            import traceback
+            traceback.print_exc()
             pass
         else:
             typeFlagsNameList = []
