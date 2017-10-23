@@ -124,7 +124,7 @@ class Hexitec(PyTango.Device_4Impl):
     @Core.DEB_MEMBER_FUNCT
     def write_collectDcTimeout(self, attr):
         data = attr.get_write_value()
-        _HexitecCamera.setcollectDcTimeout(data)
+        _HexitecCamera.setCollectDcTimeout(data)
 
     @Core.DEB_MEMBER_FUNCT
     def read_type(self, attr):
