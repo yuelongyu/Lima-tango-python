@@ -165,6 +165,17 @@ class Merlin (PyTango.Device_4Impl):
         _MerlinCamera.setEnableCounters(counter)
 
     @Core.DEB_MEMBER_FUNCT
+    def read_depth(self, attr):
+        depth = _MerlinCamera.getCounterDepth()
+        attr.set_value(AttrHelper._getDictKey(self.__Depth, depth))
+
+    @Core.DEB_MEMBER_FUNCT
+    def write_depth(self, attr):
+        data = attr.get_write_value()
+        depth = AttrHelper._getDictValue(self.__Depth, data)
+        _MerlinCamera.setCounterDepth(depth)
+
+    @Core.DEB_MEMBER_FUNCT
     def read_gain(self, attr):
         gain = _MerlinCamera.getGain()
         attr.set_value(AttrHelper._getDictKey(self.__GainSetting, gain))
@@ -498,6 +509,14 @@ class MerlinClass(PyTango.DeviceClass):
              {
               'label': 'Counter ',
               'unit': 'COUNTER0/COUNTER1/BOTH',
+             }],
+        'depth':
+            [[PyTango.DevString,
+              PyTango.SCALAR,
+              PyTango.READ_WRITE],
+             {
+              'label':'Counter depth ',
+              'unit': 'BPP1/BPP6/BPP12/BPP24',
              }],
         'gain':
             [[PyTango.DevString,
