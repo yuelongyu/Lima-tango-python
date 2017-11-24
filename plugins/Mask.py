@@ -75,7 +75,7 @@ class MaskDeviceServer(BasePostProcess) :
         except AttributeError:
             # ask the help to not store object ref (object attribute functions)
             # into  __dict__, mask task is recreated everytime the plugin is stopped/started
-            return AttrHelper.get_attr_4u(self,name,self.__maskTask, update_dict=False)
+            return get_attr_4u(self,name,self.__maskTask, update_dict=False)
 
         
 def _getDictKey(dict, value):
