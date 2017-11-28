@@ -54,7 +54,11 @@ params          No              empty            List of parameters/options (one
                                                     with SPEC START)  
                                                   - xMinSize = 1
                                                     (enable correction for the X minimum size for the CLHS firmware bug) 
-=============== =============== =============== ==============================================================
+                                                  - bitAligment = <MSB | LSB>
+                                                    bit aligment of the image data, i.e. for 12b:
+                                                    MSB - xxxx xxxx xxxx 0000
+                                                    LSB - 0000 xxxx xxxx xxxx
+ =============== =============== =============== ==============================================================
 
 
 Attributes
@@ -67,6 +71,9 @@ acqTimeoutRetry         rw      DevLong                 Maximum Timeout retries 
 adc                     rw      DevLong                 Number of working ADC's
 adcMax                  ro      DevLong                 Maximum number of ADC's
 binInfo                 ro      DevLong                 PCO hw binning info
+bitAlignment            rw      DevString               Bit alignment
+                                                         - MSB (0)
+                                                         - LSB (1)
 bytesPerPixel           ro      DevLong                 Bytes per Pixel
 camerasFound            ro      DevString               List of cameras found during the Open search
 camInfo                 ro      DevString               General camera parameters information
@@ -80,6 +87,11 @@ cdiMode                 rw      DevLong                 Correlated Double Imagin
 clXferPar               ro      DevString               General CameraLink parameters
 cocRunTime              ro      DevDouble               cocRunTime (s) - only valid after the camera is armed
 coolingTemperature      ro      DevDouble               Cooling Temperature
+debugInt                rw      DevString               PCO plugin internal debug level (hex format: 0x....)
+debugIntTypes           r0      DevString               PCO plugin internal debug types
+doubleImageMode         rw      DevLong                 Double Image Mode
+                                                         - enabled/disabled = 1/0 (rw)
+                                                         - not allowed = -1 (ro)
 firmwareInfo            ro      DevString               Firmware info
 frameRate               ro      DevDouble               Framerate, calculated as: 1/cocRunTime (1/s)
 info                    ro      DevString               General camera parameters information
@@ -100,6 +112,11 @@ rollingShutter          rw      DevLong                 Rolling Shutter Mode (**
                                                          - 4 = GLOBAL RESET
 rollingShutterInfo      ro      DevString               Rolling Shutter info
 temperatureInfo         ro      DevString               Temperature info
+timestampMode           rw      DevLong                 Timestamp mode
+                                                         - 0 = none
+                                                         - 1 = BCD coded stamp in the first 14 pixel
+                                                         - 2 = BCD coded stamp in the first 14 pixel + ASCII text
+                                                         - 3 = ASCII text (**only for some cameras**)
 traceAcq                ro      DevString               Debug information for some types of acq
 version                 ro      DevString               Version information of the plugin
 versionAtt              ro      DevString               Version of att file

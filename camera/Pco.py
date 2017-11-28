@@ -52,7 +52,7 @@ from Lima import Pco as PcoAcq
 #from LimaCCDs import CallableReadEnum,CallableWriteEnum
 from AttrHelper import get_attr_4u, get_attr_string_value_list,_getDictKey, _getDictValue
 
-VERSION_ATT ="20170707"
+VERSION_ATT ="20171128"
 
 RESET_CLOSE_INTERFACE	= 100
 
@@ -73,6 +73,7 @@ class Pco(PyTango.Device_4Impl):
 											'adc': 'Adc',
 											'adcMax': 'AdcMax',
 											'binInfo': 'BinningInfo',
+											'bitAlignment': 'BitAlignment',
 											'bytesPerPixel': 'BytesPerPixel',
 											'camInfo': 'CamInfo',
 											'camName': 'CameraName',
@@ -83,6 +84,7 @@ class Pco(PyTango.Device_4Impl):
 											'clXferPar': 'ClTransferParam',
 											'cocRunTime': 'CocRunTime',
 											'coolingTemperature': 'CoolingTemperature',
+											'doubleImageMode': 'DoubleImageMode',
 											'firmwareInfo': 'FirmwareInfo',
 											'frameRate': 'FrameRate',
 											'info': 'CamInfo',
@@ -104,6 +106,10 @@ class Pco(PyTango.Device_4Impl):
 											'version': 'Version',
 											'versionSdk': 'SdkRelease',
 											'camerasFound': 'CamerasFound',
+											'debugInt': 'DebugInt',
+											'debugIntTypes': 'DebugIntTypes',
+											'test': 'Test',
+											'timestampMode': 'TimestampMode',
                                             }
         
         
@@ -235,6 +241,16 @@ class PcoClass(PyTango.DeviceClass):
              'description': 'pco binning info'
              }],
 
+         'bitAlignment':	  
+         [[PyTango.DevString,
+           PyTango.SCALAR,
+           PyTango.READ_WRITE],
+           {
+             'unit': 'N/A',
+             'format': '%s',
+             'description': 'bit alignment (MSB/LSB)'
+             }],
+
          'bytesPerPixel':	  
          [[PyTango.DevLong,
            PyTango.SCALAR,
@@ -300,7 +316,19 @@ class PcoClass(PyTango.DeviceClass):
            PyTango.SCALAR,
            PyTango.READ_WRITE], 
            {
-    			"memorized":"true"
+             'unit': 'N/A',
+             'format': '%d',
+             'description': 'CDI Mode'
+			}],
+
+         'doubleImageMode':	  
+         [[PyTango.DevLong,
+           PyTango.SCALAR,
+           PyTango.READ_WRITE], 
+           {
+             'unit': 'N/A',
+             'format': '%d',
+             'description': 'Double Image Mode'
 			}],
 
          'clXferPar':	  
@@ -555,6 +583,48 @@ class PcoClass(PyTango.DeviceClass):
              'description': 'cameras found during the Open search'
              }],
 
+         'test':	  
+         [[PyTango.DevLong,
+           PyTango.SCALAR,
+           PyTango.READ_WRITE], 
+           {
+             'unit': 'N/A',
+             'format': '%d',
+             'description': 'test'
+			}],
+
+         'debugInt':	  
+         [[PyTango.DevString,
+           PyTango.SCALAR,
+           PyTango.READ_WRITE], 
+           {
+             'unit': 'N/A',
+             'format': '%s',
+             'description': 'internal debug level in hex format (0x....)'
+             }],
+
+         'debugIntTypes':	  
+         [[PyTango.DevString,
+           PyTango.SCALAR,
+           PyTango.READ], 
+           {
+             'unit': 'N/A',
+             'format': '%s',
+             'description': 'internal debug level types'
+             }],
+
+         'timestampMode':	  
+         [[PyTango.DevLong,
+           PyTango.SCALAR,
+           PyTango.READ_WRITE], 
+           {
+             'unit': 'N/A',
+             'format': '%d',
+             'description': 'timestamp mode'
+			}],
+
+
+
         }
 
 #------------------------------------------------------------------
@@ -649,4 +719,5 @@ def get_tango_specific_class_n_device():
 def close_interface():
     print "... close_interface()"
     _PcoInterface.reset(RESET_CLOSE_INTERFACE)
+
 
