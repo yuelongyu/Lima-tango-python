@@ -3,7 +3,7 @@ PCO Tango device
 
 This is the reference documentation of the PCO Tango device.
 
-you can also find some useful information about the camera models/prerequisite/installation/configuration/compilation in the :ref:`PCO camera plugin <camera-pco>` section.
+You can also find some useful information about the camera models/prerequisite/installation/configuration/compilation in the :ref:`PCO camera plugin <camera-pco>` section.
 
 
 Properties
@@ -47,18 +47,26 @@ debug_type      No              0               To set the debug type (in hex fo
                                                  - Always  = 0x080
 params          No              empty            List of parameters/options (one per line)
                                                   - sn = <camera serial number>
+                                                    (
                                                     if it is 0 or doesn't exist, the first camera found will be opened
                                                     if the serial number is not found, OpenCam will fail
+                                                    )
                                                   - trigSingleMulti = 1 
-                                                    (enable TriggerSingleMulti as TriggerMulti for compability
-                                                    with SPEC START)  
+                                                    (
+                                                    enable TriggerSingleMulti as TriggerMulti for compability
+                                                    with SPEC START
+                                                    )  
                                                   - xMinSize = 1
-                                                    (enable correction for the X minimum size for the CLHS firmware bug) 
+                                                    (
+                                                    enable correction for the X minimum size for the CLHS firmware bug
+                                                    ) 
                                                   - bitAligment = <MSB | LSB>
-                                                    bit aligment of the image data, i.e. for 12b:
-                                                    MSB - xxxx xxxx xxxx 0000
-                                                    LSB - 0000 xxxx xxxx xxxx
- =============== =============== =============== ==============================================================
+                                                    (
+                                                    bit aligment of the image data, i.e. for 12b: 
+                                                    [MSB - xxxx xxxx xxxx 0000]
+                                                    [LSB - 0000 xxxx xxxx xxxx]
+                                                    )
+=============== =============== =============== ==============================================================
 
 
 Attributes
@@ -123,7 +131,6 @@ versionAtt              ro      DevString               Version of att file
 versionSdk              ro      DevString               PCO SDK Release
 ======================= ======= ======================= ======================================================================
 
-For the above attributes which use "talk" command you can refer to the PCO documentation for more information.
 
 Commands
 --------
