@@ -43,7 +43,7 @@ import PyTango
 import sys, types, os, time
 
 from Lima import Core
-from Lima.Maxipix import Maxipix as MaxipixModule
+from Lima import Maxipix as MaxipixModule
 # import some useful helpers to create direct mapping between tango attributes
 # and Lima APIs.
 from Lima.Server import AttrHelper
@@ -402,7 +402,6 @@ class MaxipixClass(PyTango.DeviceClass):
 #----------------------------------------------------------------------------
 #                              Plugins
 #----------------------------------------------------------------------------
-from Lima.Maxipix import Maxipix as MaxipixModule
 
 _MaxipixCamera = None
 _MaxipixInterface = None
