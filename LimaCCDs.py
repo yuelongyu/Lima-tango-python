@@ -446,6 +446,7 @@ class LimaCCDs(PyTango.Device_4Impl) :
 					 'image_rotation':'Rotation',
                                          'video_mode':'Mode',
                                          'buffer_max_memory': 'MaxMemory',
+                                         'buffer_max_number': 'MaxNumber',
                                          'acc_mode': 'Mode',
                                          'acc_threshold_before': 'ThresholdBefore',
                                          'acc_offset_before': 'OffsetBefore'}
@@ -2444,6 +2445,10 @@ class LimaCCDsClass(PyTango.DeviceClass) :
         [[PyTango.DevShort,
           PyTango.SCALAR,
           PyTango.READ_WRITE]],
+        'buffer_max_number':
+        [[PyTango.DevShort,
+          PyTango.SCALAR,
+          PyTango.READ]],
         }
 
 
