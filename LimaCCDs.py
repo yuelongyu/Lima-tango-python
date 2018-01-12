@@ -440,7 +440,6 @@ class LimaCCDs(PyTango.Device_4Impl) :
 
         self.__Attribute2FunctionBase = {'acq_trigger_mode':'TriggerMode',
                                          'saving_overwrite_policy' : 'OverwritePolicy',
-                                         'saving_format' : 'Format',
                                          'saving_managed_mode' : 'ManagedMode',
                                          'shutter_mode' : 'Mode',
 					 'image_rotation':'Rotation',
@@ -1365,7 +1364,12 @@ class LimaCCDs(PyTango.Device_4Impl) :
         saving = self.__control.saving()
 
         saving.setFramesPerFile(data)
-        
+       
+    @Core.DEB_MEMBER_FUNCT
+    def read_saving_format(self,attr) :
+        saving = self.__control.saving()
+        attr.set_value(saving.getFormatAsString())
+ 
     ## @brief Change the saving Format
     #
     @Core.DEB_MEMBER_FUNCT
@@ -1595,6 +1599,8 @@ class LimaCCDs(PyTango.Device_4Impl) :
                 valueList = [getDictKey(self.__AcqTriggerMode,val) for val in values]
             except:
                 valueList = self.__AcqTriggerMode.keys()
+        elif attr_name == "saving_format":
+            return self.__SavingFormat
         else:
             dict_name = '_' + self.__class__.__name__ + '__' + ''.join([x.title() for x in attr_name.split('_')])
             d = getattr(self,dict_name,None)
