@@ -100,6 +100,9 @@ class SlsDetector(PyTango.Device_4Impl):
         self.init_list_attr()
         self.init_dac_adc_attr()
 
+        self.proc_finished = self.cam.getProcessingFinishedEvent()
+        self.proc_finished.registerStatusCallback(_SlsDetectorControl)
+
         self.cam.setTolerateLostPackets(self.tolerate_lost_packets)
         aff_array = self.pixel_depth_cpu_affinity_map
         if aff_array:
