@@ -355,7 +355,7 @@ class SlsDetectorClass(PyTango.DeviceClass):
         'pixel_depth_cpu_affinity_map':
         [PyTango.DevVarStringArray,
          "Default PixelDepthCPUAffinityMap as a list of 4-value tuple strings: "
-         "pixel_depth, recv, lima, other\n...", []],
+         "[\"<pixel_depth>,<recv>,<lima>,<other>\", ...]", []],
         }
 
     cmd_list = {

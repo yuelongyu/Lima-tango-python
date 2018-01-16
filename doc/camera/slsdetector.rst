@@ -9,51 +9,56 @@ You can also find some useful information about the camera models/prerequisite/i
 Properties
 ----------
 
-=============== =============== =============== ==============================================================
-Property name	Mandatory	Default value	Description
-=============== =============== =============== ==============================================================
-config_fname	Yes		-		Path to the SlsDetector config file
-=============== =============== =============== ==============================================================
+=============================== =============== =============== ==============================================================
+Property name			Mandatory	Default value	Description
+=============================== =============== =============== ==============================================================
+config_fname			Yes		-		Path to the SlsDetector config file
+tolerate_lost_packets		No		True		Initial tolerance to lost packets
+pixel_depth_cpu_affinity_map	No		[]		Default PixelDepthCPUAffinityMap as a list of 4-value tuple strings:
+								["<pixel_depth>,<recv>,<lima>,<other>", ...]
+=============================== =============== =============== ==============================================================
 
 
 Attributes
 ----------
-======================= ======= ======================= ===========================================================
-Attribute name		RW	Type			Description
-======================= ======= ======================= ===========================================================
-config_fname		ro	DevString		Path to the SlsDetector config file
-hostname_list		ro	DevVarStringArray	The list of the Eiger half-modules' hostnames
-dac_name_list		ro	DevVarStringArray	The list of the DAC signals' names
-dac_<signal_name>	rw	DevVarLongArray		Array with the DAC <signal_name> value for each half-module, in A/D units
-dac_name_list_mv	ro	DevVarStringArray	The list of the DAC signals' names supporting milli-volt units
-dac_<signal_name>_mv	rw	DevVarLongArray		Array with the DAC <signal_name> value for each half-module, in milli-volt units
-adc_name_list		ro	DevVarStringArray	The list of the ADC signals' names
-adc_<signal_name>	rw	DevVarDoubleArray	Array with the ADC <signal_name> value for each half-module, in user units (deg C, etc.)
-pixel_depth		rw	DevString		The image pixel bit-depth:
-							 - **4** (not implemented in LImA yet)
-							 - **8**
-							 - **16**
-							 - **32**
-raw_mode		rw	DevBoolean		Publish image as given by the Receivers (no SW reconstruction)
-threshold_energy	rw	DevLong			The energy (in eV) the pixel discriminator thresholds (Vcmp & Trim bits) is set at
-all_trim_bits		rw	DevVarLongArray		Array with the pixel trimming value [0-63] for each half-module, if all the pixels in the half-module have the same trimming value, -1 otherwise
-clock_div		rw      DevString               The readout clock divider:
-							 - **FULL_SPEED**
-							 - **HALF_SPEED**
-							 - **QUARTER_SPEED**
-							 - **SUPER_SLOW_SPEED**
-readout_flags		rw	DevString		The flags affecting the readout mode (Parallel|NonParallel|Safe + StoreInRAM|Continous):
-							 - **PARALLEL + STORE_IN_RAM**
-							 - **PARALLEL + CONTINUOUS**
-							 - **NON_PARALLEL + STORE_IN_RAM**
-							 - **NON_PARALLEL + CONTINUOUS**
-							 - **SAFE + STORE_IN_RAM**
-							 - **SAFE + CONTINUOUS**
-max_frame_rate		ro	DevDouble		Maximum number of frames per second (kHz)
-tolerate_lost_packets	rw	DevBoolean		Allow acquisitions with incomplete frames due to overrun
-nb_bad_frames		ro	DevLong			Number of bad frames in the current (or last) acquisition
-bad_frame_list		ro	DevVarLongArray		List of bad frames in the current (or last) acquisition
-======================= ======= ======================= ===========================================================
+=============================== ======= ======================= ===========================================================
+Attribute name			RW	Type			Description
+=============================== ======= ======================= ===========================================================
+config_fname			ro	DevString		Path to the SlsDetector config file
+hostname_list			ro	DevVarStringArray	The list of the Eiger half-modules' hostnames
+dac_name_list			ro	DevVarStringArray	The list of the DAC signals' names
+dac_<signal_name>		rw	DevVarLongArray		Array with the DAC <signal_name> value for each half-module, in A/D units
+dac_name_list_mv		ro	DevVarStringArray	The list of the DAC signals' names supporting milli-volt units
+dac_<signal_name>_mv		rw	DevVarLongArray		Array with the DAC <signal_name> value for each half-module, in milli-volt units
+adc_name_list			ro	DevVarStringArray	The list of the ADC signals' names
+adc_<signal_name>		rw	DevVarDoubleArray	Array with the ADC <signal_name> value for each half-module, in user units (deg C, etc.)
+pixel_depth			rw	DevString		The image pixel bit-depth:
+								 - **4** (not implemented in LImA yet)
+								 - **8**
+								 - **16**
+								 - **32**
+raw_mode			rw	DevBoolean		Publish image as given by the Receivers (no SW reconstruction)
+threshold_energy		rw	DevLong			The energy (in eV) the pixel discriminator thresholds (Vcmp & Trim bits) is set at
+all_trim_bits			rw	DevVarLongArray		Array with the pixel trimming value [0-63] for each half-module, if all the pixels in the half-module have the same trimming value, -1 otherwise
+clock_div			rw      DevString               The readout clock divider:
+								 - **FULL_SPEED**
+								 - **HALF_SPEED**
+								 - **QUARTER_SPEED**
+								 - **SUPER_SLOW_SPEED**
+readout_flags			rw	DevString		The flags affecting the readout mode (Parallel|NonParallel|Safe + StoreInRAM|Continous):
+								 - **PARALLEL + STORE_IN_RAM**
+								 - **PARALLEL + CONTINUOUS**
+								 - **NON_PARALLEL + STORE_IN_RAM**
+								 - **NON_PARALLEL + CONTINUOUS**
+								 - **SAFE + STORE_IN_RAM**
+								 - **SAFE + CONTINUOUS**
+max_frame_rate			ro	DevDouble		Maximum number of frames per second (kHz)
+tolerate_lost_packets		rw	DevBoolean		Allow acquisitions with incomplete frames due to overrun
+nb_bad_frames			ro	DevLong			Number of bad frames in the current (or last) acquisition
+bad_frame_list			ro	DevVarLongArray		List of bad frames in the current (or last) acquisition
+pixel_depth_cpu_affinity_map	rw	DevDouble 4-col IMAGE	PixelDepth -> CPUAffinity map as a 2D array:
+								[[pixel_depth, recv, lima, other], ...]
+=============================== ======= ======================= ===========================================================
 
 Please refer to the *PSI/SLS Eiger User's Manual* for more information about the above specfic configuration parameters.
 
