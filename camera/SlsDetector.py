@@ -103,6 +103,7 @@ class SlsDetector(PyTango.Device_4Impl):
         self.cam.setTolerateLostPackets(self.tolerate_lost_packets)
         aff_array = self.pixel_depth_cpu_affinity_map
         if aff_array:
+            aff_array = np.fromstring(','.join(aff_array), sep=',')
             aff_map = self.getPixelDepthCPUAffinityMapFromArray(aff_array)
             self.cam.setPixelDepthCPUAffinityMap(aff_map)
 
@@ -307,7 +308,7 @@ class SlsDetector(PyTango.Device_4Impl):
         if len(aff_array.shape) == 1:
             if len(aff_array) % 4 != 0:
                 raise err
-            aff_array.reshape((len(aff_array), 4))
+            aff_array.resize((len(aff_array) / 4, 4))
         if aff_array.shape[1] != 4:
             raise err
         aff_map = {}
@@ -349,9 +350,9 @@ class SlsDetectorClass(PyTango.DeviceClass):
         [PyTango.DevBoolean,
          "Initial tolerance to lost packets", True],
         'pixel_depth_cpu_affinity_map':
-        [PyTango.DevVarLongArray,
-         "Default PixelDepthCPUAffinityMap as a list of 4-value tuples:"
-         "[pixel_depth, recv, lima, other],...", []],
+        [PyTango.DevVarStringArray,
+         "Default PixelDepthCPUAffinityMap as a list of 4-value tuple strings: "
+         "pixel_depth, recv, lima, other\n...", []],
         }
 
     cmd_list = {
