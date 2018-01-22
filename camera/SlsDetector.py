@@ -118,7 +118,7 @@ class SlsDetector(PyTango.Device_4Impl):
         self.__ReadoutFlags = ConstListAttr(nl, vl)
 
         nl = ['PixelDepth4', 'PixelDepth8', 'PixelDepth16', 'PixelDepth32']
-        bdl = map(lambda x: getattr(self.cam, x), nl)
+        bdl = map(lambda x: getattr(SlsDetectorHw, x), nl)
         self.__PixelDepth = OrderedDict([(str(bd), int(bd)) for bd in bdl])
 
     def init_dac_adc_attr(self):
@@ -315,8 +315,8 @@ class SlsDetector(PyTango.Device_4Impl):
         if aff_array.shape[1] != 4:
             raise err
         aff_map = {}
-        CPUAffinity = SlsDetectorHw.Camera.CPUAffinity
-        SystemCPUAffinity = SlsDetectorHw.Camera.SystemCPUAffinity
+        CPUAffinity = SlsDetectorHw.CPUAffinity
+        SystemCPUAffinity = SlsDetectorHw.SystemCPUAffinity
         for aff_data in aff_array:
             pixel_depth, recv, lima, other = map(int, aff_data)
             sys_affinity = SystemCPUAffinity()
@@ -473,7 +473,7 @@ def get_control(config_fname, **keys) :
     if _SlsDetectorControl is None:
 	_SlsDetectorCam = SlsDetectorHw.Camera(config_fname)
         _SlsDetectorHwInter = SlsDetectorHw.Interface(_SlsDetectorCam)
-        if _SlsDetectorCam.getType() == SlsDetectorHw.Camera.EigerDet:
+        if _SlsDetectorCam.getType() == SlsDetectorHw.EigerDet:
             _SlsDetectorEiger = SlsDetectorHw.Eiger(_SlsDetectorCam)
             _SlsDetectorCorrection = _SlsDetectorEiger.createCorrectionTask()
         else:
