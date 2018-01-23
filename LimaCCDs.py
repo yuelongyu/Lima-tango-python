@@ -440,7 +440,6 @@ class LimaCCDs(PyTango.Device_4Impl) :
 
         self.__Attribute2FunctionBase = {'acq_trigger_mode':'TriggerMode',
                                          'saving_overwrite_policy' : 'OverwritePolicy',
-                                         'saving_format' : 'Format',
                                          'saving_managed_mode' : 'ManagedMode',
                                          'shutter_mode' : 'Mode',
 					 'image_rotation':'Rotation',
@@ -469,29 +468,8 @@ class LimaCCDs(PyTango.Device_4Impl) :
         self.__SavingManagedMode = {'SOFTWARE' : Core.CtSaving.Software,
                                     'HARDWARE' : Core.CtSaving.Hardware}
 
-        self.__SavingFormat = {'RAW' : Core.CtSaving.RAW,
-                               'EDF' : Core.CtSaving.EDF,
-                               'CBF' : Core.CtSaving.CBFFormat}
-
-        self.__SavingFormatDefaultSuffix = {Core.CtSaving.RAW : '.raw',
-                                            Core.CtSaving.EDF : '.edf',
-                                            Core.CtSaving.CBFFormat : '.cbf'}
-
-        if SystemHasFeature('Core.CtSaving.TIFFFormat'):
-            self.__SavingFormat['TIFF'] = Core.CtSaving.TIFFFormat
-            self.__SavingFormatDefaultSuffix[Core.CtSaving.TIFFFormat] = '.tiff'
-        if SystemHasFeature('Core.CtSaving.EDFGZ'):
-            self.__SavingFormat['EDFGZ'] = Core.CtSaving.EDFGZ
-            self.__SavingFormatDefaultSuffix[Core.CtSaving.EDFGZ] = '.edfgz'
-        if SystemHasFeature('Core.CtSaving.HDF5'):
-            self.__SavingFormat['HDF5'] = Core.CtSaving.HDF5
-            self.__SavingFormatDefaultSuffix[Core.CtSaving.HDF5] = '.h5'
-        if SystemHasFeature('Core.CtSaving.EDFConcat'):
-            self.__SavingFormat['EDFCONCAT'] = Core.CtSaving.EDFConcat
-            self.__SavingFormatDefaultSuffix[Core.CtSaving.EDFConcat] = '.edf'
-        if SystemHasFeature('Core.CtSaving.EDFLZ4'):
-            self.__SavingFormat['EDFLZ4'] = Core.CtSaving.EDFLZ4
-            self.__SavingFormatDefaultSuffix[Core.CtSaving.EDFLZ4] = '.edf.lz4'
+        saving = self.__control.saving()
+        self.__SavingFormat = saving.getFormatListAsString()
 
         self.__SavingMode = {'MANUAL' : Core.CtSaving.Manual,
                              'AUTO_FRAME' : Core.CtSaving.AutoFrame,
@@ -1387,23 +1365,27 @@ class LimaCCDs(PyTango.Device_4Impl) :
         saving = self.__control.saving()
 
         saving.setFramesPerFile(data)
-        
+       
+    @Core.DEB_MEMBER_FUNCT
+    def read_saving_format(self,attr) :
+        saving = self.__control.saving()
+        attr.set_value(saving.getFormatAsString())
+ 
     ## @brief Change the saving Format
     #
     @Core.DEB_MEMBER_FUNCT
     def write_saving_format(self,attr) :
         data = attr.get_write_value()
+        value = data.upper()
         saving = self.__control.saving()
 
-        value = getDictValue(self.__SavingFormat,data.upper())
-        if value is None:
+        if not value in self.__SavingFormat:
             PyTango.Except.throw_exception('WrongData',\
-                                           'Wrong value %s: %s'%('saving_format',data.upper()),\
+                                           'Wrong value %s: %s'%('saving_format', value),\
                                            'LimaCCD Class')
         else:
-            saving.setFormat(value)
-            defaultSuffix = self.__SavingFormatDefaultSuffix.get(value,'.unknown')
-            saving.setSuffix(defaultSuffix)
+            saving.setFormatAsString(value)
+            saving.setFormatSuffix()
 
     
     ## @brief get the maximum number of task for concurrent writing (saving)
@@ -1618,6 +1600,8 @@ class LimaCCDs(PyTango.Device_4Impl) :
                 valueList = [getDictKey(self.__AcqTriggerMode,val) for val in values]
             except:
                 valueList = self.__AcqTriggerMode.keys()
+        elif attr_name == "saving_format":
+            return self.__SavingFormat
         else:
             dict_name = '_' + self.__class__.__name__ + '__' + ''.join([x.title() for x in attr_name.split('_')])
             d = getattr(self,dict_name,None)
