@@ -43,6 +43,7 @@ import time, string
 import numpy as np
 import PyTango
 from collections import OrderedDict
+import functools
 
 from Lima import Core
 from Lima import SlsDetector as SlsDetectorHw
@@ -99,6 +100,16 @@ class SlsDetector(PyTango.Device_4Impl):
         self.init_list_attr()
         self.init_dac_adc_attr()
 
+        self.proc_finished = self.cam.getProcessingFinishedEvent()
+        self.proc_finished.registerStatusCallback(_SlsDetectorControl)
+
+        self.cam.setTolerateLostPackets(self.tolerate_lost_packets)
+        aff_array = self.pixel_depth_cpu_affinity_map
+        if aff_array:
+            aff_array = np.fromstring(','.join(aff_array), sep=',')
+            aff_map = self.getPixelDepthCPUAffinityMapFromArray(aff_array)
+            self.cam.setPixelDepthCPUAffinityMap(aff_map)
+
     def init_list_attr(self):
         nl = ['FullSpeed', 'HalfSpeed', 'QuarterSpeed', 'SuperSlowSpeed']
         self.__ClockDiv = ConstListAttr(nl)
@@ -107,7 +118,7 @@ class SlsDetector(PyTango.Device_4Impl):
         self.__ReadoutFlags = ConstListAttr(nl, vl)
 
         nl = ['PixelDepth4', 'PixelDepth8', 'PixelDepth16', 'PixelDepth32']
-        bdl = map(lambda x: getattr(self.cam, x), nl)
+        bdl = map(lambda x: getattr(SlsDetectorHw, x), nl)
         self.__PixelDepth = OrderedDict([(str(bd), int(bd)) for bd in bdl])
 
     def init_dac_adc_attr(self):
@@ -153,7 +164,10 @@ class SlsDetector(PyTango.Device_4Impl):
     def getAttrStringValueList(self, attr_name):
         return get_attr_string_value_list(self, attr_name)
 
-    def __getattr__(self,name):
+    def __getattr__(self, name):
+        prefix = 'read_stats_'
+        if name.startswith(prefix):
+            return functools.partial(self.read_stats, name=name[len(prefix):])
         return get_attr_4u(self, name, self.cam)
 
     @Core.DEB_MEMBER_FUNCT
@@ -256,6 +270,76 @@ class SlsDetector(PyTango.Device_4Impl):
         deb.Return("out_arr=%s" % out_arr)
         attr.set_value(out_arr)
 
+    @Core.DEB_MEMBER_FUNCT
+    def read_max_frame_rate(self, attr):
+        time_ranges = self.model.getTimeRanges()
+        max_frame_rate = 1 / time_ranges.min_frame_period / 1e3;
+        deb.Return("max_frame_rate=%s" % max_frame_rate)
+        attr.set_value(max_frame_rate)
+
+    @Core.DEB_MEMBER_FUNCT
+    def read_nb_bad_frames(self, attr):
+        nb_bad_frames = len(self.cam.getBadFrameList())
+        deb.Return("nb_bad_frames=%s" % nb_bad_frames)
+        attr.set_value(nb_bad_frames)
+
+    @Core.DEB_MEMBER_FUNCT
+    def read_stats(self, attr, name):
+        stats = self.cam.getStats()
+        stat = getattr(stats, name)
+        stat_data = [stat.min(), stat.max(), stat.ave(), stat.std(), stat.n()]
+        deb.Return("stats_%s=%s" % (name, stat_data))
+        attr.set_value(stat_data)
+
+    @staticmethod
+    @Core.DEB_MEMBER_FUNCT
+    def getArrayFromPixelDepthCPUAffinityMap(aff_map):
+        nb_pixel_depth = len(aff_map)
+        aff_array = np.zeros((nb_pixel_depth, 4), 'int')
+        for i, (pixel_depth, sys_affinity) in enumerate(aff_map.items()):
+            aff_array[i] = (pixel_depth, 
+                                 sys_affinity.recv, 
+                                 sys_affinity.lima, 
+                                 sys_affinity.other)
+        return aff_array
+
+    @staticmethod
+    @Core.DEB_MEMBER_FUNCT
+    def getPixelDepthCPUAffinityMapFromArray(aff_array):
+        err = ValueError("Invalid pixel_depth_cpu_affinity_map: "
+                         "must be a list of 4-value tuples")
+        if len(aff_array.shape) == 1:
+            if len(aff_array) % 4 != 0:
+                raise err
+            aff_array.resize((len(aff_array) / 4, 4))
+        if aff_array.shape[1] != 4:
+            raise err
+        aff_map = {}
+        CPUAffinity = SlsDetectorHw.CPUAffinity
+        SystemCPUAffinity = SlsDetectorHw.SystemCPUAffinity
+        for aff_data in aff_array:
+            pixel_depth, recv, lima, other = map(int, aff_data)
+            sys_affinity = SystemCPUAffinity()
+            sys_affinity.recv = CPUAffinity(recv)
+            sys_affinity.lima = CPUAffinity(lima)
+            sys_affinity.other = CPUAffinity(other)
+            aff_map[pixel_depth] = sys_affinity
+        return aff_map
+
+    @Core.DEB_MEMBER_FUNCT
+    def read_pixel_depth_cpu_affinity_map(self, attr):
+        aff_map = self.cam.getPixelDepthCPUAffinityMap()
+        aff_array = self.getArrayFromPixelDepthCPUAffinityMap(aff_map)
+        deb.Return("aff_array=%s" % aff_array)
+        attr.set_value(aff_array)
+
+    @Core.DEB_MEMBER_FUNCT
+    def write_pixel_depth_cpu_affinity_map(self, attr):
+        aff_array = attr.get_write_value()
+        deb.Param("aff_array=%s" % aff_array)
+        aff_map = self.getPixelDepthCPUAffinityMapFromArray(aff_array)
+        self.cam.setPixelDepthCPUAffinityMap(aff_map)
+
 
 class SlsDetectorClass(PyTango.DeviceClass):
 
@@ -265,6 +349,13 @@ class SlsDetectorClass(PyTango.DeviceClass):
         'config_fname':
         [PyTango.DevString,
          "Path to the SlsDetector config file",[]],
+        'tolerate_lost_packets':
+        [PyTango.DevBoolean,
+         "Initial tolerance to lost packets", True],
+        'pixel_depth_cpu_affinity_map':
+        [PyTango.DevVarStringArray,
+         "Default PixelDepthCPUAffinityMap as a list of 4-value tuple strings: "
+         "[\"<pixel_depth>,<recv>,<lima>,<other>\", ...]", []],
         }
 
     cmd_list = {
@@ -324,6 +415,42 @@ class SlsDetectorClass(PyTango.DeviceClass):
         [[PyTango.DevString,
           PyTango.SCALAR,
           PyTango.READ_WRITE]],
+        'max_frame_rate':
+        [[PyTango.DevDouble,
+          PyTango.SCALAR,
+          PyTango.READ]],
+        'tolerate_lost_packets':
+        [[PyTango.DevBoolean,
+          PyTango.SCALAR,
+          PyTango.READ_WRITE]],
+        'nb_bad_frames':
+        [[PyTango.DevLong,
+          PyTango.SCALAR,
+          PyTango.READ]],
+        'bad_frame_list':
+        [[PyTango.DevLong,
+          PyTango.SPECTRUM,
+          PyTango.READ, 100000]],
+        'stats_cb_period':
+        [[PyTango.DevDouble,
+          PyTango.SPECTRUM,
+          PyTango.READ, 5]],
+        'stats_new_finish':
+        [[PyTango.DevDouble,
+          PyTango.SPECTRUM,
+          PyTango.READ, 5]],
+        'stats_cb_exec':
+        [[PyTango.DevDouble,
+          PyTango.SPECTRUM,
+          PyTango.READ, 5]],
+        'stats_recv_exec':
+        [[PyTango.DevDouble,
+          PyTango.SPECTRUM,
+          PyTango.READ, 5]],
+        'pixel_depth_cpu_affinity_map':
+        [[PyTango.DevLong,
+          PyTango.IMAGE,
+          PyTango.READ_WRITE, 4, 5]],
         }
 
     def __init__(self,name) :
@@ -346,7 +473,7 @@ def get_control(config_fname, **keys) :
     if _SlsDetectorControl is None:
 	_SlsDetectorCam = SlsDetectorHw.Camera(config_fname)
         _SlsDetectorHwInter = SlsDetectorHw.Interface(_SlsDetectorCam)
-        if _SlsDetectorCam.getType() == SlsDetectorHw.Camera.EigerDet:
+        if _SlsDetectorCam.getType() == SlsDetectorHw.EigerDet:
             _SlsDetectorEiger = SlsDetectorHw.Eiger(_SlsDetectorCam)
             _SlsDetectorCorrection = _SlsDetectorEiger.createCorrectionTask()
         else:
