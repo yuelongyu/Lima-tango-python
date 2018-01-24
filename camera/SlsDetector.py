@@ -43,7 +43,7 @@ import time, string
 import numpy as np
 import PyTango
 from collections import OrderedDict
-import functools
+from functools import partial
 
 from Lima import Core
 from Lima import SlsDetector as SlsDetectorHw
@@ -167,7 +167,10 @@ class SlsDetector(PyTango.Device_4Impl):
     def __getattr__(self, name):
         prefix = 'read_stats_'
         if name.startswith(prefix):
-            return functools.partial(self.read_stats, name=name[len(prefix):])
+            return partial(self.read_stats, name=name[len(prefix):])
+        prefix = 'read_port_stats_'
+        if name.startswith(prefix):
+            return partial(self.read_port_stats, name=name[len(prefix):])
         return get_attr_4u(self, name, self.cam)
 
     @Core.DEB_MEMBER_FUNCT
@@ -288,6 +291,15 @@ class SlsDetector(PyTango.Device_4Impl):
         stats = self.cam.getStats()
         stat = getattr(stats, name)
         stat_data = [stat.min(), stat.max(), stat.ave(), stat.std(), stat.n()]
+        deb.Return("stats_%s=%s" % (name, stat_data))
+        attr.set_value(stat_data)
+
+    @Core.DEB_MEMBER_FUNCT
+    def read_port_stats(self, attr, name):
+        nb_ports = self.cam.getTotNbPorts()
+        stats = [self.cam.getStats(i) for i in range(nb_ports)]
+        stat = [getattr(s, name) for s in stats]
+        stat_data = [[s.min(), s.max(), s.ave(), s.std(), s.n()] for s in stat]
         deb.Return("stats_%s=%s" % (name, stat_data))
         attr.set_value(stat_data)
 
@@ -447,6 +459,22 @@ class SlsDetectorClass(PyTango.DeviceClass):
         [[PyTango.DevDouble,
           PyTango.SPECTRUM,
           PyTango.READ, 5]],
+        'port_stats_cb_period':
+        [[PyTango.DevDouble,
+          PyTango.IMAGE,
+          PyTango.READ, 64, 5]],
+        'port_stats_new_finish':
+        [[PyTango.DevDouble,
+          PyTango.IMAGE,
+          PyTango.READ, 64, 5]],
+        'port_stats_cb_exec':
+        [[PyTango.DevDouble,
+          PyTango.IMAGE,
+          PyTango.READ,64,  5]],
+        'port_stats_recv_exec':
+        [[PyTango.DevDouble,
+          PyTango.IMAGE,
+          PyTango.READ, 64, 5]],
         'pixel_depth_cpu_affinity_map':
         [[PyTango.DevLong,
           PyTango.IMAGE,
