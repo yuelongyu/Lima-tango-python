@@ -165,12 +165,6 @@ class SlsDetector(PyTango.Device_4Impl):
         return get_attr_string_value_list(self, attr_name)
 
     def __getattr__(self, name):
-        prefix = 'read_stats_'
-        if name.startswith(prefix):
-            return partial(self.read_stats, name=name[len(prefix):])
-        prefix = 'read_port_stats_'
-        if name.startswith(prefix):
-            return partial(self.read_port_stats, name=name[len(prefix):])
         return get_attr_4u(self, name, self.cam)
 
     @Core.DEB_MEMBER_FUNCT
@@ -281,27 +275,38 @@ class SlsDetector(PyTango.Device_4Impl):
         attr.set_value(max_frame_rate)
 
     @Core.DEB_MEMBER_FUNCT
-    def read_nb_bad_frames(self, attr):
-        nb_bad_frames = len(self.cam.getBadFrameList())
+    def getNbBadFrames(self, port_idx):
+        nb_bad_frames = self.cam.getNbBadFrames(port_idx);
         deb.Return("nb_bad_frames=%s" % nb_bad_frames)
-        attr.set_value(nb_bad_frames)
+        return nb_bad_frames
 
     @Core.DEB_MEMBER_FUNCT
-    def read_stats(self, attr, name):
-        stats = self.cam.getStats()
-        stat = getattr(stats, name)
+    def getBadFrameList(self, port_idx):
+        bad_frame_list = self.cam.getBadFrameList(port_idx);
+        deb.Return("bad_frame_list=%s" % bad_frame_list)
+        return bad_frame_list
+
+    @Core.DEB_MEMBER_FUNCT
+    def getStats(self, port_idx_stats_name):
+        port_idx_str, stats_name = port_idx_stats_name.split(':')
+        port_idx = int(port_idx_str)
+        deb.Param("port_idx=%s, stats_name=%s");
+        stats = self.cam.getStats(port_idx)
+        stat = getattr(stats, stats_name)
         stat_data = [stat.min(), stat.max(), stat.ave(), stat.std(), stat.n()]
-        deb.Return("stats_%s=%s" % (name, stat_data))
-        attr.set_value(stat_data)
+        deb.Return("stat_data=%s" % stat_data)
+        return stat_data
 
     @Core.DEB_MEMBER_FUNCT
-    def read_port_stats(self, attr, name):
-        nb_ports = self.cam.getTotNbPorts()
-        stats = [self.cam.getStats(i) for i in range(nb_ports)]
-        stat = [getattr(s, name) for s in stats]
-        stat_data = [[s.min(), s.max(), s.ave(), s.std(), s.n()] for s in stat]
-        deb.Return("stats_%s=%s" % (name, stat_data))
-        attr.set_value(stat_data)
+    def getStatsHistogram(self, port_idx_stats_name):
+        port_idx_str, stats_name = port_idx_stats_name.split(':')
+        port_idx = int(port_idx_str)
+        deb.Param("port_idx=%s, stats_name=%s");
+        stats = self.cam.getStats(port_idx)
+        stat = getattr(stats, stats_name)
+        stat_data = np.array(stat.hist).flatten()
+        deb.Return("stat_data=%s" % stat_data)
+        return stat_data
 
     @staticmethod
     @Core.DEB_MEMBER_FUNCT
@@ -380,6 +385,18 @@ class SlsDetectorClass(PyTango.DeviceClass):
         'getCmd':
         [[PyTango.DevString, "SlsDetector command"],
          [PyTango.DevString, "SlsDetector response"]],
+        'getNbBadFrames':
+        [[PyTango.DevLong, "port_idx(-1=all)"],
+         [PyTango.DevLong, "Number of bad frames"]],
+        'getBadFrameList':
+        [[PyTango.DevLong, "port_idx(-1=all)"],
+         [PyTango.DevVarLongArray, "Bad frame list"]],
+        'getStats':
+        [[PyTango.DevString, "port_idx(-1=all):stats_name"],
+         [PyTango.DevVarDoubleArray, "Statistics: min, max, ave, std, n"]],
+        'getStatsHistogram':
+        [[PyTango.DevString, "port_idx(-1=all):stats_name"],
+         [PyTango.DevVarDoubleArray, "[[bin, count], ...]"]],
         }
 
     attr_list = {
@@ -435,46 +452,6 @@ class SlsDetectorClass(PyTango.DeviceClass):
         [[PyTango.DevBoolean,
           PyTango.SCALAR,
           PyTango.READ_WRITE]],
-        'nb_bad_frames':
-        [[PyTango.DevLong,
-          PyTango.SCALAR,
-          PyTango.READ]],
-        'bad_frame_list':
-        [[PyTango.DevLong,
-          PyTango.SPECTRUM,
-          PyTango.READ, 100000]],
-        'stats_cb_period':
-        [[PyTango.DevDouble,
-          PyTango.SPECTRUM,
-          PyTango.READ, 5]],
-        'stats_new_finish':
-        [[PyTango.DevDouble,
-          PyTango.SPECTRUM,
-          PyTango.READ, 5]],
-        'stats_cb_exec':
-        [[PyTango.DevDouble,
-          PyTango.SPECTRUM,
-          PyTango.READ, 5]],
-        'stats_recv_exec':
-        [[PyTango.DevDouble,
-          PyTango.SPECTRUM,
-          PyTango.READ, 5]],
-        'port_stats_cb_period':
-        [[PyTango.DevDouble,
-          PyTango.IMAGE,
-          PyTango.READ, 64, 5]],
-        'port_stats_new_finish':
-        [[PyTango.DevDouble,
-          PyTango.IMAGE,
-          PyTango.READ, 64, 5]],
-        'port_stats_cb_exec':
-        [[PyTango.DevDouble,
-          PyTango.IMAGE,
-          PyTango.READ,64,  5]],
-        'port_stats_recv_exec':
-        [[PyTango.DevDouble,
-          PyTango.IMAGE,
-          PyTango.READ, 64, 5]],
         'pixel_depth_cpu_affinity_map':
         [[PyTango.DevLong,
           PyTango.IMAGE,
