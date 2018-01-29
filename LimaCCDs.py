@@ -568,11 +568,11 @@ class LimaCCDs(PyTango.Device_4Impl) :
             self.__control.registerImageStatusCallback(self.__image_status_cbk)
 
         # Setup a user-defined detector name if it exists
-        if self.InstrumentName:
-            if SystemHasFeature('Core.HwDetInfoCtrlObj.setInstrumentName'):
-                self.__detinfo.setInstrumentName(self.InstrumentName)
+        if self.UserInstrumentName:
+            if SystemHasFeature('Core.HwDetInfoCtrlObj.setUserInstrumentName'):
+                self.__detinfo.setUserInstrumentName(self.UserInstrumentName)
             else:
-                deb.Warning('InstrumentName not supported in this version')
+                deb.Warning('UserInstrumentName not supported in this version')
 
         # Setup a user-defined detector name if it exists
         if self.UserDetectorName:
@@ -691,21 +691,21 @@ class LimaCCDs(PyTango.Device_4Impl) :
         data = attr.get_write_value()
         self.__detinfo.setUserDetectorName(data)
         
-    ## @brief Read the instrument name
+    ## @brief Read the user instrument name
     #
-    @RequiresSystemFeature('Core.HwDetInfoCtrlObj.getInstrumentName')
+    @RequiresSystemFeature('Core.HwDetInfoCtrlObj.getUserInstrumentName')
     @Core.DEB_MEMBER_FUNCT
-    def read_instrument_name(self,attr) :        
-	value = self.__detinfo.getInstrumentName() 
+    def read_user_instrument_name(self,attr) :        
+	value = self.__detinfo.getUserInstrumentName() 
 	attr.set_value(value)
 
-    ## @brief Write the instrument name
+    ## @brief Write the user instrument name
     #
-    @RequiresSystemFeature('Core.HwDetInfoCtrlObj.setInstrumentName')
+    @RequiresSystemFeature('Core.HwDetInfoCtrlObj.setUserInstrumentName')
     @Core.DEB_MEMBER_FUNCT
-    def write_instrument_name(self,attr) :
+    def write_user_instrument_name(self,attr) :
         data = attr.get_write_value()
-        self.__detinfo.setInstrumentName(data)
+        self.__detinfo.setUserInstrumentName(data)
 
     ## @brief Read the Camera pixelsize
     #
@@ -1948,9 +1948,9 @@ class LimaCCDsClass(PyTango.DeviceClass) :
         'UserDetectorName' :
         [PyTango.DevString,
          "A user detector identifier, e.g frelon-saxs",[]],
-        'InstrumentName' :
+        'UserInstrumentName' :
         [PyTango.DevString,
-         "The instrument name, ESRF-ID02",[]],
+         "The instrument name, e.g ESRF-ID02",[]],
         'BufferMaxMemory' :
          [PyTango.DevString,
           "The maximum among of memory (RAM) Lima should use to allocate the frame buffers, e.g 50 %, default is 70%",[]],
@@ -2069,7 +2069,7 @@ class LimaCCDsClass(PyTango.DeviceClass) :
              'label': "user detector name",
              'description':"A user defined detector name, will be saved in the saved file header",
          }],
-        'instrument_name':
+        'user_instrument_name':
         [[PyTango.DevString,
           PyTango.SCALAR,
           PyTango.READ_WRITE],
