@@ -312,10 +312,11 @@ class SlsDetector(PyTango.Device_4Impl):
     @Core.DEB_MEMBER_FUNCT
     def getArrayFromPixelDepthCPUAffinityMap(aff_map):
         nb_pixel_depth = len(aff_map)
-        aff_array = np.zeros((nb_pixel_depth, 4), 'int')
+        aff_array = np.zeros((nb_pixel_depth, 5), 'int')
         for i, (pixel_depth, sys_affinity) in enumerate(aff_map.items()):
             aff_array[i] = (pixel_depth, 
-                                 sys_affinity.recv, 
+                                 sys_affinity.recv.listeners, 
+                                 sys_affinity.recv.writers, 
                                  sys_affinity.lima, 
                                  sys_affinity.other)
         return aff_array
@@ -324,20 +325,21 @@ class SlsDetector(PyTango.Device_4Impl):
     @Core.DEB_MEMBER_FUNCT
     def getPixelDepthCPUAffinityMapFromArray(aff_array):
         err = ValueError("Invalid pixel_depth_cpu_affinity_map: "
-                         "must be a list of 4-value tuples")
+                         "must be a list of 5-value tuples")
         if len(aff_array.shape) == 1:
-            if len(aff_array) % 4 != 0:
+            if len(aff_array) % 5 != 0:
                 raise err
-            aff_array.resize((len(aff_array) / 4, 4))
-        if aff_array.shape[1] != 4:
+            aff_array.resize((len(aff_array) / 5, 5))
+        if aff_array.shape[1] != 5:
             raise err
         aff_map = {}
         CPUAffinity = SlsDetectorHw.CPUAffinity
         SystemCPUAffinity = SlsDetectorHw.SystemCPUAffinity
         for aff_data in aff_array:
-            pixel_depth, recv, lima, other = map(int, aff_data)
+            pixel_depth, recv_l, recv_w, lima, other = map(int, aff_data)
             sys_affinity = SystemCPUAffinity()
-            sys_affinity.recv = CPUAffinity(recv)
+            sys_affinity.recv.listeners = CPUAffinity(recv_l)
+            sys_affinity.recv.writers = CPUAffinity(recv_w)
             sys_affinity.lima = CPUAffinity(lima)
             sys_affinity.other = CPUAffinity(other)
             aff_map[pixel_depth] = sys_affinity
@@ -371,8 +373,8 @@ class SlsDetectorClass(PyTango.DeviceClass):
          "Initial tolerance to lost packets", True],
         'pixel_depth_cpu_affinity_map':
         [PyTango.DevVarStringArray,
-         "Default PixelDepthCPUAffinityMap as a list of 4-value tuple strings: "
-         "[\"<pixel_depth>,<recv>,<lima>,<other>\", ...]", []],
+         "Default PixelDepthCPUAffinityMap as a list of 5-value tuple strings: "
+         "[\"<pixel_depth>,<recv_l>,<recv_w>,<lima>,<other>\", ...]", []],
         }
 
     cmd_list = {
@@ -455,7 +457,7 @@ class SlsDetectorClass(PyTango.DeviceClass):
         'pixel_depth_cpu_affinity_map':
         [[PyTango.DevLong,
           PyTango.IMAGE,
-          PyTango.READ_WRITE, 4, 5]],
+          PyTango.READ_WRITE, 5, 5]],
         }
 
     def __init__(self,name) :
