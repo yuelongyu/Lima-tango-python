@@ -166,6 +166,11 @@ class SlsDetector(PyTango.Device_4Impl):
         return get_attr_string_value_list(self, attr_name)
 
     def __getattr__(self, name):
+        if '_stats_' in name:
+            stats_tok = name.split('_stats_')
+            if stats_tok[1] in ['do_hist']:
+                stats_name = '_'.join(stats_tok)
+                return get_attr_4u(self, stats_name, SlsDetectorHw.SimpleStat)
         return get_attr_4u(self, name, self.cam)
 
     @Core.DEB_MEMBER_FUNCT
@@ -497,6 +502,10 @@ class SlsDetectorClass(PyTango.DeviceClass):
         [[PyTango.DevLong,
           PyTango.IMAGE,
           PyTango.READ_WRITE, 64, 5]],
+        'stats_do_hist':
+        [[PyTango.DevBoolean,
+          PyTango.SCALAR,
+          PyTango.READ_WRITE]],
         }
 
     def __init__(self,name) :
