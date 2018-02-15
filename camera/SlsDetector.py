@@ -322,13 +322,13 @@ class SlsDetector(PyTango.Device_4Impl):
         nb_pixel_depth = len(aff_map)
         aff_len = self.getCPUAffinityLen()
         aff_array = np.zeros((nb_pixel_depth, aff_len), 'int')
-        for i, (pixel_depth, sys_affinity) in enumerate(aff_map.items()):
+        for i, (pixel_depth, global_affinity) in enumerate(aff_map.items()):
             aff_array[i][:5] = (pixel_depth, 
-                                sys_affinity.recv.listeners, 
-                                sys_affinity.recv.writers, 
-                                sys_affinity.lima, 
-                                sys_affinity.other)
-            for ng_aff in sys_affinity.netdev:
+                                global_affinity.recv.listeners, 
+                                global_affinity.recv.writers, 
+                                global_affinity.lima, 
+                                global_affinity.other)
+            for ng_aff in global_affinity.netdev:
                 j = self.netdev_groups.index(ng_aff.name_list)
                 aff_array[i][5 + j] = ng_aff.processing
         return aff_array
@@ -347,24 +347,24 @@ class SlsDetector(PyTango.Device_4Impl):
         aff_map = {}
         CPUAffinity = SlsDetectorHw.CPUAffinity
         NetDevGroupCPUAffinity = SlsDetectorHw.NetDevGroupCPUAffinity
-        SystemCPUAffinity = SlsDetectorHw.SystemCPUAffinity
+        GlobalCPUAffinity = SlsDetectorHw.GlobalCPUAffinity
         for aff_data in aff_array:
             aff_data = map(int, aff_data)
             pixel_depth, recv_l, recv_w, lima, other = aff_data[:5]
             netdev_aff = aff_data[5:]
-            sys_affinity = SystemCPUAffinity()
-            sys_affinity.recv.listeners = CPUAffinity(recv_l)
-            sys_affinity.recv.writers = CPUAffinity(recv_w)
-            sys_affinity.lima = CPUAffinity(lima)
-            sys_affinity.other = CPUAffinity(other)
+            global_affinity = GlobalCPUAffinity()
+            global_affinity.recv.listeners = CPUAffinity(recv_l)
+            global_affinity.recv.writers = CPUAffinity(recv_w)
+            global_affinity.lima = CPUAffinity(lima)
+            global_affinity.other = CPUAffinity(other)
             ng_aff_list = []
             for name_list, a in zip(self.netdev_groups, netdev_aff):
                 ng_aff = NetDevGroupCPUAffinity()
                 ng_aff.name_list = name_list
                 ng_aff.processing = CPUAffinity(a)
                 ng_aff_list.append(ng_aff)
-            sys_affinity.netdev = ng_aff_list
-            aff_map[pixel_depth] = sys_affinity
+            global_affinity.netdev = ng_aff_list
+            aff_map[pixel_depth] = global_affinity
         return aff_map
 
     @Core.DEB_MEMBER_FUNCT
