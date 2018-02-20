@@ -104,6 +104,7 @@ class SlsDetector(PyTango.Device_4Impl):
         self.proc_finished.registerStatusCallback(_SlsDetectorControl)
 
         self.cam.setTolerateLostPackets(self.tolerate_lost_packets)
+        self.netdev_groups = [g.split(',') for g in self.netdev_groups]
         aff_array = self.pixel_depth_cpu_affinity_map
         if aff_array:
             aff_array = np.fromstring(','.join(aff_array), sep=',')
@@ -165,6 +166,11 @@ class SlsDetector(PyTango.Device_4Impl):
         return get_attr_string_value_list(self, attr_name)
 
     def __getattr__(self, name):
+        if '_stats_' in name:
+            stats_tok = name.split('_stats_')
+            if stats_tok[1] in ['do_hist']:
+                stats_name = '_'.join(stats_tok)
+                return get_attr_4u(self, stats_name, SlsDetectorHw.SimpleStat)
         return get_attr_4u(self, name, self.cam)
 
     @Core.DEB_MEMBER_FUNCT
@@ -308,40 +314,70 @@ class SlsDetector(PyTango.Device_4Impl):
         deb.Return("stat_data=%s" % stat_data)
         return stat_data
 
-    @staticmethod
+    def getCPUAffinityLen(self):
+        return 5 + len(self.netdev_groups);
+
     @Core.DEB_MEMBER_FUNCT
-    def getArrayFromPixelDepthCPUAffinityMap(aff_map):
+    def getArrayFromPixelDepthCPUAffinityMap(self, aff_map):
         nb_pixel_depth = len(aff_map)
-        aff_array = np.zeros((nb_pixel_depth, 4), 'int')
-        for i, (pixel_depth, sys_affinity) in enumerate(aff_map.items()):
-            aff_array[i] = (pixel_depth, 
-                                 sys_affinity.recv, 
-                                 sys_affinity.lima, 
-                                 sys_affinity.other)
+        aff_len = self.getCPUAffinityLen()
+        aff_array = np.zeros((nb_pixel_depth, aff_len), 'int')
+        for i, (pixel_depth, global_affinity) in enumerate(aff_map.items()):
+            aff_array[i][:5] = (pixel_depth, 
+                                global_affinity.recv.listeners, 
+                                global_affinity.recv.writers, 
+                                global_affinity.lima, 
+                                global_affinity.other)
+            for ng_aff in global_affinity.netdev:
+                j = self.netdev_groups.index(ng_aff.name_list)
+                aff_array[i][5 + j] = ng_aff.processing
         return aff_array
 
-    @staticmethod
     @Core.DEB_MEMBER_FUNCT
-    def getPixelDepthCPUAffinityMapFromArray(aff_array):
+    def getPixelDepthCPUAffinityMapFromArray(self, aff_array):
+        aff_len = self.getCPUAffinityLen()
         err = ValueError("Invalid pixel_depth_cpu_affinity_map: "
-                         "must be a list of 4-value tuples")
+                         "must be a list of %d-value tuples" % aff_len)
         if len(aff_array.shape) == 1:
-            if len(aff_array) % 4 != 0:
+            if len(aff_array) % aff_len != 0:
                 raise err
-            aff_array.resize((len(aff_array) / 4, 4))
-        if aff_array.shape[1] != 4:
+            aff_array.resize((len(aff_array) / aff_len, aff_len))
+        if aff_array.shape[1] != aff_len:
             raise err
         aff_map = {}
         CPUAffinity = SlsDetectorHw.CPUAffinity
-        SystemCPUAffinity = SlsDetectorHw.SystemCPUAffinity
+        NetDevGroupCPUAffinity = SlsDetectorHw.NetDevGroupCPUAffinity
+        GlobalCPUAffinity = SlsDetectorHw.GlobalCPUAffinity
         for aff_data in aff_array:
-            pixel_depth, recv, lima, other = map(int, aff_data)
-            sys_affinity = SystemCPUAffinity()
-            sys_affinity.recv = CPUAffinity(recv)
-            sys_affinity.lima = CPUAffinity(lima)
-            sys_affinity.other = CPUAffinity(other)
-            aff_map[pixel_depth] = sys_affinity
+            aff_data = map(int, aff_data)
+            pixel_depth, recv_l, recv_w, lima, other = aff_data[:5]
+            netdev_aff = aff_data[5:]
+            global_affinity = GlobalCPUAffinity()
+            global_affinity.recv.listeners = CPUAffinity(recv_l)
+            global_affinity.recv.writers = CPUAffinity(recv_w)
+            global_affinity.lima = CPUAffinity(lima)
+            global_affinity.other = CPUAffinity(other)
+            ng_aff_list = []
+            for name_list, a in zip(self.netdev_groups, netdev_aff):
+                ng_aff = NetDevGroupCPUAffinity()
+                ng_aff.name_list = name_list
+                ng_aff.processing = CPUAffinity(a)
+                ng_aff_list.append(ng_aff)
+            global_affinity.netdev = ng_aff_list
+            aff_map[pixel_depth] = global_affinity
         return aff_map
+
+    @Core.DEB_MEMBER_FUNCT
+    def read_netdev_groups(self, attr):
+        netdev_groups = [','.join(g) for g in self.netdev_groups]
+        deb.Return("aff_array=%s" % netdev_groups)
+        attr.set_value(netdev_groups)
+
+    @Core.DEB_MEMBER_FUNCT
+    def write_netdev_groups(self, attr):
+        netdev_groups = [g.split(',') for g in attr.get_write_value()]
+        deb.Param("aff_array=%s" % netdev_groups)
+        self.netdev_groups = netdev_groups
 
     @Core.DEB_MEMBER_FUNCT
     def read_pixel_depth_cpu_affinity_map(self, attr):
@@ -369,10 +405,16 @@ class SlsDetectorClass(PyTango.DeviceClass):
         'tolerate_lost_packets':
         [PyTango.DevBoolean,
          "Initial tolerance to lost packets", True],
+        'netdev_groups':
+        [PyTango.DevVarStringArray,
+         "List of network device groups, each group is a list of "
+         "comma-separated interface names: [\"ethX,ethY\", \"ethZ,...\"]", []],
         'pixel_depth_cpu_affinity_map':
         [PyTango.DevVarStringArray,
-         "Default PixelDepthCPUAffinityMap as a list of 4-value tuple strings: "
-         "[\"<pixel_depth>,<recv>,<lima>,<other>\", ...]", []],
+         "Default PixelDepthCPUAffinityMap as a list of 5+n-value tuple "
+         "strings (n is nb of netdev_groups): "
+         "[\"<pixel_depth>,<recv_l>,<recv_w>,<lima>,<other>"
+         "[,<netdev_grp1>,...]\", ...]", []],
         }
 
     cmd_list = {
@@ -452,10 +494,18 @@ class SlsDetectorClass(PyTango.DeviceClass):
         [[PyTango.DevBoolean,
           PyTango.SCALAR,
           PyTango.READ_WRITE]],
+        'netdev_groups':
+        [[PyTango.DevString,
+          PyTango.SPECTRUM,
+          PyTango.READ_WRITE, 64]],
         'pixel_depth_cpu_affinity_map':
         [[PyTango.DevLong,
           PyTango.IMAGE,
-          PyTango.READ_WRITE, 4, 5]],
+          PyTango.READ_WRITE, 64, 5]],
+        'stats_do_hist':
+        [[PyTango.DevBoolean,
+          PyTango.SCALAR,
+          PyTango.READ_WRITE]],
         }
 
     def __init__(self,name) :
