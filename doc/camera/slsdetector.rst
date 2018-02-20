@@ -14,8 +14,11 @@ Property name			Mandatory	Default value	Description
 =============================== =============== =============== ==============================================================
 config_fname			Yes		-		Path to the SlsDetector config file
 tolerate_lost_packets		No		True		Initial tolerance to lost packets
-pixel_depth_cpu_affinity_map	No		[]		Default PixelDepthCPUAffinityMap as a list of 4-value tuple strings:
-								["<pixel_depth>,<recv>,<lima>,<other>", ...]
+netdev_groups			No		[]		List of network device groups, each group is a list of 
+								comma-separated interface names: ["ethX,ethY", "ethZ,..."]
+pixel_depth_cpu_affinity_map	No		[]		Default PixelDepthCPUAffinityMap as a list of 5+n-value tuple 
+								strings (n is nb of netdev_groups):
+								["<pixel_depth>,<recv_l>,<recv_w>,<lima>,<other>[,<netdev_grp1>,...]", ...]
 =============================== =============== =============== ==============================================================
 
 
@@ -54,13 +57,24 @@ readout_flags			rw	DevString		The flags affecting the readout mode (Parallel|Non
 								 - **SAFE + CONTINUOUS**
 max_frame_rate			ro	DevDouble		Maximum number of frames per second (kHz)
 tolerate_lost_packets		rw	DevBoolean		Allow acquisitions with incomplete frames due to overrun
-nb_bad_frames			ro	DevLong			Number of bad frames in the current (or last) acquisition
-bad_frame_list			ro	DevVarLongArray		List of bad frames in the current (or last) acquisition
-pixel_depth_cpu_affinity_map	rw	DevDouble 4-col IMAGE	PixelDepth -> CPUAffinity map as a 2D array:
-								[[pixel_depth, recv, lima, other], ...]
+netdev_groups			rw	DevVarStringArray	List of network device groups, each group is a list of 
+								comma-separated interface names: ["ethX,ethY", "ethZ,..."]
+pixel_depth_cpu_affinity_map	rw	DevDouble 5+n-col IMAGE	PixelDepth -> CPUAffinity map as a 2D array:
+					(n=nb of netdev_groups)	[[pixel_depth, recv_l, recv_w, lima, other[, <netdev_grp1>, ...]], ...]
 =============================== ======= ======================= ===========================================================
 
 Please refer to the *PSI/SLS Eiger User's Manual* for more information about the above specfic configuration parameters.
+
+Note: CPU-affinity control now acts, in a per-pixel_depth basis, on the following execution elements:
+
+* Receiver listener threads
+* Receiver writer threads
+* Lima control & processing threads
+* Other processes in the OS
+* Network devices' processing tasks (kernel space)
+
+Network devices can be grouped, each group will have the same CPU-affinity for the processing tasks.
+
 
 Commands
 --------
@@ -74,6 +88,10 @@ Status			DevVoid		DevString		Return the device state as a string
 getAttrStringValueList	DevString:	DevVarStringArray:	Return the authorized string value list for
 			Attribute name	String value list	a given attribute name
 putCmd			DevString	DevVoid			Command setting a SlsDetector parameter (no response)
-getCmd			DevString	DevString		Command getting a SlsDetector parameter (with response)
+getCmd			DevString:	DevString:		Command getting a SlsDetector parameter (with response)
 			get command	command result 
+getNbBadFrames		DevLong:	DevLong:		Get the number of bad frames in the current (or last) acquisition
+			port_idx	nb_bad_frames		for the given receiver port (-1=all)
+getBadFrameList		DevLong:	DevVarLongArray:	Get the list of bad frames in the current (or last) acquisition
+			port_idx	bad_frame_list		for the given receiver port (-1=all)
 =======================	=============== =======================	===========================================
