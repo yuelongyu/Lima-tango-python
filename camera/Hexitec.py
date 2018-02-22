@@ -64,7 +64,9 @@ class Hexitec(PyTango.Device_4Impl):
 
         self.__SaveOpt = {'SaveRaw': 1,
                           'SaveProcessed': 2,
-                          'SaveHistogram': 4}
+                          'SaveHistogram': 4,
+                          'SaveSummed': 8,
+                          }
 
         self.init_device()
 
@@ -125,6 +127,15 @@ class Hexitec(PyTango.Device_4Impl):
     def write_collectDcTimeout(self, attr):
         data = attr.get_write_value()
         _HexitecCamera.setCollectDcTimeout(data)
+
+    @Core.DEB_MEMBER_FUNCT
+    def read_frameTimeout(self, attr):
+        attr.set_value(_HexitecCamera.getFrameTimeout())
+
+    @Core.DEB_MEMBER_FUNCT
+    def write_frameTimeout(self, attr):
+        data = attr.get_write_value()
+        _HexitecCamera.setFrameTimeout(data)
 
     @Core.DEB_MEMBER_FUNCT
     def read_type(self, attr):
@@ -213,6 +224,37 @@ class Hexitec(PyTango.Device_4Impl):
         data = attr.get_write_value()
         _HexitecCamera.setBiasVoltageSettleTime(data)
 
+    @Core.DEB_MEMBER_FUNCT
+    def read_biasVoltage(self, attr):
+        attr.set_value(_HexitecCamera.getBiasVoltage())
+
+    @Core.DEB_MEMBER_FUNCT
+    def write_biasVoltage(self, attr):
+        data = attr.get_write_value()
+        _HexitecCamera.setBiasVoltage(data)
+
+    @Core.DEB_MEMBER_FUNCT
+    def read_refreshVoltage(self, attr):
+        attr.set_value(_HexitecCamera.getRefreshVoltage())
+
+    @Core.DEB_MEMBER_FUNCT
+    def write_refreshVoltage(self, attr):
+        data = attr.get_write_value()
+        _HexitecCamera.setRefreshVoltage(data)
+
+    @Core.DEB_MEMBER_FUNCT
+    def read_framesPerTrigger(self, attr):
+        attr.set_value(_HexitecCamera.getframesPerTrigger())
+
+    @Core.DEB_MEMBER_FUNCT
+    def write_framesPerTrigger(self, attr):
+        data = attr.get_write_value()
+        _HexitecCamera.setFramesPerTrigger(data)
+
+    @Core.DEB_MEMBER_FUNCT
+    def read_skippedFrameCount(self, attr):
+        attr.set_value(_HexitecCamera.getSkippedFrameCount())
+        
 # ==================================================================
 #
 #    Hexitec command methods
@@ -291,6 +333,10 @@ class HexitecClass(PyTango.DeviceClass):
             [[PyTango.DevLong,
               PyTango.SCALAR,
               PyTango.READ_WRITE]],
+        'frameTimeout':
+            [[PyTango.DevLong,
+              PyTango.SCALAR,
+              PyTango.READ_WRITE]],
         'type':
             [[PyTango.DevString,
               PyTango.SCALAR,
@@ -331,6 +377,22 @@ class HexitecClass(PyTango.DeviceClass):
             [[PyTango.DevLong,
               PyTango.SCALAR,
               PyTango.READ_WRITE]],
+        'biasVoltage':
+            [[PyTango.DevLong,
+              PyTango.SCALAR,
+              PyTango.READ_WRITE]],
+        'refreshVoltage':
+            [[PyTango.DevLong,
+              PyTango.SCALAR,
+              PyTango.READ_WRITE]],
+        'framePerTrigger':
+            [[PyTango.DevLong,
+              PyTango.SCALAR,
+              PyTango.READ_WRITE]],
+        'skippedFrameCount':
+            [[PyTango.DevLong,
+              PyTango.SCALAR,
+              PyTango.READ]],
         }
 
     def __init__(self, name):
