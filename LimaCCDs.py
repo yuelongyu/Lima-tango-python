@@ -2092,6 +2092,9 @@ class LimaCCDsClass(PyTango.DeviceClass) :
         'configFileLoad':
         [[PyTango.DevVoid,""],
          [PyTango.DevVoid,""]],
+        'setSavingStream':
+        [[PyTango.DevLong,"Stream number"],
+         [PyTango.DevVoid,""]],
 	}
     
     #    Attribute definitions
