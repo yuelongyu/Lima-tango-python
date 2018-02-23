@@ -198,11 +198,11 @@ def get_control(camera_path='/dev/fliusb0',**keys) :
     global _FliCam
     global _FliInterface
 
-    print "FLI camera path:", camera_path
+    print ("FLI camera path: ", camera_path)
 
     if _FliCam is None:
-	_FliCam = FliAcq.Camera(camera_path)
-	_FliInterface = FliAcq.Interface(_FliCam)
+        _FliCam = FliAcq.Camera(camera_path)
+        _FliInterface = FliAcq.Interface(_FliCam)
     return Core.CtControl(_FliInterface)
 
 def get_tango_specific_class_n_device():

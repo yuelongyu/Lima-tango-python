@@ -514,10 +514,10 @@ def get_control(**keys) :
     global _RayonixHsCamera
     global _RayonixHsInterface
     if _RayonixHsCamera is None:
-        print '\n\nStarting and configuring the RayonixHs camera ...'
+        print ('\n\nStarting and configuring the RayonixHs camera ...')
         _RayonixHsCamera = RayonixHsAcq.Camera()
         _RayonixHsInterface = RayonixHsAcq.Interface(_RayonixHsCamera)
-        print '\n\nRayonixHs Camera (%s:%s) is started'%(_RayonixHsCamera.getDetectorType(),_RayonixHsCamera.getDetectorModel())
+        print ('\n\nRayonixHs Camera (%s:%s) is started'%(_RayonixHsCamera.getDetectorType(),_RayonixHsCamera.getDetectorModel()))
     return Core.CtControl(_RayonixHsInterface)
 
     

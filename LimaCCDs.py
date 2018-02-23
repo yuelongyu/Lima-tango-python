@@ -61,15 +61,15 @@ LimaCameraType = None
 #    from EnvHelper import setup_lima_env
 #    LimaCameraType = setup_lima_env(sys.argv)
 
-from EnvHelper import get_sub_devices
-from EnvHelper import get_lima_camera_type, get_lima_device_name
-from EnvHelper import create_tango_objects
-from AttrHelper import get_attr_4u
-from AttrHelper import getDictKey, getDictValue
+from .EnvHelper import get_sub_devices
+from .EnvHelper import get_lima_camera_type, get_lima_device_name
+from .EnvHelper import create_tango_objects
+from .AttrHelper import get_attr_4u
+from Lima.Server.AttrHelper import getDictKey, getDictValue
 from Lima import Core
 
-import plugins
-import camera
+from Lima.Server import plugins
+from Lima.Server import camera
 if len(sys.argv) >1: instance_name=sys.argv[1]
 else: instance_name = ''
 
@@ -82,11 +82,11 @@ TacoSpecificDict = {}
 TacoSpecificName = []
 
 VerboseLevel2TypeFlags = {
-    0: ['Fatal'],
-    1: ['Error'],
-    2: ['Warning'],
-    3: ['Trace'],
-    4: ['Funct', 'Param', 'Return']
+    0: ['Fatal'.encode()],
+    1: ['Error'.encode()],
+    2: ['Warning'.encode()],
+    3: ['Trace'.encode()],
+    4: ['Funct'.encode(), 'Param'.encode(), 'Return'.encode()]
     }
 
 SystemFeatures = {}
@@ -239,8 +239,8 @@ class LimaCCDs(PyTango.Device_4Impl) :
     #} DataArrayHeaderStruct;
 
     DataArrayVersion = 2
-    DataArrayPackStr = '<IHHIIHHHHHHHHIIIIIIII'
-    DataArrayMagic = struct.unpack('>I', 'DTAY')[0]	# 0x44544159
+    DataArrayPackStr = b'<IHHIIHHHHHHHHIIIIIIII'
+    DataArrayMagic = struct.unpack(b'>I', b'DTAY')[0]	# 0x44544159
     DataArrayHeaderLen = 64
     DataArrayMaxNbDim = 6
 
@@ -893,7 +893,7 @@ class LimaCCDs(PyTango.Device_4Impl) :
         else:
             msg = "Accumulation threshold plugins not loaded"
             deb.Error(msg)
-            raise Exception, msg
+            raise Exception(msg)
 
     ## @brief active/unactive calculation of saturated images and counters
     #
@@ -1711,7 +1711,7 @@ class LimaCCDs(PyTango.Device_4Impl) :
         nbDim = len(s)
         maxNbDim = self.DataArrayMaxNbDim
         if nbDim > maxNbDim:
-            raise ValueError, 'Invalid nb of dimensions: max is %d' % maxNbDim
+            raise ValueError('Invalid nb of dimensions: max is %d' % maxNbDim)
 
         image = self.__control.image()
         imageType = image.getImageType()
@@ -1742,8 +1742,8 @@ class LimaCCDs(PyTango.Device_4Impl) :
           t[0],t[1],t[2],t[3],t[4],t[5],        # 24 bytes I x 6 - stepsbytes
           0, 0)    				# padding 2 x 4 bytes
         if len(dataheader) != self.DataArrayHeaderLen:
-            raise RuntimeError, 'Invalid header len: %d (expected %d)' % \
-                  (len(dataheader), self.DataArrayHeaderLen)
+            raise RuntimeError('Invalid header len: %d (expected %d)' % \
+                  (len(dataheader), self.DataArrayHeaderLen))
 
         flatData = d.ravel()
         flatData.dtype = numpy.uint8
@@ -1777,7 +1777,7 @@ class LimaCCDs(PyTango.Device_4Impl) :
         if len(frame_seq) > 2:
             step = frame_seq[2]
             if step != 1:
-                raise ValueError, 'Discontiguous sequences not supported yet'
+                raise ValueError('Discontiguous sequences not supported yet')
         nbFrames = end - start
         deb.Param('readImageSeq:start,end,step = %d,%d,%d (%d frames)' % \
 
@@ -2465,12 +2465,12 @@ def declare_camera_n_commun_to_tango_world(util) :
         try:
             m = __import__('Lima.Server.plugins.%s' % (module_name),None,None,'Lima.Server.plugins.%s' % (module_name))
         except ImportError:
-            print "Warning optional plugin %s can't be load, dependency not satisfied." % module_name
+            print ("Warning optional plugin %s can't be load, dependency not satisfied." % module_name)
             warningFlag = True
             if verboseLevel >= 4:
                 import traceback
                 traceback.print_exc()
-                print
+                print ()
             continue
         else:
             if 'Taco' in module_name:
@@ -2487,7 +2487,7 @@ def declare_camera_n_commun_to_tango_world(util) :
                 specificClass,specificDevice = func()
                 util.add_TgClass(specificClass,specificDevice,specificDevice.__name__)
     if warningFlag and verboseLevel < 4:
-        print "For more pulgins dependency  information start server with -v4"
+        print ("For more pulgins dependency  information start server with -v4")
         
 def export_default_plugins() :
     #Post processing tango export
@@ -2512,7 +2512,7 @@ def export_default_plugins() :
                 if deviceName is None and specificClass and specificDevice:
                     deviceName = '%s/%s/%s' % (beamlineName,
                                                specificDevice.__name__.lower().replace('deviceserver',''),cameraName)
-                    print 'create device',specificDevice.__name__,deviceName
+                    print ('create device',specificDevice.__name__,deviceName)
                     try:
                         util.create_device(specificDevice.__name__,deviceName)
                     except:
@@ -2575,7 +2575,7 @@ def _not_allowed(*args) :
     return False
 
 def _video_image_2_struct(image):
-    VIDEO_HEADER_FORMAT = '!IHHqiiHHHH'
+    VIDEO_HEADER_FORMAT = b'!IHHqiiHHHH'
     videoheader = struct.pack(
             VIDEO_HEADER_FORMAT,
             0x5644454f,                           # Magic
@@ -2660,7 +2660,7 @@ def main() :
         try:
             declare_camera_n_commun_to_tango_world(py)
         except:
-            print 'SEB_EXP'
+            print ('SEB_EXP')
             import traceback
             traceback.print_exc()
 
@@ -2668,12 +2668,10 @@ def main() :
 
         # create ct control
         control = _get_control()
-
         if pytango_ver >= (8,1,7) and control is not None:
             master_dev_name = get_lima_device_name()
             beamline_name, _, camera_name = master_dev_name.split('/')
             name_template = "{0}/{{type}}/{1}".format(beamline_name, camera_name)
-
             # register Tango classes corresponding to CtControl, CtImage, ...
             server, ct_map = create_tango_objects(control, name_template)
             tango_classes = set()
@@ -2698,16 +2696,18 @@ def main() :
         try:
             export_default_plugins()
         except:
-            print 'SEB_EXP'
+            print ('SEB_EXP')
             import traceback
             traceback.print_exc()
 
         U.server_run()
 
-    except PyTango.DevFailed,e:
-        print '-------> Received a DevFailed exception:',e
-    except Exception,e:
-        print '-------> An unforeseen exception occured....',e
+    except PyTango.DevFailed as e:
+        print ('-------> Received a DevFailed exception:',e)
+    except Exception as e:
+        print ('-------> An unforeseen exception occurred....',e)
+        #import traceback
+        #traceback.print_exc()
 
 if __name__ == '__main__':
     main()
