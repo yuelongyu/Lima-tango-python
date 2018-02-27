@@ -49,6 +49,7 @@ import PyTango
 import AttrHelper
 from Lima import Core
 from Lima import Merlin as MerlinAcq
+from Lima.Server import AttrHelper
 
 
 class Merlin (PyTango.Device_4Impl):
@@ -123,56 +124,56 @@ class Merlin (PyTango.Device_4Impl):
     @Core.DEB_MEMBER_FUNCT
     def read_chargeSumming(self, attr):
         mode = _MerlinCamera.getChargeSumming()
-        attr.set_value(AttrHelper._getDictKey(self.__Switch, mode))
+        attr.set_value(AttrHelper.getDictKey(self.__Switch, mode))
 
     @Core.DEB_MEMBER_FUNCT
     def write_chargeSumming(self, attr):
         data = attr.get_write_value()
-        mode = AttrHelper._getDictValue(self.__Switch, data)
+        mode = AttrHelper.getDictValue(self.__Switch, data)
         _MerlinCamera.setChargeSumming(mode)
 
     @Core.DEB_MEMBER_FUNCT
     def read_colourMode(self, attr):
         mode = _MerlinCamera.getColourMode()
-        attr.set_value(AttrHelper._getDictKey(self.__ColourMode, mode))
+        attr.set_value(AttrHelper.getDictKey(self.__ColourMode, mode))
 
     @Core.DEB_MEMBER_FUNCT
     def write_colourMode(self, attr):
         data = attr.get_write_value()
-        mode = AttrHelper._getDictValue(self.__ColourMode, data)
+        mode = AttrHelper.getDictValue(self.__ColourMode, data)
         _MerlinCamera.setColourMode(mode)
 
     @Core.DEB_MEMBER_FUNCT
     def read_continuousRW(self, attr):
         mode = _MerlinCamera.getContinuousRW()
-        attr.set_value(AttrHelper._getDictKey(self.__Switch, mode))
+        attr.set_value(AttrHelper.getDictKey(self.__Switch, mode))
 
     @Core.DEB_MEMBER_FUNCT
     def write_continuousRW(self, attr):
         data = attr.get_write_value()
-        mode = AttrHelper._getDictValue(self.__Switch, data)
+        mode = AttrHelper.getDictValue(self.__Switch, data)
         _MerlinCamera.setContinuousRW(mode)
 
     @Core.DEB_MEMBER_FUNCT
     def read_counter(self, attr):
         counter = _MerlinCamera.getEnableCounters()
-        attr.set_value(AttrHelper._getDictKey(self.__Counter, counter))
+        attr.set_value(AttrHelper.getDictKey(self.__Counter, counter))
 
     @Core.DEB_MEMBER_FUNCT
     def write_counter(self, attr):
         data = attr.get_write_value()
-        counter = AttrHelper._getDictValue(self.__Counter, data)
+        counter = AttrHelper.getDictValue(self.__Counter, data)
         _MerlinCamera.setEnableCounters(counter)
 
     @Core.DEB_MEMBER_FUNCT
     def read_gain(self, attr):
         gain = _MerlinCamera.getGain()
-        attr.set_value(AttrHelper._getDictKey(self.__GainSetting, gain))
+        attr.set_value(AttrHelper.getDictKey(self.__GainSetting, gain))
 
     @Core.DEB_MEMBER_FUNCT
     def write_gain(self, attr):
         data = attr.get_write_value()
-        gain = AttrHelper._getDictValue(self.__GainSetting, data)
+        gain = AttrHelper.getDictValue(self.__GainSetting, data)
         _MerlinCamera.setGain(gain)
 
     @Core.DEB_MEMBER_FUNCT
@@ -272,67 +273,68 @@ class Merlin (PyTango.Device_4Impl):
     @Core.DEB_MEMBER_FUNCT
     def read_triggerStartType(self, attr):
         trig = _MerlinCamera.getTriggerStartType()
-        attr.set_value(AttrHelper._getDictKey(self.__Trigger, trig))
+        attr.set_value(AttrHelper.getDictKey(self.__Trigger, trig))
 
     @Core.DEB_MEMBER_FUNCT
     def write_triggerStartType(self, attr):
         data = attr.get_write_value()
-        trig = AttrHelper._getDictValue(self.__Trigger, data)
+        trig = AttrHelper.getDictValue(self.__Trigger, data)
         _MerlinCamera.setTriggerStartType(trig)
 
     @Core.DEB_MEMBER_FUNCT
     def read_triggerStopType(self, attr):
         trig = _MerlinCamera.getTriggerStopType()
-        attr.set_value(AttrHelper._getDictKey(self.__Trigger, trig))
+        attr.set_value(AttrHelper.getDictKey(self.__Trigger, trig))
 
     @Core.DEB_MEMBER_FUNCT
     def write_triggerStopType(self, attr):
         data = attr.get_write_value()
-        trig = AttrHelper._getDictValue(self.__Trigger, data)
+        trig = AttrHelper.getDictValue(self.__Trigger, data)
         _MerlinCamera.setTriggerStopType(trig)
 
     @Core.DEB_MEMBER_FUNCT
     def read_triggerOutTTL(self, attr):
         trigout = _MerlinCamera.getTriggerOutTTL()
-        attr.set_value(AttrHelper._getDictKey(self.__TriggerOutput, trigout))
+        attr.set_value(AttrHelper.getDictKey(self.__TriggerOutput, trigout))
 
     @Core.DEB_MEMBER_FUNCT
     def write_triggerOutTTL(self, attr):
         data = attr.get_write_value()
-        trigout = AttrHelper._getDictValue(self.__TriggerOutput, data)
+        trigout = AttrHelper.getDictValue(self.__TriggerOutput, data)
         _MerlinCamera.setTriggerOutTTL(trigout)
 
     @Core.DEB_MEMBER_FUNCT
     def read_triggerOutLVDS(self, attr):
         trigout = _MerlinCamera.getTriggerOutLVDS()
-        attr.set_value(AttrHelper._getDictKey(self.__TriggerOutput, trigout))
+        attr.set_value(AttrHelper.getDictKey(self.__TriggerOutput, trigout))
 
     @Core.DEB_MEMBER_FUNCT
     def write_triggerOutLVDS(self, attr):
         data = attr.get_write_value()
-        trigout = AttrHelper._getDictValue(self.__TriggerOutput, data)
+        trigout = AttrHelper.getDictValue(self.__TriggerOutput, data)
         _MerlinCamera.setTriggerOutLVDS(trigout)
 
     @Core.DEB_MEMBER_FUNCT
     def read_triggerOutTTLInvert(self, attr):
         trigout = _MerlinCamera.getTriggerOutTTLInvert()
-        attr.set_value(AttrHelper._getDictKey(self.__TriggerLevel, trigout))
+        attr.set_value(AttrHelper.getDictKey(self.__TriggerLevel, trigout))
 
     @Core.DEB_MEMBER_FUNCT
     def write_triggerOutTTLInvert(self, attr):
         data = attr.get_write_value()
-        trigout = AttrHelper._getDictValue(self.__TriggerLevel, data)
+        trigout = AttrHelper.getDictValue(self.__TriggerLevel, data)
         _MerlinCamera.setTriggerOutTTLInvert(trigout)
 
     @Core.DEB_MEMBER_FUNCT
     def read_triggerOutLVDSInvert(self, attr):
         trigout = _MerlinCamera.getTriggerOutLVDSInvert()
-        attr.set_value(AttrHelper._getDictKey(self.__TriggerLevel, trigout))
+        attr.set_value(AttrHelper.getDictKey(self.__TriggerLevel, trigout))
 
     @Core.DEB_MEMBER_FUNCT
     def write_triggerOutLVDSInvert(self, attr):
         data = attr.get_write_value()
-        trigout = AttrHelper._getDictValue(self.__TriggerLevel, data)
+        trigout = AttrHelper.getDictValue(self.__TriggerLevel, data)
+
         _MerlinCamera.setTriggerOutLVDSInvert(trigout)
 
     @Core.DEB_MEMBER_FUNCT
@@ -356,12 +358,12 @@ class Merlin (PyTango.Device_4Impl):
     @Core.DEB_MEMBER_FUNCT
     def read_triggerUseDelay(self, attr):
         mode = _MerlinCamera.getTriggerUseDelay()
-        attr.set_value(AttrHelper._getDictKey(self.__Switch, mode))
+        attr.set_value(AttrHelper.getDictKey(self.__Switch, mode))
 
     @Core.DEB_MEMBER_FUNCT
     def write_triggerUseDelay(self, attr):
         data = attr.get_write_value()
-        mode = AttrHelper._getDictValue(self.__Switch, data)
+        mode = AttrHelper.getDictValue(self.__Switch, data)
         _MerlinCamera.setTriggerUseDelay(mode)
 
     @Core.DEB_MEMBER_FUNCT
@@ -385,23 +387,23 @@ class Merlin (PyTango.Device_4Impl):
     @Core.DEB_MEMBER_FUNCT
     def read_fileEnable(self, attr):
         mode = _MerlinCamera.getFileEnable()
-        attr.set_value(AttrHelper._getDictKey(self.__Switch, mode))
+        attr.set_value(AttrHelper.getDictKey(self.__Switch, mode))
 
     @Core.DEB_MEMBER_FUNCT
     def write_fileEnable(self, attr):
         data = attr.get_write_value()
-        mode = AttrHelper._getDictValue(self.__Switch, data)
+        mode = AttrHelper.getDictValue(self.__Switch, data)
         _MerlinCamera.setFileEnable(mode)
 
     @Core.DEB_MEMBER_FUNCT
     def read_fillMode(self, attr):
         mode = _MerlinCamera.getFillMode()
-        attr.set_value(AttrHelper._getDictKey(self.__FillMode, mode))
+        attr.set_value(AttrHelper.getDictKey(self.__FillMode, mode))
 
     @Core.DEB_MEMBER_FUNCT
     def write_fillMode(self, attr):
         data = attr.get_write_value()
-        mode = AttrHelper._getDictValue(self.__FillMode, data)
+        mode = AttrHelper.getDictValue(self.__FillMode, data)
         _MerlinCamera.setFillMode(mode)
 
     def read_acqRunning(self, attr):
@@ -740,6 +742,7 @@ class MerlinClass(PyTango.DeviceClass):
 # Plugins
 # ------------------------------------------------------------------
 # ------------------------------------------------------------------
+
 
 
 _MerlinCamera = None

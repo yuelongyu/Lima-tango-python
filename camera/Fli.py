@@ -21,9 +21,9 @@
 ############################################################################
 #=============================================================================
 #
-# file :        Dexela.py
+# file :        Fli.py
 #
-# description : Python source for the Dexela and its commands.
+# description : Python source for the Fli and its commands.
 #                The class is derived from Device. It represents the
 #                CORBA servant object which will be accessed from the
 #                network. All commands which can be executed on the
@@ -39,14 +39,13 @@
 #         (c) - Bliss - ESRF
 #=============================================================================
 #
-import os
 import PyTango
 from Lima import Core
-from Lima import Dexela as DexelaAcq
+from Lima import Fli as FliAcq
 from Lima.Server import AttrHelper
 
 
-class Dexela(PyTango.Device_4Impl):
+class Fli(PyTango.Device_4Impl):
 
     Core.DEB_CLASS(Core.DebModApplication, 'LimaCCDs')
 
@@ -56,11 +55,18 @@ class Dexela(PyTango.Device_4Impl):
 #------------------------------------------------------------------
     def __init__(self,*args) :
         PyTango.Device_4Impl.__init__(self,*args)
-
+        
+        self.__ExtTriggerLevel = {'LOW':0,
+                                  'HIGH':1}       
+        
+        self.__Attribute2FunctionBase = {
+            'temperature_sp': 'TemperatureSP',
+            'temperature_ccd': 'TemperatureCCD',
+            'temperature_base': 'TemperatureBase',
+        }
+        
         self.init_device()
 
-        self.__Attribute2FunctionBase = {
-                                         }
 
 #------------------------------------------------------------------
 #    Device destructor
@@ -76,11 +82,12 @@ class Dexela(PyTango.Device_4Impl):
         self.set_state(PyTango.DevState.ON)
         self.get_device_properties(self.get_device_class())
 
-	#Full well mode
-        self.__FullWellMode = {'HIGH' : _DexelaInterface.High,
-                               'LOW' : _DexelaInterface.Low}
-        self.__SkipFirstFrame = {'YES' : True,
-                                 'NO' : False}
+        if self.temperature_sp:
+            _FliInterface.setTemperatureSP(self.temperature_sp)
+
+        if self.ext_trigger_level:
+            _FliInterface.setExtTriggerLevel(self.__ExtTriggerLevel[self.ext_trigger_level])
+
 #------------------------------------------------------------------
 #    getAttrStringValueList command:
 #
@@ -93,41 +100,89 @@ class Dexela(PyTango.Device_4Impl):
         return AttrHelper.get_attr_string_value_list(self, attr_name)
 #==================================================================
 #
-#    Dexela read/write attribute methods
+#    Fli read/write attribute methods
 #
 #==================================================================
     def __getattr__(self,name) :
         #use AttrHelper
-        return AttrHelper.get_attr_4u(self,name,_DexelaInterface)
+        return AttrHelper.get_attr_4u(self,name,_FliInterface)
 
 
 #==================================================================
 #
-#    DexelaClass class definition
+#    FliClass class definition
 #
 #==================================================================
-class DexelaClass(PyTango.DeviceClass):
+class FliClass(PyTango.DeviceClass):
 
     class_property_list = {}
 
     device_property_list = {
-        'format_file':
+        # define one and only one of the following 4 properties:
+        'camera_path':
         [PyTango.DevString,
-         "Format file",[]],
-        }
+         "Camera device path", []],
+        'temperature_sp':
+        [PyTango.DevDouble,
+         'Temperature set point in Celsius', []],
+        'ext_trigger_level':
+        [PyTango.DevString,
+         'level of external trigger input ("LOW"/"HIGH")', []],                 
+    }
 
     cmd_list = {
         'getAttrStringValueList':
         [[PyTango.DevString, "Attribute name"],
          [PyTango.DevVarStringArray, "Authorized String value list"]],
-        }
+    }
 
     attr_list = {
-	'skip_first_frame':
-	[[PyTango.DevString,
-	  PyTango.SCALAR,
-	  PyTango.READ_WRITE]],
-        }
+        'cooler_power':
+        [[PyTango.DevDouble,
+          PyTango.SCALAR,
+          PyTango.READ],
+         {
+             'unit': '%',
+             'format': '%1f',
+             'description': 'cooler power (%)',
+         }],
+        'ext_trigger_level':
+        [[PyTango.DevString,
+          PyTango.SCALAR,
+          PyTango.READ_WRITE],
+         {
+             'unit': 'N/A',
+             'format': '',
+             'description': 'external trigger input level, see manual for usage LOW or HIGH',
+         }],
+        'temperature_sp':
+        [[PyTango.DevDouble,
+          PyTango.SCALAR,
+          PyTango.READ_WRITE],
+         {
+             'unit': 'C',
+             'format': '%1f',
+             'description': 'temperature set-point (C)',
+         }],
+        'temperature_ccd':
+        [[PyTango.DevDouble,
+          PyTango.SCALAR,
+          PyTango.READ],
+         {
+             'unit': 'C',
+             'format': '%1f',
+             'description': 'sensor temperature (C)',
+         }],
+        'temperature_base':
+        [[PyTango.DevDouble,
+          PyTango.SCALAR,
+          PyTango.READ],
+         {
+             'unit': 'C',
+             'format': '%1f',
+             'description': 'base (external) temperature (C)',
+         }],       
+    }
 
     def __init__(self,name) :
         PyTango.DeviceClass.__init__(self,name)
@@ -136,14 +191,19 @@ class DexelaClass(PyTango.DeviceClass):
 #----------------------------------------------------------------------------
 # Plugins
 #----------------------------------------------------------------------------
-_DexelaInterface = None
+_FliCam = None
+_FliInterface = None
 
-def get_control(format_file) :
-    global _DexelaInterface
+def get_control(camera_path='/dev/fliusb0',**keys) :
+    global _FliCam
+    global _FliInterface
 
-    if _DexelaInterface is None:
-        _DexelaInterface = DexelaAcq.Interface(format_file)
-    return Core.CtControl(_DexelaInterface)
+    print "FLI camera path:", camera_path
+
+    if _FliCam is None:
+	_FliCam = FliAcq.Camera(camera_path)
+	_FliInterface = FliAcq.Interface(_FliCam)
+    return Core.CtControl(_FliInterface)
 
 def get_tango_specific_class_n_device():
-    return DexelaClass,Dexela
+    return FliClass,Fli

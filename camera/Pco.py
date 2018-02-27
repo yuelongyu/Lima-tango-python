@@ -49,8 +49,7 @@ import PyTango
 import pdb
 from Lima import Core
 from Lima import Pco as PcoAcq
-#from LimaCCDs import CallableReadEnum,CallableWriteEnum
-from AttrHelper import get_attr_4u, get_attr_string_value_list,_getDictKey, _getDictValue
+from Lima.Server import AttrHelper
 
 VERSION_ATT ="20171128"
 
@@ -136,7 +135,7 @@ class Pco(PyTango.Device_4Impl):
 #
 #==================================================================
     def __getattr__(self,name) :
-        return get_attr_4u(self, name, _PcoCam)
+        return AttrHelper.get_attr_4u(self, name, _PcoCam)
 
     def read_versionAtt(self,attr) :
         attr.set_value(VERSION_ATT)
@@ -148,7 +147,7 @@ class Pco(PyTango.Device_4Impl):
 #==================================================================
     @Core.DEB_MEMBER_FUNCT
     def getAttrStringValueList(self, attr_name):
-        return get_attr_string_value_list(self, attr_name)
+        return AttrHelper.get_attr_string_value_list(self, attr_name)
 
     @Core.DEB_MEMBER_FUNCT
     def talk(self, argin):

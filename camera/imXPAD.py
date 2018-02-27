@@ -43,8 +43,7 @@ import PyTango
 import os,glob
 from Lima import Core
 from Lima import imXpad as XpadAcq
-#from LimaCCDs import CallableReadEnum,CallableWriteEnum
-from AttrHelper import get_attr_4u, get_attr_string_value_list
+from Lima.Server import AttrHelper
 
 
 class imXPAD(PyTango.Device_4Impl):
@@ -135,7 +134,7 @@ class imXPAD(PyTango.Device_4Impl):
             full_path = os.path.join(self.config_path,'*.cfg')
             return [os.path.splitext(os.path.basename(x))[0] for x in glob.glob(full_path)]
         else:
-            return get_attr_string_value_list(self, attr_name)
+            return AttrHelper.get_attr_string_value_list(self, attr_name)
 
     @Core.DEB_MEMBER_FUNCT
     def loadConfig(self,config_prefix) :
@@ -157,7 +156,7 @@ class imXPAD(PyTango.Device_4Impl):
         self._ITHL_offset = 0
 
     def __getattr__(self,name) :
-        return get_attr_4u(self, name, _imXPADCam)
+        return AttrHelper.get_attr_4u(self, name, _imXPADCam)
      
     def read_config_name(self,attr):
         config_name = self._config_name
@@ -511,8 +510,8 @@ def get_control(cam_ip_address = "localhost",port=3456,**keys) :
     port = int(port)
     print "Getting control for IMXPAD: %s / %s" % (cam_ip_address, port)
     if _imXPADCam is None:
-		_imXPADCam = XpadAcq.Camera(cam_ip_address,port)
-		_imXPADInterface = XpadAcq.Interface(_imXPADCam)
+        _imXPADCam = XpadAcq.Camera(cam_ip_address,port)
+        _imXPADInterface = XpadAcq.Interface(_imXPADCam)
     return Core.CtControl(_imXPADInterface)
 
 def get_tango_specific_class_n_device():

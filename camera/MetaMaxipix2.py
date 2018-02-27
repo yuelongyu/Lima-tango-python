@@ -49,8 +49,7 @@ from Lima import Meta
 
 # import some useful helpers to create direct mapping between tango attributes
 # and Lima interfaces.
-from AttrHelper import get_attr_4u, get_attr_string_value_list
-import AttrHelper
+from Lima.Server import AttrHelper
 
 
 class MetaMaxipix:
@@ -190,7 +189,7 @@ class MetaMaxipix2(PyTango.Device_4Impl):
     def __init__(self,*args) :
         PyTango.Device_4Impl.__init__(self,*args)
 
-	_PriamAcq = _MaxipixAcqM1.getPriamAcq()
+        _PriamAcq = _MaxipixAcqM1.getPriamAcq()
         self.__SignalLevel = {'LOW_FALL': _PriamAcq.LOW_FALL,\
                               'HIGH_RISE': _PriamAcq.HIGH_RISE,
                               '??': -1}
@@ -260,7 +259,7 @@ class MetaMaxipix2(PyTango.Device_4Impl):
         func = getattr(self.__MetaMpx, 'set'+name)
         deb.Always('Setting property '+prop_name) 
 
-        val = AttrHelper._getDictValue(dict, key.upper())
+        val = AttrHelper.getDictValue(dict, key.upper())
         if  val is None:
             deb.Error('Wrong value for property %s :%s' % (prop_name, val))
         else:
@@ -276,7 +275,7 @@ class MetaMaxipix2(PyTango.Device_4Impl):
 
             
     def __getattr__(self,name) :
-        return get_attr_4u(self, name, self.__MetaMpx)
+        return AttrHelper.get_attr_4u(self, name, self.__MetaMpx)
 
 
     @Core.DEB_MEMBER_FUNCT
@@ -307,7 +306,7 @@ class MetaMaxipix2(PyTango.Device_4Impl):
 #------------------------------------------------------------------
     @Core.DEB_MEMBER_FUNCT
     def getAttrStringValueList(self, attr_name):
-        return get_attr_string_value_list(self, attr_name)
+        return AttrHelper.get_attr_string_value_list(self, attr_name)
 
 #------------------------------------------------------------------
 #    setDebugFlags command:

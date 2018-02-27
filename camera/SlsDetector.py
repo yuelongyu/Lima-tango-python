@@ -47,7 +47,7 @@ from functools import partial
 
 from Lima import Core
 from Lima import SlsDetector as SlsDetectorHw
-from AttrHelper import get_attr_4u, get_attr_string_value_list
+from Lima.Server.AttrHelper import get_attr_4u, get_attr_string_value_list
 
 def ConstListAttr(nl, vl=None, Defs=SlsDetectorHw.Defs):
     def g(x):
@@ -526,7 +526,7 @@ def get_control(config_fname, **keys) :
     global _SlsDetectorCam, _SlsDetectorHwInter, _SlsDetectorEiger
     global _SlsDetectorCorrection, _SlsDetectorControl
     if _SlsDetectorControl is None:
-	_SlsDetectorCam = SlsDetectorHw.Camera(config_fname)
+        _SlsDetectorCam = SlsDetectorHw.Camera(config_fname)
         _SlsDetectorHwInter = SlsDetectorHw.Interface(_SlsDetectorCam)
         if _SlsDetectorCam.getType() == SlsDetectorHw.EigerDet:
             _SlsDetectorEiger = SlsDetectorHw.Eiger(_SlsDetectorCam)

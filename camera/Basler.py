@@ -42,7 +42,7 @@
 import PyTango
 from Lima import Core
 from Lima import Basler as BaslerAcq
-from AttrHelper import get_attr_4u, get_attr_string_value_list
+from Lima.Server import AttrHelper
 
 
 class Basler(PyTango.Device_4Impl):
@@ -84,7 +84,7 @@ class Basler(PyTango.Device_4Impl):
     @Core.DEB_MEMBER_FUNCT
     def getAttrStringValueList(self, attr_name):
         #use AttrHelper
-        return get_attr_string_value_list(self, attr_name)
+        return AttrHelper.get_attr_string_value_list(self, attr_name)
 #==================================================================
 #
 #    Basler read/write attribute methods
@@ -92,7 +92,7 @@ class Basler(PyTango.Device_4Impl):
 #==================================================================
     def __getattr__(self,name) :
         #use AttrHelper
-        return get_attr_4u(self,name,_BaslerCam)
+        return AttrHelper.get_attr_4u(self,name,_BaslerCam)
 
 
 #==================================================================
@@ -175,10 +175,10 @@ def get_control(frame_transmission_delay = 0, inter_packet_delay = 0,
     print "basler camera_id:", camera_id
 
     if _BaslerCam is None:
-	_BaslerCam = BaslerAcq.Camera(camera_id, int(packet_size))
-	_BaslerCam.setInterPacketDelay(int(inter_packet_delay))
-	_BaslerCam.setFrameTransmissionDelay(int(frame_transmission_delay))
-	_BaslerInterface = BaslerAcq.Interface(_BaslerCam)
+        _BaslerCam = BaslerAcq.Camera(camera_id, int(packet_size))
+        _BaslerCam.setInterPacketDelay(int(inter_packet_delay))
+        _BaslerCam.setFrameTransmissionDelay(int(frame_transmission_delay))
+        _BaslerInterface = BaslerAcq.Interface(_BaslerCam)
     return Core.CtControl(_BaslerInterface)
 
 def get_tango_specific_class_n_device():

@@ -57,14 +57,14 @@
 
 import PyTango
 
-def _getDictKey(dict, value):
+def getDictKey(dict, value):
     try:
         ind = dict.values().index(value)                            
     except ValueError:
         return None
     return dict.keys()[ind]
 
-def _getDictValue(dict, key):
+def getDictValue(dict, key):
     try:
         value = dict[key.upper()]
     except KeyError:
@@ -72,7 +72,7 @@ def _getDictValue(dict, key):
     return value
 
 #preserve the case of key
-def _getDictCaseValue(dict, key):
+def getDictCaseValue(dict, key):
     try:
         value = dict[key]
     except KeyError:
@@ -86,7 +86,7 @@ class CallableReadEnum:
         self.__func2Call = func2Call
 
     def __call__(self,attr) :
-        value = _getDictKey(self.__dict,self.__func2Call())
+        value = getDictKey(self.__dict,self.__func2Call())
         attr.set_value(value)
 
 ## @brief Class for genenic write_<attribute> with enum value
@@ -98,7 +98,7 @@ class CallableWriteEnum:
         
     def __call__(self,attr) :
         data = attr.get_write_value()
-        value = _getDictValue(self.__dict,data.upper())
+        value = getDictValue(self.__dict,data.upper())
         if value is None:
             PyTango.Except.throw_exception('WrongData',\
                                            'Wrong value %s: %s'%(self.__attr_name,data.upper()),\
