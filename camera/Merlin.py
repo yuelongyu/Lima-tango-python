@@ -420,7 +420,7 @@ class MerlinClass(PyTango.DeviceClass):
 
     #    Class Properties
     class_property_list = {
-        }
+    }
 
     #    Device Properties
     device_property_list = {
@@ -452,7 +452,7 @@ class MerlinClass(PyTango.DeviceClass):
             [PyTango.DevBoolean,
              "Simulate the Merlin commands.",
              [False]],
-        }
+    }
 
     #    Command definitions
     cmd_list = {
@@ -472,264 +472,264 @@ class MerlinClass(PyTango.DeviceClass):
               PyTango.SCALAR,
               PyTango.READ_WRITE],
              {
-              'label': 'Charge Summming mode',
-              'unit': 'ON/OFF',
-             }],
+                'label': 'Charge Summming mode',
+                'unit': 'ON/OFF',
+            }],
         'colourMode':
             [[PyTango.DevString,
               PyTango.SCALAR,
               PyTango.READ_WRITE],
              {
-              'label': 'Colour mode',
-              'unit': 'MONOCHROME/COLOUR',
-             }],
+                'label': 'Colour mode',
+                'unit': 'MONOCHROME/COLOUR',
+            }],
         'continuousRW':
             [[PyTango.DevString,
               PyTango.SCALAR,
               PyTango.READ_WRITE],
              {
-              'label': 'Continuous Collection',
-              'unit': 'ON/OFF',
-             }],
+                'label': 'Continuous Collection',
+                'unit': 'ON/OFF',
+            }],
         'counter':
             [[PyTango.DevString,
               PyTango.SCALAR,
               PyTango.READ_WRITE],
              {
-              'label': 'Counter ',
-              'unit': 'COUNTER0/COUNTER1/BOTH',
-             }],
+                'label': 'Counter ',
+                'unit': 'COUNTER0/COUNTER1/BOTH',
+            }],
         'gain':
             [[PyTango.DevString,
               PyTango.SCALAR,
               PyTango.READ_WRITE],
              {
-              'label': 'Gain Settings',
-              'unit': 'SHGM/HGM/LGM/SLGM',
-             }],
+                'label': 'Gain Settings',
+                'unit': 'SHGM/HGM/LGM/SLGM',
+            }],
         'operatingEnergy':
             [[PyTango.DevFloat,
               PyTango.SCALAR,
               PyTango.READ_WRITE],
              {
-              'label': 'Energy',
-              'unit': 'keV',
-              'min_value': '0',
-              'max_value': '999.99',
-             }],
+                'label': 'Energy',
+                'unit': 'keV',
+                'min_value': '0',
+                'max_value': '999.99',
+            }],
         'temperature':
             [[PyTango.DevFloat,
               PyTango.SCALAR,
               PyTango.READ],
              {
-              'label': 'Temperature',
-              'unit': 'degrees C',
-             }],
+                'label': 'Temperature',
+                'unit': 'degrees C',
+            }],
         'threshold0':
             [[PyTango.DevFloat,
               PyTango.SCALAR,
               PyTango.READ_WRITE],
              {
-              'label': 'Threshold 0',
-              'unit': 'keV',
-              'min_value': '0',
-              'max_value': '999.99',
-             }],
+                'label': 'Threshold 0',
+                'unit': 'keV',
+                'min_value': '0',
+                'max_value': '999.99',
+            }],
         'threshold1':
             [[PyTango.DevFloat,
               PyTango.SCALAR,
               PyTango.READ_WRITE],
              {
-              'label': 'Threshold 1',
-              'unit': 'keV',
-              'min_value': '0',
-              'max_value': '999.99',
-             }],
+                'label': 'Threshold 1',
+                'unit': 'keV',
+                'min_value': '0',
+                'max_value': '999.99',
+            }],
         'threshold2':
             [[PyTango.DevFloat,
               PyTango.SCALAR,
               PyTango.READ_WRITE],
              {
-              'label': 'Threshold 2',
-              'unit': 'keV',
-              'min_value': '0',
-              'max_value': '999.99',
-             }],
+                'label': 'Threshold 2',
+                'unit': 'keV',
+                'min_value': '0',
+                'max_value': '999.99',
+            }],
         'threshold3':
             [[PyTango.DevFloat,
               PyTango.SCALAR,
               PyTango.READ_WRITE],
              {
-              'label': 'Threshold 3',
-              'unit': 'keV',
-              'min_value': '0',
-              'max_value': '999.99',
-             }],
+                'label': 'Threshold 3',
+                'unit': 'keV',
+                'min_value': '0',
+                'max_value': '999.99',
+            }],
         'threshold4':
             [[PyTango.DevFloat,
               PyTango.SCALAR,
               PyTango.READ_WRITE],
              {
-              'label': 'Threshold 4',
-              'unit': 'keV',
-              'min_value': '0',
-              'max_value': '999.99',
-             }],
+                'label': 'Threshold 4',
+                'unit': 'keV',
+                'min_value': '0',
+                'max_value': '999.99',
+            }],
         'threshold5':
             [[PyTango.DevFloat,
               PyTango.SCALAR,
               PyTango.READ_WRITE],
              {
-              'label': 'Threshold 5',
-              'unit': 'keV',
-              'min_value': '0',
-              'max_value': '999.99',
-             }],
+                'label': 'Threshold 5',
+                'unit': 'keV',
+                'min_value': '0',
+                'max_value': '999.99',
+            }],
         'threshold6':
             [[PyTango.DevFloat,
               PyTango.SCALAR,
               PyTango.READ_WRITE],
              {
-              'label': 'Threshold 6',
-              'unit': 'keV',
-              'min_value': '0',
-              'max_value': '999.99',
-             }],
+                'label': 'Threshold 6',
+                'unit': 'keV',
+                'min_value': '0',
+                'max_value': '999.99',
+            }],
         'threshold7':
             [[PyTango.DevFloat,
               PyTango.SCALAR,
               PyTango.READ_WRITE],
              {
-              'label': 'Threshold 7',
-              'unit': 'keV',
-              'min_value': '0',
-              'max_value': '999.99',
-             }],
+                'label': 'Threshold 7',
+                'unit': 'keV',
+                'min_value': '0',
+                'max_value': '999.99',
+            }],
         'framesPerTrigger':
             [[PyTango.DevLong64,
               PyTango.SCALAR,
               PyTango.READ_WRITE],
              {
-              'label': 'Number of frames per trigger',
-              'unit': ' ',
-             }],
+                'label': 'Number of frames per trigger',
+                'unit': ' ',
+            }],
         'triggerStartType':
             [[PyTango.DevString,
               PyTango.SCALAR,
               PyTango.READ_WRITE],
              {
-              'label': 'Trigger start mode',
-              'unit': 'INTERNAL/RISING_EDGE_TTL/FALLING_EDGE_TTL/RISING_EDGE_LVDS/FALLING_EDGE_LVDS/SOFT',
-             }],
+                'label': 'Trigger start mode',
+                'unit': 'INTERNAL/RISING_EDGE_TTL/FALLING_EDGE_TTL/RISING_EDGE_LVDS/FALLING_EDGE_LVDS/SOFT',
+            }],
         'triggerStopType':
             [[PyTango.DevString,
               PyTango.SCALAR,
               PyTango.READ_WRITE],
              {
-              'label': 'Trigger stop mode',
-              'unit': 'INTERNAL/RISING_EDGE_TTL/FALLING_EDGE_TTL/RISING_EDGE_LVDS/FALLING_EDGE_LVDS/SOFT',
-             }],
+                'label': 'Trigger stop mode',
+                'unit': 'INTERNAL/RISING_EDGE_TTL/FALLING_EDGE_TTL/RISING_EDGE_LVDS/FALLING_EDGE_LVDS/SOFT',
+            }],
         'triggerOutTTL':
             [[PyTango.DevString,
               PyTango.SCALAR,
               PyTango.READ_WRITE],
              {
-              'label': 'TTL Trigger stop mode',
-              'unit': 'TTL/LVDS/TTL_DELAYED/LVDS_DELAYED/FOLLOW_SHUTTER/'
-                      'ONE_PER_ACQ_BURST/SHUTTER_AND_SENSOR_READ/OUTPUT_BUSY',
-             }],
+                'label': 'TTL Trigger stop mode',
+                'unit': 'TTL/LVDS/TTL_DELAYED/LVDS_DELAYED/FOLLOW_SHUTTER/'
+                'ONE_PER_ACQ_BURST/SHUTTER_AND_SENSOR_READ/OUTPUT_BUSY',
+            }],
         'triggerOutLVDS':
             [[PyTango.DevString,
               PyTango.SCALAR,
               PyTango.READ_WRITE],
              {
-              'label': 'LVDS Trigger stop mode',
-              'unit': 'TTL/LVDS/TTL_DELAYED/LVDS_DELAYED/FOLLOW_SHUTTER/'
-                      'ONE_PER_ACQ_BURST/SHUTTER_AND_SENSOR_READ/OUTPUT_BUSY',
-             }],
+                'label': 'LVDS Trigger stop mode',
+                'unit': 'TTL/LVDS/TTL_DELAYED/LVDS_DELAYED/FOLLOW_SHUTTER/'
+                'ONE_PER_ACQ_BURST/SHUTTER_AND_SENSOR_READ/OUTPUT_BUSY',
+            }],
         'triggerOutTTLInvert':
             [[PyTango.DevString,
               PyTango.SCALAR,
               PyTango.READ_WRITE],
              {
-              'label': 'TTL Trigger invert mode',
-              'unit': 'NORMAL/INVERTED',
-             }],
+                'label': 'TTL Trigger invert mode',
+                'unit': 'NORMAL/INVERTED',
+            }],
         'triggerOutLVDSInvert':
             [[PyTango.DevString,
               PyTango.SCALAR,
               PyTango.READ_WRITE],
              {
-              'label': 'LVDS Trigger invert mode',
-              'unit': 'NORMAL/INVERTED',
-             }],
+                'label': 'LVDS Trigger invert mode',
+                'unit': 'NORMAL/INVERTED',
+            }],
         'triggerInTTLDelay':
             [[PyTango.DevLong64,
               PyTango.SCALAR,
               PyTango.READ_WRITE],
              {
-              'label': 'TTL Trigger delay',
-              'unit': 'ns',
-              'min_value': '0',
-              'max_value': '68719476720',
-             }],
+                'label': 'TTL Trigger delay',
+                'unit': 'ns',
+                'min_value': '0',
+                'max_value': '68719476720',
+            }],
         'triggerInLVDSDelay':
             [[PyTango.DevLong64,
               PyTango.SCALAR,
               PyTango.READ_WRITE],
              {
-              'label': 'LVDS Trigger delay',
-              'unit': 'ns',
-              'min_value': '0',
-              'max_value': '68719476720',
-             }],
+                'label': 'LVDS Trigger delay',
+                'unit': 'ns',
+                'min_value': '0',
+                'max_value': '68719476720',
+            }],
         'triggerUseDelay':
             [[PyTango.DevString,
               PyTango.SCALAR,
               PyTango.READ_WRITE],
              {
-              'label': 'Use Trigger delay',
-              'unit': 'ON/OFF',
-             }],
+                'label': 'Use Trigger delay',
+                'unit': 'ON/OFF',
+            }],
         'fileDirectory':
             [[PyTango.DevString,
               PyTango.SCALAR,
               PyTango.READ_WRITE],
              {
-              'label': 'Directory name if saving on Merlin PC',
-             }],
+                'label': 'Directory name if saving on Merlin PC',
+            }],
         'fileName':
             [[PyTango.DevString,
               PyTango.SCALAR,
               PyTango.READ_WRITE],
              {
-              'label': 'Filename if saving on Merlin PC',
-             }],
+                'label': 'Filename if saving on Merlin PC',
+            }],
         'fileEnable':
             [[PyTango.DevString,
               PyTango.SCALAR,
               PyTango.READ_WRITE],
              {
-              'label': 'Enable file saving to Merlin PC',
-              'unit': 'ON/OFF',
-             }],
+                'label': 'Enable file saving to Merlin PC',
+                'unit': 'ON/OFF',
+            }],
         'fillMode':
             [[PyTango.DevString,
               PyTango.SCALAR,
               PyTango.READ_WRITE],
              {
-              'label': 'Set the Fillmode for inter-chip gap',
-              'unit': 'NoFill/InsertZero/Distribute/Interpolate',
-             }],
+                'label': 'Set the Fillmode for inter-chip gap',
+                'unit': 'NoFill/InsertZero/Distribute/Interpolate',
+            }],
         'acqRunning':
             [[PyTango.DevBoolean,
               PyTango.SCALAR,
               PyTango.READ],
              {
-              'label': 'Acquisition active',
-              'unit': ' ',
-             }]
-        }
+                'label': 'Acquisition active',
+                'unit': ' ',
+            }]
+    }
 
     def __init__(self, name):
         PyTango.DeviceClass.__init__(self, name)
