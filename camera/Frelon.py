@@ -148,6 +148,9 @@ class Frelon(PyTango.Device_4Impl):
         transfer_time = cam.getTransferTime()
         attr.set_value(transfer_time)
 
+    def read_camera_serial(self,attr):
+        serial = _FrelonAcq.m_cam.getModel().getSerialNb()
+        attr.set_value("%d" % serial)
 
 class FrelonClass(PyTango.DeviceClass):
 
@@ -210,6 +213,10 @@ class FrelonClass(PyTango.DeviceClass):
           PyTango.READ]],
         'transfer_time' :
         [[PyTango.DevFloat,
+          PyTango.SCALAR,
+          PyTango.READ]],
+        'camera_serial' :
+        [[PyTango.DevString,
           PyTango.SCALAR,
           PyTango.READ]],
         }
