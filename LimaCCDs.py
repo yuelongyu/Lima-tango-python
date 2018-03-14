@@ -52,7 +52,7 @@ import numpy
 import struct
 import time
 import re
-
+import six
 
 # Before loading Lima.Core, must find out the version the plug-in
 # was compiled with - horrible hack ...
@@ -82,11 +82,11 @@ TacoSpecificDict = {}
 TacoSpecificName = []
 
 VerboseLevel2TypeFlags = {
-    0: ['Fatal'.encode()],
-    1: ['Error'.encode()],
-    2: ['Warning'.encode()],
-    3: ['Trace'.encode()],
-    4: ['Funct'.encode(), 'Param'.encode(), 'Return'.encode()]
+    0: ['Fatal'],
+    1: ['Error'],
+    2: ['Warning'],
+    3: ['Trace'],
+    4: ['Funct', 'Param', 'Return']
     }
 
 SystemFeatures = {}
@@ -239,8 +239,8 @@ class LimaCCDs(PyTango.Device_4Impl) :
     #} DataArrayHeaderStruct;
 
     DataArrayVersion = 2
-    DataArrayPackStr = b'<IHHIIHHHHHHHHIIIIIIII'
-    DataArrayMagic = struct.unpack(b'>I', b'DTAY')[0]	# 0x44544159
+    DataArrayPackStr = '<IHHIIHHHHHHHHIIIIIIII'
+    DataArrayMagic = struct.unpack('>I', b'DTAY')[0]	# 0x44544159
     DataArrayHeaderLen = 64
     DataArrayMaxNbDim = 6
 
@@ -1042,7 +1042,7 @@ class LimaCCDs(PyTango.Device_4Impl) :
     def read_saving_common_header(self,attr) :
         saving = self.__control.saving()
         header = saving.getCommonHeader()
-        headerArr = ['%s%s%s' % (k,self.__key_header_delimiter,v) for k,v in header.iteritems()]
+        headerArr = ['%s%s%s' % (k,self.__key_header_delimiter,v) for k,v in six.iteritems(header)]
         attr.set_value(headerArr,len(headerArr))
 
     ## @brief Write common header
@@ -1184,7 +1184,7 @@ class LimaCCDs(PyTango.Device_4Impl) :
     def read_ready_for_next_image(self,attr) :
         interface = self.__control.hwInterface()
         status = interface.getStatus()
-	ready = status.det == Core.DetIdle or status.det & Core.DetWaitForTrigger
+        ready = status.det == Core.DetIdle or status.det & Core.DetWaitForTrigger
         attr.set_value(bool(ready))
 
     ## @brief this flag is true when acquisition is finished
@@ -1533,7 +1533,7 @@ class LimaCCDs(PyTango.Device_4Impl) :
 
     def read_plugin_list(self,attr) :
         returnList = []
-        for key,value in get_sub_devices().iteritems():
+        for key,value in six.iteritems(get_sub_devices()):
             returnList.append(key.lower().replace('deviceserver',''))
             returnList.append(value)
         attr.set_value(returnList)
@@ -1878,7 +1878,7 @@ class LimaCCDs(PyTango.Device_4Impl) :
 
     @Core.DEB_MEMBER_FUNCT
     def getPluginDeviceNameFromType(self,pluginType):
-        pluginType2deviceName = dict([(x.lower().replace('deviceserver',''),y) for x,y in get_sub_devices().iteritems()])
+        pluginType2deviceName = dict([(x.lower().replace('deviceserver',''),y) for x,y in six.iteritems(get_sub_devices())])
         return pluginType2deviceName.get(pluginType.lower(),'')
 
 #----------------------------------------------------------------------------
@@ -2522,7 +2522,7 @@ def export_default_plugins() :
 def export_ct_control(ct_map):
     util = PyTango.Util.instance()
     tango_dev_map = get_sub_devices()
-    for name, (tango_ct, tango_object) in ct_map.iteritems():
+    for name, (tango_ct, tango_object) in six.iteritems(ct_map):
         tango_class_name = tango_object.tango_class_name
         # device already created.
         if tango_class_name in tango_dev_map:
@@ -2575,7 +2575,7 @@ def _not_allowed(*args) :
     return False
 
 def _video_image_2_struct(image):
-    VIDEO_HEADER_FORMAT = b'!IHHqiiHHHH'
+    VIDEO_HEADER_FORMAT = '!IHHqiiHHHH'
     videoheader = struct.pack(
             VIDEO_HEADER_FORMAT,
             0x5644454f,                           # Magic
@@ -2584,9 +2584,10 @@ def _video_image_2_struct(image):
             image.frameNumber(),                  # frame number
             image.width(),                        # width
             image.height(),                       # height
-            ord(struct.pack('=H',1)[-1]),         # endianness
+            ord(struct.pack('=H',1).decode()[-1]),         # endianness
             struct.calcsize(VIDEO_HEADER_FORMAT), # header size
             0,0)                                  # padding
+
     return videoheader + image.buffer()
 
 def _get_control():
@@ -2675,7 +2676,7 @@ def main() :
             # register Tango classes corresponding to CtControl, CtImage, ...
             server, ct_map = create_tango_objects(control, name_template)
             tango_classes = set()
-            for name, (tango_ct_object, tango_object) in ct_map.iteritems():
+            for name, (tango_ct_object, tango_object) in six.iteritems(ct_map):
                 tango_class = server.get_tango_class(tango_object.class_name)
                 tango_classes.add(tango_class)
             for tango_class in tango_classes:
