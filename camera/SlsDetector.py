@@ -107,7 +107,8 @@ class SlsDetector(PyTango.Device_4Impl):
         self.netdev_groups = [g.split(',') for g in self.netdev_groups]
         aff_array = self.pixel_depth_cpu_affinity_map
         if aff_array:
-            aff_array = np.fromstring(','.join(aff_array), sep=',')
+            flat_array = ','.join(aff_array).split(',')
+            aff_array = np.array(map(partial(int, base=0), flat_array))
             aff_map = self.getPixelDepthCPUAffinityMapFromArray(aff_array)
             self.cam.setPixelDepthCPUAffinityMap(aff_map)
 
@@ -122,6 +123,7 @@ class SlsDetector(PyTango.Device_4Impl):
         bdl = map(lambda x: getattr(SlsDetectorHw, x), nl)
         self.__PixelDepth = OrderedDict([(str(bd), int(bd)) for bd in bdl])
 
+    @Core.DEB_MEMBER_FUNCT
     def init_dac_adc_attr(self):
         nb_modules = self.cam.getNbDetSubModules()
         name_list, idx_list, milli_volt_list = self.model.getDACInfo()
