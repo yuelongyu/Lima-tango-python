@@ -888,6 +888,10 @@ class LimaTacoCCDs(PyTango.Device_4Impl, object):
 #------------------------------------------------------------------
     @Core.DEB_MEMBER_FUNCT
     def DevCcdSetFrames(self, nb_frames):
+        is_mult_trig = self.__mult_trig_nb_frames is not None
+        if is_mult_trig and (nb_frames == 1):
+            return
+
         control = _control_ref()
         acquisition = control.acquisition()
         acquisition.setAcqNbFrames(nb_frames)
