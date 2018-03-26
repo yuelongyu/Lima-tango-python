@@ -126,6 +126,16 @@ class Pilatus(PyTango.Device_4Impl):
     def getAttrStringValueList(self, attr_name):
         return AttrHelper.get_attr_string_value_list(self, attr_name)
 
+#------------------------------------------------------------------
+#    resetHighVoltage command:
+#
+#    Description: resets high voltage
+#    argin: sleep time (s) (-1 to not sleep)
+#------------------------------------------------------------------
+    @Core.DEB_MEMBER_FUNCT
+    def resetHighVoltage(self, sleep_time):
+        _PilatusCamera.resetHighVoltage(sleep_time)
+
 #==================================================================
 #
 #    Pilatus read/write attribute methods
@@ -299,6 +309,9 @@ class PilatusClass(PyTango.DeviceClass):
         'sendCamserverCmd':
         [[PyTango.DevString, "Camserver command to send"],
          [PyTango.DevVoid, "None"]],
+        'resetHighVoltage':
+        [[PyTango.DevLong, "sleep_time (s)"],
+         [PyTango.DevVoid, ""]],
         }
 
     #    Attribute definitions
