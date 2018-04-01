@@ -49,7 +49,7 @@ from Lima import Core
 from Lima import SlsDetector as SlsDetectorHw
 from Lima.Server.AttrHelper import get_attr_4u, get_attr_string_value_list
 
-def ConstListAttr(nl, vl=None, Defs=SlsDetectorHw.Defs):
+def ConstListAttr(nl, vl=None, namespc=SlsDetectorHw.Defs):
     def g(x):
         n = ''
         was_cap = True
@@ -61,7 +61,7 @@ def ConstListAttr(nl, vl=None, Defs=SlsDetectorHw.Defs):
         return n
 
     if vl is None:
-        vl = [getattr(Defs, n) for n in nl]
+        vl = [getattr(namespc, n) for n in nl]
     return OrderedDict([(g(n), v) for n, v in zip(nl, vl)])
 
 
@@ -116,8 +116,8 @@ class SlsDetector(PyTango.Device_4Impl):
         nl = ['FullSpeed', 'HalfSpeed', 'QuarterSpeed', 'SuperSlowSpeed']
         self.__ClockDiv = ConstListAttr(nl)
 
-        vl, nl = self.cam.getValidReadoutFlags()
-        self.__ReadoutFlags = ConstListAttr(nl, vl)
+        nl = ['Parallel', 'NonParallel', 'Safe']
+        self.__ParallelMode = ConstListAttr(nl, namespc=SlsDetectorHw.Eiger)
 
         nl = ['PixelDepth4', 'PixelDepth8', 'PixelDepth16', 'PixelDepth32']
         bdl = map(lambda x: getattr(SlsDetectorHw, x), nl)
@@ -484,7 +484,7 @@ class SlsDetectorClass(PyTango.DeviceClass):
         [[PyTango.DevString,
           PyTango.SCALAR,
           PyTango.READ_WRITE]],
-        'readout_flags':
+        'parallel_mode':
         [[PyTango.DevString,
           PyTango.SCALAR,
           PyTango.READ_WRITE]],
