@@ -173,7 +173,12 @@ class SlsDetector(PyTango.Device_4Impl):
             if stats_tok[1] in ['do_hist']:
                 stats_name = '_'.join(stats_tok)
                 return get_attr_4u(self, stats_name, SlsDetectorHw.SimpleStat)
-        return get_attr_4u(self, name, self.cam)
+        obj = self.cam
+        model_attrs = ['parallel_mode']
+        for attr in model_attrs:
+            if attr in name:
+                obj = self.model
+        return get_attr_4u(self, name, obj)
 
     @Core.DEB_MEMBER_FUNCT
     def read_config_fname(self, attr):
