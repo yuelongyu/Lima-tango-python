@@ -153,7 +153,6 @@ class RoiCounterDeviceServer(BasePostProcess) :
                 if roi_name is None:
                     raise RuntimeError('should call add method before setRoi')
                 roi_list.append((roi_name.encode(),Core.Roi(x,y,width,height)))
-                print (roi_list)
             self.__roiCounterMgr.updateRois(roi_list)
         else:
             raise AttributeError('should be a vector as follow [roi_id0,x0,y0,width0,height0,...')
