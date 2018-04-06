@@ -76,6 +76,9 @@ class SlsDetector(PyTango.Device_4Impl):
 
     MilliVoltSuffix = '_mv'
 
+    ModelAttrs = ['parallel_mode', 'clock_div', 'high_voltage', 
+                  'threshold_energy']
+
     def __init__(self,*args) :
         PyTango.Device_4Impl.__init__(self,*args)
         self.init_device()
@@ -174,8 +177,7 @@ class SlsDetector(PyTango.Device_4Impl):
                 stats_name = '_'.join(stats_tok)
                 return get_attr_4u(self, stats_name, SlsDetectorHw.SimpleStat)
         obj = self.cam
-        model_attrs = ['parallel_mode']
-        for attr in model_attrs:
+        for attr in self.ModelAttrs:
             if attr in name:
                 obj = self.model
         return get_attr_4u(self, name, obj)
@@ -237,14 +239,14 @@ class SlsDetector(PyTango.Device_4Impl):
 
     @Core.DEB_MEMBER_FUNCT
     def read_all_trim_bits(self, attr):
-        val_list = self.cam.getAllTrimBitsList()
+        val_list = self.model.getAllTrimBitsList()
         deb.Return("val_list=%s" % val_list)
         attr.set_value(val_list)
 
     @Core.DEB_MEMBER_FUNCT
     def write_all_trim_bits(self, attr):
         for i, val in self.get_write_mod_idx_val_list(attr):
-            self.cam.setAllTrimBits(i, val)
+            self.model.setAllTrimBits(i, val)
 
     @Core.DEB_MEMBER_FUNCT
     def get_write_mod_idx_val_list(self, attr):
@@ -485,6 +487,10 @@ class SlsDetectorClass(PyTango.DeviceClass):
         [[PyTango.DevLong,
           PyTango.SPECTRUM,
           PyTango.READ_WRITE, 64]],
+        'high_voltage':
+        [[PyTango.DevLong,
+          PyTango.SCALAR,
+          PyTango.READ_WRITE]],
         'clock_div':
         [[PyTango.DevString,
           PyTango.SCALAR,
