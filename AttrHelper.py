@@ -182,5 +182,5 @@ def get_attr_string_value_list(obj, attr_name):
     dict_name = '_' + obj.__class__.__name__ + '__' + ''.join([x.title() for x in attr_name.split('_')])
     d = getattr(obj,dict_name,None)
     if d:
-        valueList = d.keys()
+        valueList = list(d.keys())
     return valueList

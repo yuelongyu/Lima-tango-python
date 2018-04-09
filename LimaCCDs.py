@@ -1600,14 +1600,14 @@ class LimaCCDs(PyTango.Device_4Impl) :
                 values = acq.getTriggerModeList()
                 valueList = [getDictKey(self.__AcqTriggerMode,val) for val in values]
             except:
-                valueList = self.__AcqTriggerMode.keys()
+                valueList = list(self.__AcqTriggerMode.keys())
         elif attr_name == "saving_format":
             return self.__SavingFormat
         else:
             dict_name = '_' + self.__class__.__name__ + '__' + ''.join([x.title() for x in attr_name.split('_')])
             d = getattr(self,dict_name,None)
             if d:
-                valueList = d.keys()
+                valueList = list(d.keys())
 
         return valueList
 
