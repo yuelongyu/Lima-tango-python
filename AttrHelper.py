@@ -54,15 +54,16 @@
 #       return get_attr_4u(self, name, _AndorCamera)
 #
 
+import six
 
 import PyTango
 
 def getDictKey(dict, value):
     try:
-        ind = dict.values().index(value)                            
+        ind = list(dict.values()).index(value)
     except ValueError:
         return None
-    return dict.keys()[ind]
+    return list(dict.keys())[ind]
 
 def getDictValue(dict, key):
     try:
@@ -181,5 +182,5 @@ def get_attr_string_value_list(obj, attr_name):
     dict_name = '_' + obj.__class__.__name__ + '__' + ''.join([x.title() for x in attr_name.split('_')])
     d = getattr(obj,dict_name,None)
     if d:
-        valueList = d.keys()
+        valueList = list(d.keys())
     return valueList

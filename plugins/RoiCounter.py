@@ -27,10 +27,10 @@ import sys
 import numpy
 import processlib
 from Lima import Core
-from Utils import getDataFromFile,BasePostProcess
+from Lima.Server.plugins.Utils import getDataFromFile,BasePostProcess
 
 def grouper(n, iterable, padvalue=None):
-    return itertools.izip(*[itertools.chain(iterable, itertools.repeat(padvalue, n-1))]*n)
+    return zip(*[itertools.chain(iterable, itertools.repeat(padvalue, n-1))]*n)
 
 RoiCounterTask = Core.Processlib.Tasks.RoiCounterTask
 
@@ -124,7 +124,7 @@ class RoiCounterDeviceServer(BasePostProcess) :
     def addNames(self,argin):
         roi_id = []
         for roi_name in argin:
-            if not self.__roiName2ID.has_key(roi_name):
+            if not roi_name in self.__roiName2ID:
                 self.__roiName2ID[roi_name] = self.__currentRoiId
                 self.__roiID2Name[self.__currentRoiId] = roi_name
                 roi_id.append(self.__currentRoiId)
@@ -152,7 +152,7 @@ class RoiCounterDeviceServer(BasePostProcess) :
                 roi_name = self.__roiID2Name.get(roi_id,None)
                 if roi_name is None:
                     raise RuntimeError('should call add method before setRoi')
-                roi_list.append((roi_name,Core.Roi(x,y,width,height)))
+                roi_list.append((roi_name.encode(),Core.Roi(x,y,width,height)))
             self.__roiCounterMgr.updateRois(roi_list)
         else:
             raise AttributeError('should be a vector as follow [roi_id0,x0,y0,width0,height0,...')

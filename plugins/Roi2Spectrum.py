@@ -27,7 +27,7 @@ import sys
 import numpy
 import processlib
 from Lima import Core
-from Utils import getDataFromFile,BasePostProcess
+from Lima.Server.plugins.Utils import getDataFromFile,BasePostProcess
 
 def grouper(n, iterable, padvalue=None):
     return itertools.izip(*[itertools.chain(iterable, itertools.repeat(padvalue, n-1))]*n)

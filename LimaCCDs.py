@@ -52,7 +52,7 @@ import numpy
 import struct
 import time
 import re
-
+import six
 
 # Before loading Lima.Core, must find out the version the plug-in
 # was compiled with - horrible hack ...
@@ -61,15 +61,15 @@ LimaCameraType = None
 #    from EnvHelper import setup_lima_env
 #    LimaCameraType = setup_lima_env(sys.argv)
 
-from EnvHelper import get_sub_devices
-from EnvHelper import get_lima_camera_type, get_lima_device_name
-from EnvHelper import create_tango_objects
-from AttrHelper import get_attr_4u
-from AttrHelper import getDictKey, getDictValue
+from .EnvHelper import get_sub_devices
+from .EnvHelper import get_lima_camera_type, get_lima_device_name
+from .EnvHelper import create_tango_objects
+from .AttrHelper import get_attr_4u
+from Lima.Server.AttrHelper import getDictKey, getDictValue
 from Lima import Core
 
-import plugins
-import camera
+from Lima.Server import plugins
+from Lima.Server import camera
 if len(sys.argv) >1: instance_name=sys.argv[1]
 else: instance_name = ''
 
@@ -240,7 +240,7 @@ class LimaCCDs(PyTango.Device_4Impl) :
 
     DataArrayVersion = 2
     DataArrayPackStr = '<IHHIIHHHHHHHHIIIIIIII'
-    DataArrayMagic = struct.unpack('>I', 'DTAY')[0]	# 0x44544159
+    DataArrayMagic = struct.unpack('>I', b'DTAY')[0]	# 0x44544159
     DataArrayHeaderLen = 64
     DataArrayMaxNbDim = 6
 
@@ -893,7 +893,7 @@ class LimaCCDs(PyTango.Device_4Impl) :
         else:
             msg = "Accumulation threshold plugins not loaded"
             deb.Error(msg)
-            raise Exception, msg
+            raise Exception(msg)
 
     ## @brief active/unactive calculation of saturated images and counters
     #
@@ -1042,7 +1042,7 @@ class LimaCCDs(PyTango.Device_4Impl) :
     def read_saving_common_header(self,attr) :
         saving = self.__control.saving()
         header = saving.getCommonHeader()
-        headerArr = ['%s%s%s' % (k,self.__key_header_delimiter,v) for k,v in header.iteritems()]
+        headerArr = ['%s%s%s' % (k,self.__key_header_delimiter,v) for k,v in six.iteritems(header)]
         attr.set_value(headerArr,len(headerArr))
 
     ## @brief Write common header
@@ -1184,7 +1184,7 @@ class LimaCCDs(PyTango.Device_4Impl) :
     def read_ready_for_next_image(self,attr) :
         interface = self.__control.hwInterface()
         status = interface.getStatus()
-	ready = status.det == Core.DetIdle or status.det & Core.DetWaitForTrigger
+        ready = status.det == Core.DetIdle or status.det & Core.DetWaitForTrigger
         attr.set_value(bool(ready))
 
     ## @brief this flag is true when acquisition is finished
@@ -1533,7 +1533,7 @@ class LimaCCDs(PyTango.Device_4Impl) :
 
     def read_plugin_list(self,attr) :
         returnList = []
-        for key,value in get_sub_devices().iteritems():
+        for key,value in six.iteritems(get_sub_devices()):
             returnList.append(key.lower().replace('deviceserver',''))
             returnList.append(value)
         attr.set_value(returnList)
@@ -1600,14 +1600,14 @@ class LimaCCDs(PyTango.Device_4Impl) :
                 values = acq.getTriggerModeList()
                 valueList = [getDictKey(self.__AcqTriggerMode,val) for val in values]
             except:
-                valueList = self.__AcqTriggerMode.keys()
+                valueList = list(self.__AcqTriggerMode.keys())
         elif attr_name == "saving_format":
             return self.__SavingFormat
         else:
             dict_name = '_' + self.__class__.__name__ + '__' + ''.join([x.title() for x in attr_name.split('_')])
             d = getattr(self,dict_name,None)
             if d:
-                valueList = d.keys()
+                valueList = list(d.keys())
 
         return valueList
 
@@ -1711,7 +1711,7 @@ class LimaCCDs(PyTango.Device_4Impl) :
         nbDim = len(s)
         maxNbDim = self.DataArrayMaxNbDim
         if nbDim > maxNbDim:
-            raise ValueError, 'Invalid nb of dimensions: max is %d' % maxNbDim
+            raise ValueError('Invalid nb of dimensions: max is %d' % maxNbDim)
 
         image = self.__control.image()
         imageType = image.getImageType()
@@ -1742,8 +1742,8 @@ class LimaCCDs(PyTango.Device_4Impl) :
           t[0],t[1],t[2],t[3],t[4],t[5],        # 24 bytes I x 6 - stepsbytes
           0, 0)    				# padding 2 x 4 bytes
         if len(dataheader) != self.DataArrayHeaderLen:
-            raise RuntimeError, 'Invalid header len: %d (expected %d)' % \
-                  (len(dataheader), self.DataArrayHeaderLen)
+            raise RuntimeError('Invalid header len: %d (expected %d)' % \
+                  (len(dataheader), self.DataArrayHeaderLen))
 
         flatData = d.ravel()
         flatData.dtype = numpy.uint8
@@ -1777,7 +1777,7 @@ class LimaCCDs(PyTango.Device_4Impl) :
         if len(frame_seq) > 2:
             step = frame_seq[2]
             if step != 1:
-                raise ValueError, 'Discontiguous sequences not supported yet'
+                raise ValueError('Discontiguous sequences not supported yet')
         nbFrames = end - start
         deb.Param('readImageSeq:start,end,step = %d,%d,%d (%d frames)' % \
 
@@ -1878,7 +1878,7 @@ class LimaCCDs(PyTango.Device_4Impl) :
 
     @Core.DEB_MEMBER_FUNCT
     def getPluginDeviceNameFromType(self,pluginType):
-        pluginType2deviceName = dict([(x.lower().replace('deviceserver',''),y) for x,y in get_sub_devices().iteritems()])
+        pluginType2deviceName = dict([(x.lower().replace('deviceserver',''),y) for x,y in six.iteritems(get_sub_devices())])
         return pluginType2deviceName.get(pluginType.lower(),'')
 
 #----------------------------------------------------------------------------
@@ -2465,12 +2465,12 @@ def declare_camera_n_commun_to_tango_world(util) :
         try:
             m = __import__('Lima.Server.plugins.%s' % (module_name),None,None,'Lima.Server.plugins.%s' % (module_name))
         except ImportError:
-            print "Warning optional plugin %s can't be load, dependency not satisfied." % module_name
+            print ("Warning optional plugin %s can't be load, dependency not satisfied." % module_name)
             warningFlag = True
             if verboseLevel >= 4:
                 import traceback
                 traceback.print_exc()
-                print
+                print ()
             continue
         else:
             if 'Taco' in module_name:
@@ -2487,7 +2487,7 @@ def declare_camera_n_commun_to_tango_world(util) :
                 specificClass,specificDevice = func()
                 util.add_TgClass(specificClass,specificDevice,specificDevice.__name__)
     if warningFlag and verboseLevel < 4:
-        print "For more pulgins dependency  information start server with -v4"
+        print ("For more pulgins dependency  information start server with -v4")
         
 def export_default_plugins() :
     #Post processing tango export
@@ -2512,7 +2512,7 @@ def export_default_plugins() :
                 if deviceName is None and specificClass and specificDevice:
                     deviceName = '%s/%s/%s' % (beamlineName,
                                                specificDevice.__name__.lower().replace('deviceserver',''),cameraName)
-                    print 'create device',specificDevice.__name__,deviceName
+                    print ('create device',specificDevice.__name__,deviceName)
                     try:
                         util.create_device(specificDevice.__name__,deviceName)
                     except:
@@ -2522,7 +2522,7 @@ def export_default_plugins() :
 def export_ct_control(ct_map):
     util = PyTango.Util.instance()
     tango_dev_map = get_sub_devices()
-    for name, (tango_ct, tango_object) in ct_map.iteritems():
+    for name, (tango_ct, tango_object) in six.iteritems(ct_map):
         tango_class_name = tango_object.tango_class_name
         # device already created.
         if tango_class_name in tango_dev_map:
@@ -2584,9 +2584,10 @@ def _video_image_2_struct(image):
             image.frameNumber(),                  # frame number
             image.width(),                        # width
             image.height(),                       # height
-            ord(struct.pack('=H',1)[-1]),         # endianness
+            ord(struct.pack('=H',1).decode()[-1]),         # endianness
             struct.calcsize(VIDEO_HEADER_FORMAT), # header size
             0,0)                                  # padding
+
     return videoheader + image.buffer()
 
 def _get_control():
@@ -2653,6 +2654,7 @@ def main() :
             except: pass
 
     pytango_ver = PyTango.__version_info__[:3]
+    py_ver_3 = sys.version_info[0] == 3
 
     try:
         py = PyTango.Util(sys.argv)
@@ -2660,7 +2662,7 @@ def main() :
         try:
             declare_camera_n_commun_to_tango_world(py)
         except:
-            print 'SEB_EXP'
+            print ('SEB_EXP')
             import traceback
             traceback.print_exc()
 
@@ -2668,16 +2670,14 @@ def main() :
 
         # create ct control
         control = _get_control()
-
-        if pytango_ver >= (8,1,7) and control is not None:
+        if not py_ver_3 and pytango_ver >= (8,1,7) and control is not None:
             master_dev_name = get_lima_device_name()
             beamline_name, _, camera_name = master_dev_name.split('/')
             name_template = "{0}/{{type}}/{1}".format(beamline_name, camera_name)
-
             # register Tango classes corresponding to CtControl, CtImage, ...
             server, ct_map = create_tango_objects(control, name_template)
             tango_classes = set()
-            for name, (tango_ct_object, tango_object) in ct_map.iteritems():
+            for name, (tango_ct_object, tango_object) in six.iteritems(ct_map):
                 tango_class = server.get_tango_class(tango_object.class_name)
                 tango_classes.add(tango_class)
             for tango_class in tango_classes:
@@ -2698,16 +2698,18 @@ def main() :
         try:
             export_default_plugins()
         except:
-            print 'SEB_EXP'
+            print ('SEB_EXP')
             import traceback
             traceback.print_exc()
 
         U.server_run()
 
-    except PyTango.DevFailed,e:
-        print '-------> Received a DevFailed exception:',e
-    except Exception,e:
-        print '-------> An unforeseen exception occured....',e
+    except PyTango.DevFailed as e:
+        print ('-------> Received a DevFailed exception:',e)
+    except Exception as e:
+        print ('-------> An unforeseen exception occurred....',e)
+        #import traceback
+        #traceback.print_exc()
 
 if __name__ == '__main__':
     main()
