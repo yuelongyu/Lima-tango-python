@@ -112,6 +112,7 @@ maxNbImages             ro      DevLong                 The maximum number of im
 pixelRate               ro      DevLong                 Actual Pixel Rate (Hz)
 pixelRateInfo           ro      DevString               Pixel Rate information
 pixelRateValidValues    ro      DevString               Allowed Pixel Rates
+recorderForcedFifo      rw      DevLong                 Forced Fifo Mode (**only for recording cams**)
 roiInfo                 ro      DevString               PCO ROI info
 roiLastFixed            ro      DevString               Last fixed ROI info
 rollingShutter          rw      DevLong                 Rolling Shutter Mode (**only for some types of EDGE**)
