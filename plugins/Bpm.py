@@ -1,7 +1,7 @@
 ############################################################################
 # This file is part of LImA, a Library for Image Acquisition
 #
-# Copyright (C) : 2009-2011
+# Copyright (C) : 2009-2018
 # European Synchrotron Radiation Facility
 # BP 220, Grenoble 38043
 # FRANCE
@@ -59,16 +59,18 @@ class BpmDeviceServer(BasePostProcess):
 
 #--------- Add you global variables here --------------------------
     BPM_TASK_NAME = "BpmTask"
+    BVDATA_TASK_NAME = "BVDataTask"
 #------------------------------------------------------------------
 #    Device constructor
 #------------------------------------------------------------------
     def __init__(self,cl, name):
-        self.__softOp = None
-        self.__bpmManager = None
+        self._softOp = None
+        self._bpmManager = None
         self.bvdata = None
         self.autoscale = False
         self.color_map = False
         self.lut_method = "LINEAR"
+        self._BVDataTask = None
 #######PALETTE INIT
         color_palette =  pixmaptools.LUT.Palette(pixmaptools.LUT.Palette.TEMP)
         greyscale_palette = pixmaptools.LUT.Palette(pixmaptools.LUT.Palette.GREYSCALE)
@@ -89,44 +91,50 @@ class BpmDeviceServer(BasePostProcess):
         print "In ", self.get_name(), "::init_device()"
         self.get_device_properties(self.get_device_class())
 
-        for attr in ("Intensity", "Proj_X", "Proj_Y",
-                     "Fwhm_X", "Fwhm_Y", "tXY", "X", "Y"):
+        for attr in ("intensity", "proj_x", "proj_y",
+                     "fwhm_x", "fwhm_y", "txy", "x", "y", "bvdata"):
             self.set_change_event(attr, True, False)
 
 
     def set_state(self,state) :
         if(state == PyTango.DevState.OFF) :
-            if(self.__softOp) :
-                self.__softOp = None
-                self.__bpmManager = None
+            if(self._softOp) :
+                self._softOp = None
+                self._bpmManager = None
+                self._BVDataTask = None
                 ctControl = _control_ref()
                 extOpt = ctControl.externalOperation()
-                extOpt.delOp(self.PEAK_FINDER_TASK_NAME)
+                extOpt.delOp(self.BVDATA_TASK_NAME)
+                extOpt.delOp(self.BPM_TASK_NAME)
         elif(state == PyTango.DevState.ON) :
-            if not self.__bpmManager:
+            if not self._bpmManager:
                 ctControl = _control_ref()
                 extOpt = ctControl.externalOperation()
-                self.__softOp = extOpt.addOp(Core.BPM,self.BPM_TASK_NAME,
+                self._softOp = extOpt.addOp(Core.BPM,self.BPM_TASK_NAME,
                                                     self._runLevel)
-                self.__bpmManager = self.__softOp.getManager()
-                
+                self._bpmManager = self._softOp.getManager()
+                self._BVDataTask = BVDataTask(self._bpmManager,self)
+                handler = extOpt.addOp(Core.USER_SINK_TASK,
+                                       self.BVDATA_TASK_NAME,self._runLevel+1)
+                handler.setSinkTask(self._BVDataTask)
+
 
         PyTango.Device_4Impl.set_state(self,state)
 
 #------------------------------------------------------------------
-#    Read BufferSize attribute
+#    Read buffersize attribute
 #------------------------------------------------------------------
-    def read_BufferSize(self, attr):
-        value_read = self.__bpmManager.historySize()
+    def read_buffersize(self, attr):
+        value_read = self._bpmManager.historySize()
         attr.set_value(value_read)
 
 
 #------------------------------------------------------------------
-#    Write BufferSize attribute
+#    Write buffersize attribute
 #------------------------------------------------------------------
-    def write_BufferSize(self, attr):
+    def write_buffersize(self, attr):
         data = attr.get_write_value()
-        self.__bpmManager.resizeHistory(data)
+        self._bpmManager.resizeHistory(data)
 
 
 
@@ -149,7 +157,7 @@ class BpmDeviceServer(BasePostProcess):
         return x
 
     def getResults(self, from_index=0) :
-        results = self.__bpmManager.getHistory(from_index)
+        results = self._bpmManager.getHistory(from_index)
         result_array = numpy.zeros((len(results),7))
         dim = _control_ref().image().getImageDim().getSize()
         max_width = dim.getWidth()
@@ -164,17 +172,15 @@ class BpmDeviceServer(BasePostProcess):
             result_array[i][6] = r.frameNumber
         return result_array.ravel()
 
-    def SaveCalibration(self, calib):
-        calib_x = calib[0]; calib_y = calib[1]
-        tango_db = PyTango.DeviceProxy("sys/database/2")
-        tango_db.DbPutDeviceProperty([self.get_name(), "1", "calibration_x", "1", str(calib_x)])
-        tango_db.DbPutDeviceProperty([self.get_name(), "1", "calibration_y", "1", str(calib_y)])
-
-    def LockBeamMark(self, bm):
-        x = bm[0]; y=bm[1]
-        tango_db = PyTango.DeviceProxy("sys/database/2")
-        tango_db.DbPutDeviceProperty([self.get_name(), "1", "beam_x", "1", str(x)])
-        tango_db.DbPutDeviceProperty([self.get_name(), "1", "beam_y", "1", str(y)])
+    def GetPixelIntensity(self, coordinate):
+        x=coordinate[0] ; y=coordinate[1]
+        try:
+            image = _control_ref().ReadImage()
+            raw_image = image.buffer.copy()
+            return int(raw_image[x][y])
+        except:
+            return -1
+ 
 
     """
 ##############BACKGROUND : will see later
@@ -215,114 +221,134 @@ class BpmDeviceServer(BasePostProcess):
     def get_bpm_result(self, frameNumber=None, timestamp=None):
         if frameNumber==None:
             t = time.time()
-            result = self.__bpmManager.getResult()
+            result = self._bpmManager.getResult()
         else:
             t = timestamp
-            result = self.__bpmManager.getResult(0,frameNumber)
-        if result.errorCode != self.__bpmManager.OK:
-           result.beam_center_x = -1
-           result.beam_center_y = -1
-           result.beam_intensity = -1
-           result.beam_fwhm_x = 0
-           result.beam_fwhm_y = 0
-           result.max_pixel_value = 0
+            result = self._bpmManager.getResult(0,frameNumber)
+        dim = _control_ref().image().getImageDim().getSize()
+        max_width = dim.getWidth()
+        max_height = dim.getHeight()
+        if result.errorCode != self._bpmManager.OK:
+           x = -1
+           y = -1
+           intensity = -1
+           fwhm_x = 0
+           fwhm_y = 0
+           max_intensity = 0
         else:
-            dim = _control_ref().image().getImageDim().getSize()
-            max_width = dim.getWidth()
-            max_height = dim.getHeight()
-            acq_time=t
             x  = self.validate_number(result.beam_center_x, max_value=max_width)
             y  = self.validate_number(result.beam_center_y, max_value=max_height)
             intensity = self.validate_number(result.beam_intensity)
             fwhm_x = self.validate_number(result.beam_fwhm_x, fallback_value=0)
             fwhm_y = self.validate_number(result.beam_fwhm_y, fallback_value=0)
             max_intensity = self.validate_number(result.max_pixel_value, fallback_value=0)
-            
-            try:
-                profile_x = result.profile_x.buffer.astype(numpy.int)
-            except:
-                profile_x = numpy.array([],dtype=numpy.int)
-            try:
-                profile_y = result.profile_y.buffer.astype(numpy.int)
-            except:
-                profile_y = numpy.array([],dtype=numpy.int)
-
+        try:
+            profile_x = result.profile_x.buffer.astype(numpy.int)
+        except:
+            profile_x = numpy.array([],dtype=numpy.int)
+        try:
+            profile_y = result.profile_y.buffer.astype(numpy.int)
+        except:
+            profile_y = numpy.array([],dtype=numpy.int)
+        
+        acq_time=t
         result_array = [acq_time,x,y,intensity,fwhm_x,fwhm_y,max_intensity,profile_x,profile_y]
         return result_array
 
 
-    def read_tXY(self, attr):
+    def read_txy(self, attr):
         last_acq_time, last_x, last_y, _, _, _, _, _, _ = self.get_bpm_result()
         value = numpy.array([last_acq_time, last_x, last_y], numpy.double)
         attr.set_value(value)
 
-    def read_X(self, attr):
+    def read_x(self, attr):
         _, last_x, _, _, _, _, _, _, _ = self.get_bpm_result()
         attr.set_value(last_x)
 
-    def read_Y(self, attr):
+    def read_y(self, attr):
         _, _, last_y, _, _, _, _, _, _ = self.get_bpm_result()
         attr.set_value(last_y)
 
-    def read_Intensity(self, attr):
+    def read_intensity(self, attr):
         _, _, _, last_intensity, _, _, _, _, _ = self.get_bpm_result()
         attr.set_value(last_intensity)
 
-    def read_Fwhm_X(self, attr):
+    def read_fwhm_x(self, attr):
         _, _, _, _, last_fwhm_x, _, _, _, _ = self.get_bpm_result()
         attr.set_value(last_fwhm_x)
 
-    def read_Fwhm_Y(self, attr):
+    def read_fwhm_y(self, attr):
         _, _, _, _, _, last_fwhm_y, _, _, _ = self.get_bpm_result()
         attr.set_value(last_fwhm_y)
 
-    def read_MaxIntensity(self, attr):
+    def read_max_intensity(self, attr):
         _, _, _, _, _, _, last_max_intensity, _, _ = self.get_bpm_result()
         attr.set_value(last_max_intensity)
 
-    def read_Proj_X(self, attr):
+    def read_proj_x(self, attr):
         _, _, _, _, _, _, _, last_proj_x, _ = self.get_bpm_result()
         attr.set_value(last_proj_x)
 
-    def read_Proj_Y(self, attr):
+    def read_proj_y(self, attr):
         _, _, _, _, _, _, _, _, last_proj_y = self.get_bpm_result()
         attr.set_value(last_proj_y)
 
-    def read_AutomaticAOI(self,attr):
-        aoi = self.__softOp.getTask().mRoiAutomatic
+    def read_automaticaoi(self,attr):
+        aoi = self._softOp.getTask().mRoiAutomatic
         attr.set_value(aoi)
 
-    def write_AutomaticAOI(self,attr):
+    def write_automaticaoi(self,attr):
         aoi = attr.get_write_value()
-        self.__softOp.getTask().mRoiAutomatic = aoi
+        self._softOp.getTask().mRoiAutomatic = aoi
 
-    def read_AutoScale(self,attr):
+    def read_autoscale(self,attr):
         attr.set_value(self.autoscale)
 
-    def write_AutoScale(self,attr):
+    def write_autoscale(self,attr):
         data = attr.get_write_value()
         self.autoscale = data
 
-    def read_LutMethod(self,attr):
+    def read_lut_method(self,attr):
         attr.set_value(self.lut_method)
 
-    def write_LutMethod(self,attr):
+    def write_lut_method(self,attr):
         data = attr.get_write_value()
         if data == "LINEAR" or data == "LOG":
             self.lut_method=data
         else:
             print "wrong lut method" #maybe error message
     
-    def read_Colors(self,attr):
+    def read_color_map(self,attr):
         attr.set_value(self.color_map)
 
-    def write_Colors(self,attr):
+    def write_color_map(self,attr):
         data = attr.get_write_value()
         self.color_map=data
 
+    def read_calibration(self, attr):
+        if None not in self.calibration:
+            attr.set_value(self.calibration)
+
+    
+    def write_calibration(self, attr):
+        data = attr.get_write_value()
+        print type(data), data
+        self.calibration = data
+
+        
+    def read_beammark(self, attr):
+        if None not in self.beammark:
+            attr.set_value(self.beammark)
+    
+    def write_beammark(self, attr):
+        data = attr.get_write_value()
+        self.beammark[0] = data[0]
+        self.beammark[1] = data[1]
+
+
 
 #need to see how bpm will deal with bvdata 
-    def read_BVData(self,attr):
+    def read_bvdata(self,attr):
         image = _control_ref().ReadImage() 
         last_acq_time, last_x, last_y, last_intensity, last_fwhm_x, last_fwhm_y, last_max_intensity, last_proj_x, last_proj_y = self.get_bpm_result(image.frameNumber, image.timestamp) 
         lima_roi = _control_ref().image().getRoi()
@@ -370,7 +396,7 @@ class BpmDeviceServer(BasePostProcess):
                 image_jpeg)
 
         attr.set_value(self.bvdata_format,self.bvdata)
-        #self.push_change_event("BVData", self.bvdata[1], self.bvdata[0])
+        #self.push_change_event("bvdata", self.bvdata_format, self.bvdata)
 
 
 #==================================================================
@@ -387,18 +413,14 @@ class BpmDeviceServerClass(PyTango.DeviceClass):
 
     #	 Device Properties
     device_property_list = {
-        "calibration_y":
-        [PyTango.DevDouble,
-        "Pixel size Y",
-        [1] ],
-        "beam_x":
-        [PyTango.DevDouble,
-        "Beam position X",
-        [0] ],
-        "beam_y":
-        [PyTango.DevDouble,
-        "Beam position Y",
-        [0] ],
+        "calibration":
+        [PyTango.DevVarDoubleArray,
+        "Array containing calibX and calibY",
+        [1.0,1.0] ],
+        "beammark":
+        [PyTango.DevVarLongArray,
+        "Array containing BeamMark positions (X,Y)",
+        [0,0] ]
 	}
 
 
@@ -408,39 +430,39 @@ class BpmDeviceServerClass(PyTango.DeviceClass):
             [[PyTango.DevLong,"from frame number"],
              [PyTango.DevVarDoubleArray,"frame number,x,y"]],
 	    'Start':
-            [[PyTango.DevVoid,""],
+            [[PyTango.DevVoid,"Start Bpm device"],
              [PyTango.DevVoid,""]],
 	    'Stop':
-            [[PyTango.DevVoid,""],
+            [[PyTango.DevVoid,"Stop Bpm device"],
              [PyTango.DevVoid,""]],
         'GetPixelIntensity':
             [[PyTango.DevVarLongArray, "pixel coordinate"],
-             [PyTango.DevLong], "return intensity on last image"]
+             [PyTango.DevLong, "return intensity on last image"]]
 
 	}
 
 
     #	 Attribute definitions
     attr_list = {
-        'BufferSize': [[PyTango.DevLong, PyTango.SCALAR, PyTango.READ_WRITE]],
-        'tXY': [[PyTango.DevDouble, PyTango.SPECTRUM, PyTango.READ, 3 ]],
-        'X': [[PyTango.DevDouble, PyTango.SCALAR, PyTango.READ ]],
-        'Y': [[PyTango.DevDouble, PyTango.SCALAR, PyTango.READ ]],
+        'buffersize': [[PyTango.DevLong, PyTango.SCALAR, PyTango.READ_WRITE]],
+        'txy': [[PyTango.DevDouble, PyTango.SPECTRUM, PyTango.READ, 3 ]],
+        'x': [[PyTango.DevDouble, PyTango.SCALAR, PyTango.READ ]],
+        'y': [[PyTango.DevDouble, PyTango.SCALAR, PyTango.READ ]],
 #        'AcquisitionSpectrum': [[PyTango.DevDouble, PyTango.IMAGE, PyTango.READ, 10000000, 7 ]],
 #        'ResultSize': [[PyTango.DevLong, PyTango.SCALAR, PyTango.READ ]],
-        'AutomaticAOI': [[PyTango.DevBoolean, PyTango.SCALAR, PyTango.READ_WRITE ]],
-        'Intensity': [[PyTango.DevDouble, PyTango.SCALAR, PyTango.READ ]],
-        'MaxIntensity': [[PyTango.DevDouble, PyTango.SCALAR, PyTango.READ]],
-        'Proj_X': [[PyTango.DevLong, PyTango.SPECTRUM, PyTango.READ, 2048 ]],
-        'Proj_Y': [[PyTango.DevLong, PyTango.SPECTRUM, PyTango.READ, 2048 ]],
-        'Fwhm_X': [[PyTango.DevDouble, PyTango.SCALAR, PyTango.READ]],
-        'Fwhm_Y': [[PyTango.DevDouble, PyTango.SCALAR, PyTango.READ]],
-        'AutoScale': [[PyTango.DevBoolean, PyTango.SCALAR, PyTango.READ_WRITE ]],
-        'LutMethod' : [[PyTango.DevString, PyTango.SCALAR, PyTango.READ_WRITE ]],
-        'Colors': [[PyTango.DevBoolean, PyTango.SCALAR, PyTango.READ_WRITE ]],
-        'BVData':[[PyTango.DevEncoded, PyTango.SCALAR, PyTango.READ]],
-        'Calibration': [[PyTango.DevDouble, PyTango.SPECTRUM, PyTango.READ_WRITE, 2 ]],
-        'BeamMark': [[PyTango.DevLong, PyTango.SPECTRUM, PyTango.READ_WRITE, 2 ]]
+        'automaticaoi': [[PyTango.DevBoolean, PyTango.SCALAR, PyTango.READ_WRITE ]],
+        'intensity': [[PyTango.DevDouble, PyTango.SCALAR, PyTango.READ ]],
+        'max_intensity': [[PyTango.DevDouble, PyTango.SCALAR, PyTango.READ]],
+        'proj_x': [[PyTango.DevLong, PyTango.SPECTRUM, PyTango.READ, 2048 ]],
+        'proj_y': [[PyTango.DevLong, PyTango.SPECTRUM, PyTango.READ, 2048 ]],
+        'fwhm_x': [[PyTango.DevDouble, PyTango.SCALAR, PyTango.READ]],
+        'fwhm_y': [[PyTango.DevDouble, PyTango.SCALAR, PyTango.READ]],
+        'autoscale': [[PyTango.DevBoolean, PyTango.SCALAR, PyTango.READ_WRITE ]],
+        'lut_method' : [[PyTango.DevString, PyTango.SCALAR, PyTango.READ_WRITE ]],
+        'color_map': [[PyTango.DevBoolean, PyTango.SCALAR, PyTango.READ_WRITE ]],
+        'bvdata':[[PyTango.DevEncoded, PyTango.SCALAR, PyTango.READ]],
+        'calibration': [[PyTango.DevDouble, PyTango.SPECTRUM, PyTango.READ_WRITE, 2 ]],
+        'beammark': [[PyTango.DevLong, PyTango.SPECTRUM, PyTango.READ_WRITE, 2 ]]
     }
 
 
@@ -450,6 +472,112 @@ class BpmDeviceServerClass(PyTango.DeviceClass):
     def __init__(self, name):
         PyTango.DeviceClass.__init__(self, name)
         self.set_type(name)
+
+
+import threading
+class BVDataTask(Core.Processlib.SinkTaskBase):
+    Core.DEB_CLASS(Core.DebModApplication, "BVDataTask")
+
+    class _PushingThread(threading.Thread):
+        Core.DEB_CLASS(Core.DebModApplication, "_PushingThread")
+        def __init__(self, task):
+            threading.Thread.__init__(self)
+            self._task = task
+        def run(self):
+            task = self._task
+            while task._stop is False:
+                with task._lock:
+                    while (task._data is None and
+                           task._stop is False):
+                        task._lock.wait()
+                    if task._stop:
+                        break
+                    local_data = task._data
+                    task._data = None
+                    local_stat = task._stat
+                    task._stat = None
+                #do something with local_data
+                #tango push
+                
+                lima_roi = _control_ref().image().getRoi()
+                roi_top_left = lima_roi.getTopLeft()
+                roi_size = lima_roi.getSize()
+                height, width = local_data.buffer.shape
+                jpegFile = cStringIO.StringIO()
+                if self._task._bpm_device.lut_method=="LINEAR":
+                    lut_method = pixmaptools.LUT.LINEAR
+                else:
+                    lut_method = pixmaptools.LUT.LOG
+                if self._task._bpm_device.color_map==True:
+                    color_map = pixmaptools.LUT.Palette.TEMP
+                else:
+                    color_map = pixmaptools.LUT.Palette.GREYSCALE
+
+                if self._task._bpm_device.autoscale:
+                    img_buffer = pixmaptools.LUT.transform_autoscale(local_data.buffer, self._task._bpm_device.palette[color_map], lut_method)[0]
+                else:
+                    img_buffer = pixmaptools.LUT.transform(local_data.buffer, self._task._bpm_device.palette[color_map], lut_method, 0, 4*4096)[0]
+                img_buffer.shape = (height, width, 4)
+                I = Image.fromarray(img_buffer, "RGBX").convert("RGB")
+                I.save(jpegFile, "jpeg", quality=95)
+                raw_jpeg_data = jpegFile.getvalue()
+                image_jpeg = base64.b64encode(raw_jpeg_data)
+                
+                last_acq_time, last_x, last_y, last_intensity, last_fwhm_x, last_fwhm_y, last_max_intensity, last_proj_x, last_proj_y = local_stat
+
+                profil_x = str(last_proj_x.tolist())
+                profil_y = str(last_proj_y.tolist())
+                self.bvdata_format='!dldddliiiidd%ds%ds%ds' %(len(profil_x),len(profil_y),len(image_jpeg))
+                #msg sent is tuple(struct.pack,format) for decode purpose
+                self.bvdata = struct.pack(
+                        self.bvdata_format,
+                        last_acq_time,
+                        local_data.frameNumber,
+                        last_x,
+                        last_y,
+                        last_intensity,
+                        last_max_intensity,
+                        roi_top_left.x,
+                        roi_top_left.y,
+                        roi_size.getWidth(),
+                        roi_size.getHeight(),
+                        last_fwhm_x,
+                        last_fwhm_y,
+                        profil_x,
+                        profil_y,
+                        image_jpeg)
+
+                self._task._bpm_device.push_change_event("bvdata", self.bvdata_format, self.bvdata)
+                del local_data
+                del local_stat
+            
+    def __init__(self, bpm_manager, bpm_device):
+        Core.Processlib.SinkTaskBase.__init__(self)
+        self._bpm_device = bpm_device
+        self._bpm_manager = bpm_manager
+        self._lock = threading.Condition()
+        self._data = None
+        self._stat = None
+        self._stop = False
+        self._pushing_event_thread = self._PushingThread(self)
+        self._pushing_event_thread.start()
+
+
+    def __del__(self):
+        self._stop=True
+        self._pushing_event_thread.join()
+
+
+    def process(self, data):
+        stat = self._bpm_device.get_bpm_result(data.frameNumber, data.timestamp)
+        
+        with self._lock:
+            self._data = data
+            self._stat = stat
+            self._lock.notify()
+
+
+
 
 
 
