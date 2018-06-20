@@ -332,7 +332,6 @@ class BpmDeviceServer(BasePostProcess):
     
     def write_calibration(self, attr):
         data = attr.get_write_value()
-        print type(data), data
         self.calibration = data
 
         
@@ -349,54 +348,12 @@ class BpmDeviceServer(BasePostProcess):
 
 #need to see how bpm will deal with bvdata 
     def read_bvdata(self,attr):
-        image = _control_ref().ReadImage() 
-        last_acq_time, last_x, last_y, last_intensity, last_fwhm_x, last_fwhm_y, last_max_intensity, last_proj_x, last_proj_y = self.get_bpm_result(image.frameNumber, image.timestamp) 
-        lima_roi = _control_ref().image().getRoi()
-        roi_top_left = lima_roi.getTopLeft()
-        roi_size = lima_roi.getSize()
-        height, width = image.buffer.shape
-        jpegFile = cStringIO.StringIO()
-        if self.lut_method=="LINEAR":
-            lut_method = pixmaptools.LUT.LINEAR
-        else:
-            lut_method = pixmaptools.LUT.LOG
-        if self.color_map==True:
-            color_map = pixmaptools.LUT.Palette.TEMP
-        else:
-            color_map = pixmaptools.LUT.Palette.GREYSCALE
-
-        if self.autoscale:
-            img_buffer = pixmaptools.LUT.transform_autoscale(image.buffer, self.palette[color_map], lut_method)[0]
-        else:
-            img_buffer = pixmaptools.LUT.transform(image.buffer, self.palette[color_map], lut_method, 0, 4*4096)[0]
-        img_buffer.shape = (height, width, 4)
-        I = Image.fromarray(img_buffer, "RGBX").convert("RGB")
-        I.save(jpegFile, "jpeg", quality=95)
-        raw_jpeg_data = jpegFile.getvalue()
-        image_jpeg = base64.b64encode(raw_jpeg_data)
-        profil_x = str(last_proj_x.tolist())
-        profil_y = str(last_proj_y.tolist())
-        self.bvdata_format='!ddddliiiidd%ds%ds%ds' %(len(profil_x),len(profil_y),len(image_jpeg))
-        #msg sent is tuple(struct.pack,format) for decode purpose
-        self.bvdata = struct.pack(
-                self.bvdata_format,
-		        last_acq_time,
-		        last_x,
-		        last_y,
-		        last_intensity,
-		        last_max_intensity,
-		        roi_top_left.x,
-		        roi_top_left.y,
-		        roi_size.getWidth(),
-		        roi_size.getHeight(),
-		        last_fwhm_x,
-		        last_fwhm_y,
-                profil_x,
-                profil_y,
-                image_jpeg)
-
+ 
+        self.bvdata = None
+        self.bvdata_format = None
+        self.bvdata, self.bvdata_format = construct_bvdata(self)
+        
         attr.set_value(self.bvdata_format,self.bvdata)
-        #self.push_change_event("bvdata", self.bvdata_format, self.bvdata)
 
 
 #==================================================================
@@ -473,7 +430,6 @@ class BpmDeviceServerClass(PyTango.DeviceClass):
         PyTango.DeviceClass.__init__(self, name)
         self.set_type(name)
 
-
 import threading
 class BVDataTask(Core.Processlib.SinkTaskBase):
     Core.DEB_CLASS(Core.DebModApplication, "BVDataTask")
@@ -485,71 +441,26 @@ class BVDataTask(Core.Processlib.SinkTaskBase):
             self._task = task
         def run(self):
             task = self._task
+            #import pdb; pdb.set_trace()
             while task._stop is False:
+
                 with task._lock:
                     while (task._data is None and
                            task._stop is False):
                         task._lock.wait()
                     if task._stop:
                         break
-                    local_data = task._data
+                    #local_stat = task._stat
+                    #data = numpy.copy(task._data.buffer)
+                    #data_frame = task._data.frameNumber
                     task._data = None
-                    local_stat = task._stat
                     task._stat = None
-                #do something with local_data
-                #tango push
                 
-                lima_roi = _control_ref().image().getRoi()
-                roi_top_left = lima_roi.getTopLeft()
-                roi_size = lima_roi.getSize()
-                height, width = local_data.buffer.shape
-                jpegFile = cStringIO.StringIO()
-                if self._task._bpm_device.lut_method=="LINEAR":
-                    lut_method = pixmaptools.LUT.LINEAR
-                else:
-                    lut_method = pixmaptools.LUT.LOG
-                if self._task._bpm_device.color_map==True:
-                    color_map = pixmaptools.LUT.Palette.TEMP
-                else:
-                    color_map = pixmaptools.LUT.Palette.GREYSCALE
+                bvdata, bvdata_format = construct_bvdata(self._task._bpm_device)
 
-                if self._task._bpm_device.autoscale:
-                    img_buffer = pixmaptools.LUT.transform_autoscale(local_data.buffer, self._task._bpm_device.palette[color_map], lut_method)[0]
-                else:
-                    img_buffer = pixmaptools.LUT.transform(local_data.buffer, self._task._bpm_device.palette[color_map], lut_method, 0, 4*4096)[0]
-                img_buffer.shape = (height, width, 4)
-                I = Image.fromarray(img_buffer, "RGBX").convert("RGB")
-                I.save(jpegFile, "jpeg", quality=95)
-                raw_jpeg_data = jpegFile.getvalue()
-                image_jpeg = base64.b64encode(raw_jpeg_data)
+                self._task._bpm_device.push_change_event("bvdata", bvdata_format, bvdata)
                 
-                last_acq_time, last_x, last_y, last_intensity, last_fwhm_x, last_fwhm_y, last_max_intensity, last_proj_x, last_proj_y = local_stat
-
-                profil_x = str(last_proj_x.tolist())
-                profil_y = str(last_proj_y.tolist())
-                self.bvdata_format='!dldddliiiidd%ds%ds%ds' %(len(profil_x),len(profil_y),len(image_jpeg))
-                #msg sent is tuple(struct.pack,format) for decode purpose
-                self.bvdata = struct.pack(
-                        self.bvdata_format,
-                        last_acq_time,
-                        local_data.frameNumber,
-                        last_x,
-                        last_y,
-                        last_intensity,
-                        last_max_intensity,
-                        roi_top_left.x,
-                        roi_top_left.y,
-                        roi_size.getWidth(),
-                        roi_size.getHeight(),
-                        last_fwhm_x,
-                        last_fwhm_y,
-                        profil_x,
-                        profil_y,
-                        image_jpeg)
-
-                self._task._bpm_device.push_change_event("bvdata", self.bvdata_format, self.bvdata)
-                del local_data
-                del local_stat
+                
             
     def __init__(self, bpm_manager, bpm_device):
         Core.Processlib.SinkTaskBase.__init__(self)
@@ -562,21 +473,70 @@ class BVDataTask(Core.Processlib.SinkTaskBase):
         self._pushing_event_thread = self._PushingThread(self)
         self._pushing_event_thread.start()
 
-
+    #https://stackoverflow.com/questions/1481488/what-is-the-del-method-how-to-call-it?utm_medium=organic&utm_source=google_rich_qa&utm_campaign=google_rich_qa
     def __del__(self):
         self._stop=True
         self._pushing_event_thread.join()
 
 
     def process(self, data):
-        stat = self._bpm_device.get_bpm_result(data.frameNumber, data.timestamp)
+       # stat = self._bpm_device.get_bpm_result(data.frameNumber, data.timestamp)
         
         with self._lock:
-            self._data = data
-            self._stat = stat
+            self._data = Core.Processlib.Data(data)
+            #self._stat = stat
+            #print "rx data",data.frameNumber,data.buffer.shape
             self._lock.notify()
+            
 
+def construct_bvdata(bpm):
+    image = _control_ref().ReadImage() 
+    last_acq_time, last_x, last_y, last_intensity, last_fwhm_x, last_fwhm_y, last_max_intensity, last_proj_x, last_proj_y = bpm.get_bpm_result(image.frameNumber, image.timestamp) 
+    lima_roi = _control_ref().image().getRoi()
+    roi_top_left = lima_roi.getTopLeft()
+    roi_size = lima_roi.getSize()
+    height, width = image.buffer.shape
+    jpegFile = cStringIO.StringIO()
+    if bpm.lut_method=="LINEAR":
+        lut_method = pixmaptools.LUT.LINEAR
+    else:
+        lut_method = pixmaptools.LUT.LOG
+    if bpm.color_map==True:
+        color_map = pixmaptools.LUT.Palette.TEMP
+    else:
+        color_map = pixmaptools.LUT.Palette.GREYSCALE
 
+    if bpm.autoscale:
+        img_buffer = pixmaptools.LUT.transform_autoscale(image.buffer, bpm.palette[color_map], lut_method)[0]
+    else:
+        img_buffer = pixmaptools.LUT.transform(image.buffer, bpm.palette[color_map], lut_method, 0, 4*4096)[0]
+    img_buffer.shape = (height, width, 4)
+    I = Image.fromarray(img_buffer, "RGBX").convert("RGB")
+    I.save(jpegFile, "jpeg", quality=95)
+    raw_jpeg_data = jpegFile.getvalue()
+    image_jpeg = base64.b64encode(raw_jpeg_data)
+    profil_x = str(last_proj_x.tolist())
+    profil_y = str(last_proj_y.tolist())
+    bvdata_format='dldddliiiidd%ds%ds%ds' %(len(profil_x),len(profil_y),len(image_jpeg))
+    print "SENT : ", last_acq_time, " FRAMENUMBER : ", image.frameNumber
+    bvdata = struct.pack(
+                bvdata_format,
+                last_acq_time,
+                image.frameNumber,
+		        last_x,
+		        last_y,
+		        last_intensity,
+		        last_max_intensity,
+		        roi_top_left.x,
+		        roi_top_left.y,
+		        roi_size.getWidth(),
+		        roi_size.getHeight(),
+		        last_fwhm_x,
+		        last_fwhm_y,
+                profil_x,
+                profil_y,
+                image_jpeg)
+    return bvdata, bvdata_format
 
 
 
