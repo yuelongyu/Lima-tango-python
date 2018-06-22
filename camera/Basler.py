@@ -127,6 +127,9 @@ class BaslerClass(PyTango.DeviceClass):
         'packet_size':
         [PyTango.DevLong,
          "Network packet size (MTU)",8000],
+        'image_type':
+        [PyTango.DevInt,
+         "Image type",-1],
         }
 
     cmd_list = {
@@ -154,7 +157,7 @@ _BaslerInterface = None
 # directory for for details about network optimization.
 
 def get_control(frame_transmission_delay = 0, inter_packet_delay = 0,
-                packet_size = 8000,**keys) :
+                packet_size = 8000,image_type = -1, **keys) :
     global _BaslerCam
     global _BaslerInterface
 
@@ -173,9 +176,10 @@ def get_control(frame_transmission_delay = 0, inter_packet_delay = 0,
         camera_id = 'uname://' + util.get_ds_inst_name()
 
     print ("basler camera_id:", camera_id)
+    print ("basler image_type:", image_type)
 
     if _BaslerCam is None:
-        _BaslerCam = BaslerAcq.Camera(camera_id, int(packet_size))
+        _BaslerCam = BaslerAcq.Camera(camera_id, int(packet_size), 0, int(image_type))
         _BaslerCam.setInterPacketDelay(int(inter_packet_delay))
         _BaslerCam.setFrameTransmissionDelay(int(frame_transmission_delay))
         _BaslerInterface = BaslerAcq.Interface(_BaslerCam)
