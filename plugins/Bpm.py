@@ -71,6 +71,7 @@ class BpmDeviceServer(BasePostProcess):
         self.color_map = False
         self.lut_method = "LINEAR"
         self._BVDataTask = None
+        self.bkg_substraction_handler = None
 #######PALETTE INIT
         color_palette =  pixmaptools.LUT.Palette(pixmaptools.LUT.Palette.TEMP)
         greyscale_palette = pixmaptools.LUT.Palette(pixmaptools.LUT.Palette.GREYSCALE)
@@ -181,37 +182,28 @@ class BpmDeviceServer(BasePostProcess):
         except:
             return -1
  
-
-    """
-##############BACKGROUND : will see later
-    def take_background(self):
-        if self.getAcqStatus()=='Running':
-            raise RuntimeError, "Acquisition has not finished (or Live mode is on)"
-        self.get_position()
-        self._set_background()
-
-
-    def _set_background(self):
+  ##############BACKGROUND : work through bpm device commande.
+    def TakeBackground(self):
+        ctControl = _control_ref()
+        extOpt = ctControl.externalOperation()
         if self.bkg_substraction_handler is not None:
-            self._ext.delOp("bkg")
-        im = self.ccd_control.ReadImage()
-        self.bkg_substraction_handler = self._ext.addOp(self.Lima.Core.BACKGROUNDSUBSTRACTION, "bkg", 0)
+            extOpt.delOp("bkg")
+        im = ctControl.ReadImage()
+        self.bkg_substraction_handler = extOpt.addOp(Core.BACKGROUNDSUBSTRACTION, "bkg", 0)
         self.bkg_substraction_handler.setBackgroundImage(im)
-        self._ext_change_event.set()
 
 
-    def _has_background(self):
+    def HasBackground(self):
         return self.bkg_substraction_handler is not None
 
 
-    def reset_background(self):
+    def ResetBackground(self):
+        ctControl = _control_ref()
+        extOpt = ctControl.externalOperation()
         if self.bkg_substraction_handler is not None:
-            self._ext.delOp("bkg")
+            extOpt.delOp("bkg")
         self.bkg_substraction_handler = None
-        self._ext_change_event.set()
 ##############
-    """
-
 #==================================================================
 #
 #    BpmDeviceServer read/write attribute methods
@@ -394,7 +386,16 @@ class BpmDeviceServerClass(PyTango.DeviceClass):
              [PyTango.DevVoid,""]],
         'GetPixelIntensity':
             [[PyTango.DevVarLongArray, "pixel coordinate"],
-             [PyTango.DevLong, "return intensity on last image"]]
+             [PyTango.DevLong, "return intensity on last image"]],
+        'HasBackground':
+            [[PyTango.DevVoid,"check if bpm has background"],
+             [PyTango.DevBoolean,""]],
+        'TakeBackground':
+            [[PyTango.DevVoid,"Set a background"],
+             [PyTango.DevVoid,""]],
+        'ResetBackground':
+            [[PyTango.DevVoid,"Reset background"],
+             [PyTango.DevVoid,""]]
 
 	}
 
@@ -457,7 +458,6 @@ class BVDataTask(Core.Processlib.SinkTaskBase):
                     task._stat = None
                 
                 bvdata, bvdata_format = construct_bvdata(self._task._bpm_device)
-
                 self._task._bpm_device.push_change_event("bvdata", bvdata_format, bvdata)
                 
                 
@@ -490,7 +490,7 @@ class BVDataTask(Core.Processlib.SinkTaskBase):
             
 
 def construct_bvdata(bpm):
-    image = _control_ref().ReadImage() 
+    image = _control_ref().ReadImage()
     last_acq_time, last_x, last_y, last_intensity, last_fwhm_x, last_fwhm_y, last_max_intensity, last_proj_x, last_proj_y = bpm.get_bpm_result(image.frameNumber, image.timestamp) 
     lima_roi = _control_ref().image().getRoi()
     roi_top_left = lima_roi.getTopLeft()
