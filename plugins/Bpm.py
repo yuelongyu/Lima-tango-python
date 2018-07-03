@@ -71,7 +71,7 @@ class BpmDeviceServer(BasePostProcess):
         self.color_map = False
         self.lut_method = "LINEAR"
         self._BVDataTask = None
-        self.bkg_substraction_handler = None
+        self.bkg_substraction_handler = None        
 #######PALETTE INIT
         color_palette =  pixmaptools.LUT.Palette(pixmaptools.LUT.Palette.TEMP)
         greyscale_palette = pixmaptools.LUT.Palette(pixmaptools.LUT.Palette.GREYSCALE)
@@ -112,11 +112,11 @@ class BpmDeviceServer(BasePostProcess):
                 ctControl = _control_ref()
                 extOpt = ctControl.externalOperation()
                 self._softOp = extOpt.addOp(Core.BPM,self.BPM_TASK_NAME,
-                                                    self._runLevel)
+                                                    self._runLevel+1)
                 self._bpmManager = self._softOp.getManager()
                 self._BVDataTask = BVDataTask(self._bpmManager,self)
                 handler = extOpt.addOp(Core.USER_SINK_TASK,
-                                       self.BVDATA_TASK_NAME,self._runLevel+1)
+                                       self.BVDATA_TASK_NAME,self._runLevel+2)
                 handler.setSinkTask(self._BVDataTask)
 
 
@@ -182,19 +182,15 @@ class BpmDeviceServer(BasePostProcess):
         except:
             return -1
  
-  ##############BACKGROUND : work through bpm device commande.
+##############BACKGROUND : work through bpm device commande.
     def TakeBackground(self):
         ctControl = _control_ref()
         extOpt = ctControl.externalOperation()
         if self.bkg_substraction_handler is not None:
             extOpt.delOp("bkg")
         im = ctControl.ReadImage()
-        self.bkg_substraction_handler = extOpt.addOp(Core.BACKGROUNDSUBSTRACTION, "bkg", 0)
+        self.bkg_substraction_handler = extOpt.addOp(Core.BACKGROUNDSUBSTRACTION, "bkg", self._runLevel)
         self.bkg_substraction_handler.setBackgroundImage(im)
-
-
-    def HasBackground(self):
-        return self.bkg_substraction_handler is not None
 
 
     def ResetBackground(self):
@@ -203,6 +199,10 @@ class BpmDeviceServer(BasePostProcess):
         if self.bkg_substraction_handler is not None:
             extOpt.delOp("bkg")
         self.bkg_substraction_handler = None
+
+    def HasBackground(self):
+        return self.bkg_substraction_handler is not None
+
 ##############
 #==================================================================
 #
@@ -337,8 +337,6 @@ class BpmDeviceServer(BasePostProcess):
         self.beammark[1] = data[1]
 
 
-
-#need to see how bpm will deal with bvdata 
     def read_bvdata(self,attr):
  
         self.bvdata = None
@@ -406,8 +404,6 @@ class BpmDeviceServerClass(PyTango.DeviceClass):
         'txy': [[PyTango.DevDouble, PyTango.SPECTRUM, PyTango.READ, 3 ]],
         'x': [[PyTango.DevDouble, PyTango.SCALAR, PyTango.READ ]],
         'y': [[PyTango.DevDouble, PyTango.SCALAR, PyTango.READ ]],
-#        'AcquisitionSpectrum': [[PyTango.DevDouble, PyTango.IMAGE, PyTango.READ, 10000000, 7 ]],
-#        'ResultSize': [[PyTango.DevLong, PyTango.SCALAR, PyTango.READ ]],
         'automaticaoi': [[PyTango.DevBoolean, PyTango.SCALAR, PyTango.READ_WRITE ]],
         'intensity': [[PyTango.DevDouble, PyTango.SCALAR, PyTango.READ ]],
         'max_intensity': [[PyTango.DevDouble, PyTango.SCALAR, PyTango.READ]],
@@ -442,7 +438,6 @@ class BVDataTask(Core.Processlib.SinkTaskBase):
             self._task = task
         def run(self):
             task = self._task
-            #import pdb; pdb.set_trace()
             while task._stop is False:
 
                 with task._lock:
@@ -451,9 +446,6 @@ class BVDataTask(Core.Processlib.SinkTaskBase):
                         task._lock.wait()
                     if task._stop:
                         break
-                    #local_stat = task._stat
-                    #data = numpy.copy(task._data.buffer)
-                    #data_frame = task._data.frameNumber
                     task._data = None
                     task._stat = None
                 
@@ -473,19 +465,14 @@ class BVDataTask(Core.Processlib.SinkTaskBase):
         self._pushing_event_thread = self._PushingThread(self)
         self._pushing_event_thread.start()
 
-    #https://stackoverflow.com/questions/1481488/what-is-the-del-method-how-to-call-it?utm_medium=organic&utm_source=google_rich_qa&utm_campaign=google_rich_qa
     def __del__(self):
         self._stop=True
         self._pushing_event_thread.join()
 
 
-    def process(self, data):
-       # stat = self._bpm_device.get_bpm_result(data.frameNumber, data.timestamp)
-        
+    def process(self, data):        
         with self._lock:
             self._data = Core.Processlib.Data(data)
-            #self._stat = stat
-            #print "rx data",data.frameNumber,data.buffer.shape
             self._lock.notify()
             
 
