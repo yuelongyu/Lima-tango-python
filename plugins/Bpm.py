@@ -229,10 +229,14 @@ class BpmDeviceServer(BasePostProcess):
            max_intensity = 0
         else:
             x  = self.validate_number(result.beam_center_x, max_value=max_width)
+            x *= self.calibration[0]
             y  = self.validate_number(result.beam_center_y, max_value=max_height)
+            y *= self.calibration[1]
             intensity = self.validate_number(result.beam_intensity)
             fwhm_x = self.validate_number(result.beam_fwhm_x, fallback_value=0)
+            fwhm_x = self.calibration[0]
             fwhm_y = self.validate_number(result.beam_fwhm_y, fallback_value=0)
+            fwhm_y = self.calibration[1]
             max_intensity = self.validate_number(result.max_pixel_value, fallback_value=0)
         try:
             profile_x = result.profile_x.buffer.astype(numpy.int)
@@ -308,7 +312,7 @@ class BpmDeviceServer(BasePostProcess):
         if data == "LINEAR" or data == "LOG":
             self.lut_method=data
         else:
-            print "wrong lut method" #maybe error message
+            print "wrong lut method, 'LINEAR' or 'LOG'" #maybe error message
     
     def read_color_map(self,attr):
         attr.set_value(self.color_map)
