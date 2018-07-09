@@ -178,7 +178,7 @@ class BpmDeviceServer(BasePostProcess):
         try:
             image = _control_ref().ReadImage()
             raw_image = image.buffer.copy()
-            return int(raw_image[x][y])
+            return int(raw_image[y][x])
         except:
             return -1
  
