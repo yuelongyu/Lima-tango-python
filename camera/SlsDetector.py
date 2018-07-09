@@ -44,6 +44,7 @@ import numpy as np
 import PyTango
 from collections import OrderedDict
 from functools import partial
+from itertools import chain
 
 from Lima import Core
 from Lima import SlsDetector as SlsDetectorHw
@@ -355,22 +356,64 @@ class SlsDetector(PyTango.Device_4Impl):
             raise err
         aff_map = {}
         CPUAffinity = SlsDetectorHw.CPUAffinity
+        RecvCPUAffinity = SlsDetectorHw.RecvCPUAffinity
+        NetDevRxQueueCPUAffinity = SlsDetectorHw.NetDevRxQueueCPUAffinity
         NetDevGroupCPUAffinity = SlsDetectorHw.NetDevGroupCPUAffinity
         GlobalCPUAffinity = SlsDetectorHw.GlobalCPUAffinity
         for aff_data in aff_array:
             aff_data = map(int, aff_data)
             pixel_depth, recv_l, recv_w, lima, other = aff_data[:5]
             netdev_aff = aff_data[5:]
+            all_cpus = range(CPUAffinity.getNbSystemCPUs())
+            recv_lw = [[6, 7], [9, 10]]
+            indep_lw = True
+            if indep_lw:
+                recv_l = recv_lw
+                recv_w = [map(lambda x: x + 12, l) for l in recv_l]
+            else:
+                recv_l = [[(x, x + 12) for x in r] for r in recv_lw]
+                recv_w = recv_l
+            recv_pt = [(8, 20), (11, 23)]
+            recv_pt = zip(*([recv_pt] * 2))
+            lima = list(range(6))
+            lima += map(lambda x: x + 12, lima)
+            lima.remove(0)
+            other = [0]
+            irq_aff = [0, (8, 20), (11, 23)]
+            proc_aff = irq_aff
+            def Affinity(*x):
+                if type(x[0]) in [tuple, list]:
+                    x = list(chain(*x))
+                m = reduce(lambda a, b: a | b, map(lambda a: 1 << a, x))
+                return CPUAffinity(m)
             global_affinity = GlobalCPUAffinity()
-            global_affinity.recv.listeners = CPUAffinity(recv_l)
-            global_affinity.recv.writers = CPUAffinity(recv_w)
-            global_affinity.lima = CPUAffinity(lima)
-            global_affinity.other = CPUAffinity(other)
+            recv_list = []
+            for l, w, pt in zip(recv_l, recv_w, recv_pt):
+                recv = RecvCPUAffinity()
+                recv.listeners = map(Affinity, l)
+                recv.writers = map(Affinity, w)
+                recv.port_threads = map(Affinity, pt)
+                recv_list.append(recv)
+            global_affinity.recv = recv_list
+            for i, r in enumerate(global_affinity.recv):
+                s = "Recv[%d]:" % i
+                def A(x):
+                    return hex(long(x))
+                s += " listeners=%s," % [A(x) for x in r.listeners]
+                s += " writers=%s," % [A(x) for x in r.writers]
+                s += " port_threads=%s" % [A(x) for x in r.port_threads]
+                print(s)
+            global_affinity.lima = Affinity(*lima)
+            global_affinity.other = Affinity(*other)
             ng_aff_list = []
-            for name_list, a in zip(self.netdev_groups, netdev_aff):
+            for name_list, (irq, proc) in zip(self.netdev_groups, 
+                                              zip(irq_aff, proc_aff)):
                 ng_aff = NetDevGroupCPUAffinity()
                 ng_aff.name_list = name_list
-                ng_aff.processing = CPUAffinity(a)
+                ng_aff_queue = NetDevRxQueueCPUAffinity()
+                ng_aff_queue.irq = Affinity(irq)
+                ng_aff_queue.processing = Affinity(proc)
+                ng_aff.queue_affinity = {-1: ng_aff_queue}
                 ng_aff_list.append(ng_aff)
             global_affinity.netdev = ng_aff_list
             aff_map[pixel_depth] = global_affinity
