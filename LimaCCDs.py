@@ -2431,7 +2431,7 @@ class LimaCCDsClass(PyTango.DeviceClass) :
           PyTango.SCALAR,
           PyTango.READ_WRITE]],
         'buffer_max_number':
-        [[PyTango.DevShort,
+        [[PyTango.DevLong,
           PyTango.SCALAR,
           PyTango.READ]],
         }
