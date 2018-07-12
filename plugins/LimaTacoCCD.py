@@ -179,6 +179,8 @@ class LimaTacoCCDs(PyTango.Device_4Impl, object):
         self.__image_number_header_delimiter = ';'
 
         self.__last_exp_time= None
+        self.__mult_trig_nb_frames = None
+        self.__mult_trig_last_frame = -1
 
 #------------------------------------------------------------------
 #    Device destructor
@@ -259,7 +261,13 @@ class LimaTacoCCDs(PyTango.Device_4Impl, object):
         if acq_status == Core.AcqReady:
             return PyTango.DevState.OFF
         elif acq_status == Core.AcqRunning:
-            return PyTango.DevState.ON
+            img_counters = ct_status.ImageCounters
+            last_acq_frame = img_counters.LastCounterReady
+            ready = ((self.__mult_trig_nb_frames is not None) and
+                     (last_acq_frame == self.__mult_trig_last_frame + 1))
+            if ready:
+                self.__mult_trig_last_frame = last_acq_frame
+            return PyTango.DevState.OFF if ready else PyTango.DevState.ON
         else:
             return PyTango.DevState.FAULT
 
@@ -271,8 +279,23 @@ class LimaTacoCCDs(PyTango.Device_4Impl, object):
     @Core.DEB_MEMBER_FUNCT
     def DevCcdStart(self):
         control = _control_ref()
-        control.prepareAcq()
-        control.startAcq()
+        prepare, start = True, True
+        is_mult_trig = self.__mult_trig_nb_frames is not None
+        if is_mult_trig:
+            acq = control.acquisition()
+            ct_status = control.getStatus()
+            acq_status = ct_status.AcquisitionStatus
+            prepare = (acq_status != Core.AcqRunning)
+            trig_mode = acq.getTriggerMode()
+            start = prepare or (trig_mode == Core.IntTrigMult)
+            
+        if prepare:
+            if is_mult_trig:
+                acq.setAcqNbFrames(self.__mult_trig_nb_frames)
+            control.prepareAcq()
+            self.__mult_trig_last_frame = -1
+        if start:
+            control.startAcq()
 
 
 #------------------------------------------------------------------
@@ -295,6 +318,8 @@ class LimaTacoCCDs(PyTango.Device_4Impl, object):
     @Core.DEB_MEMBER_FUNCT
     def DevCcdRead(self, frame_data):
         frame_nb, frame_size = frame_data
+        if self.__mult_trig_nb_frames is not None and frame_nb == 0:
+            frame_nb = self.__mult_trig_last_frame
         deb.Param('frame_nb=%s, frame_size=%s' % (frame_nb, frame_size))
         control = _control_ref()
         data = control.ReadImage(int(frame_nb))
@@ -805,6 +830,8 @@ class LimaTacoCCDs(PyTango.Device_4Impl, object):
 #------------------------------------------------------------------
     @Core.DEB_MEMBER_FUNCT
     def DevCcdWriteFile(self, frame_nb):
+        if self.__mult_trig_nb_frames is not None and frame_nb == 0:
+            frame_nb = self.__mult_trig_last_frame
         synchronous = not self.ManualAsynchronousWrite
         control = _control_ref()
         saving = control.saving()
@@ -861,6 +888,10 @@ class LimaTacoCCDs(PyTango.Device_4Impl, object):
 #------------------------------------------------------------------
     @Core.DEB_MEMBER_FUNCT
     def DevCcdSetFrames(self, nb_frames):
+        is_mult_trig = self.__mult_trig_nb_frames is not None
+        if is_mult_trig and (nb_frames == 1):
+            return
+
         control = _control_ref()
         acquisition = control.acquisition()
         acquisition.setAcqNbFrames(nb_frames)
@@ -1024,7 +1055,7 @@ class LimaTacoCCDs(PyTango.Device_4Impl, object):
 #    DevCcdGetCurrent command:
 #
 #    Description: Get the current acquired frame number
-#    argout: DevVarDoubleArray    
+#    argout: DevLong
 #------------------------------------------------------------------
     @Core.DEB_MEMBER_FUNCT
     def DevCcdGetCurrent(self):
@@ -1045,7 +1076,7 @@ class LimaTacoCCDs(PyTango.Device_4Impl, object):
 #    DevSetDebugFlags command:
 #
 #    Description: Get the current acquired frame number
-#    argout: DevVarDoubleArray    
+#    argin: DevULong
 #------------------------------------------------------------------
     @Core.DEB_MEMBER_FUNCT
     def DevSetDebugFlags(self, deb_flags):
@@ -1062,7 +1093,7 @@ class LimaTacoCCDs(PyTango.Device_4Impl, object):
 #    DevGetDebugFlags command:
 #
 #    Description: Get the current acquired frame number
-#    argout: DevVarDoubleArray    
+#    argout: DevULong
 #------------------------------------------------------------------
     @Core.DEB_MEMBER_FUNCT
     def DevGetDebugFlags(self):
@@ -1076,6 +1107,47 @@ class LimaTacoCCDs(PyTango.Device_4Impl, object):
         deb.Return('Getting debug flags: 0x%08x' % deb_flags)
         return deb_flags
 
+
+#------------------------------------------------------------------
+#    DevCcdSetMultTrigNbFrames command:
+#
+#    Description: Set the current nb. of frames in mult-trig mode
+#    argin: DevULong
+#------------------------------------------------------------------
+    @Core.DEB_MEMBER_FUNCT
+    def DevCcdSetMultTrigNbFrames(self, nb_frames):
+        deb.Param('Setting mult-trig nb_frames: %d' % nb_frames)
+        if nb_frames < 1:
+            raise Core.Exception, 'Invalid nb_frames=%d' % nb_frames
+        self.__mult_trig_nb_frames = nb_frames
+
+#------------------------------------------------------------------
+#    DevCcdGetMultTrigNbFrames command:
+#
+#    Description: Get the current acquired frame number
+#    argout: DevULong
+#------------------------------------------------------------------
+    @Core.DEB_MEMBER_FUNCT
+    def DevCcdGetMultTrigNbFrames(self):
+        nb_frames = self.__mult_trig_nb_frames
+        if nb_frames is None:
+            nb_frames = 0
+        deb.Return('Getting mult-trig nb_frames: %d' % nb_frames)
+        return nb_frames
+
+#------------------------------------------------------------------
+#    DevCcdResetMultTrigNbFrames command:
+#
+#    Description: Reset the mult-trig mode - go to standard
+#------------------------------------------------------------------
+    @Core.DEB_MEMBER_FUNCT
+    def DevCcdResetMultTrigNbFrames(self):
+        deb.Param('Resetting mult-trig nb_frames')
+        if self.__mult_trig_nb_frames is not None:
+            control = _control_ref()
+            acq = control.acquisition()
+            acq.setAcqNbFrames(1)
+            self.__mult_trig_nb_frames = None
 
 #------------------------------------------------------------------
 #    DevGetCurrent command:
@@ -1225,6 +1297,15 @@ class LimaTacoCCDsClass(PyTango.DeviceClass):
         'DevCcdGetCurrent':
             [[PyTango.DevVoid, ""],
             [PyTango.DevLong, ""]],
+        'DevCcdGetMultTrigNbFrames':
+            [[PyTango.DevVoid, ""],
+            [PyTango.DevULong, ""]],
+        'DevCcdSetMultTrigNbFrames':
+            [[PyTango.DevULong, ""],
+            [PyTango.DevVoid, ""]],
+        'DevCcdResetMultTrigNbFrames':
+            [[PyTango.DevVoid, ""],
+            [PyTango.DevVoid, ""]],
         'DevGetDebugFlags':
             [[PyTango.DevVoid, ""],
             [PyTango.DevULong, ""]],
