@@ -77,8 +77,12 @@ class SlsDetector(PyTango.Device_4Impl):
 
     MilliVoltSuffix = '_mv'
 
-    ModelAttrs = ['parallel_mode', 'clock_div', 'high_voltage', 
-                  'threshold_energy']
+    ModelAttrs = ['parallel_mode',
+                  'high_voltage',
+                  'clock_div',
+                  'fixed_clock_div',
+                  'threshold_energy',
+    ]
 
     def __init__(self,*args) :
         PyTango.Device_4Impl.__init__(self,*args)
@@ -106,6 +110,13 @@ class SlsDetector(PyTango.Device_4Impl):
 
         self.proc_finished = self.cam.getProcessingFinishedEvent()
         self.proc_finished.registerStatusCallback(_SlsDetectorControl)
+
+        if self.high_voltage > 0:
+            self.model.setHighVoltage(self.high_voltage)
+        if self.fixed_clock_div > 0:
+            self.model.setFixedClockDiv(self.fixed_clock_div)
+        if self.threshold_energy > 0:
+            self.model.setThresholdEnergy(self.threshold_energy)
 
         self.cam.setTolerateLostPackets(self.tolerate_lost_packets)
         self.netdev_groups = [g.split(',') for g in self.netdev_groups]
@@ -454,6 +465,16 @@ class SlsDetectorClass(PyTango.DeviceClass):
         'config_fname':
         [PyTango.DevString,
          "Path to the SlsDetector config file",[]],
+        'high_voltage':
+        [PyTango.DevShort,
+         "Initial detector high voltage (V) "
+         "(set to 150 if already tested)", 0],
+        'fixed_clock_div':
+        [PyTango.DevShort,
+         "Initial detector fixed-clock-div (0, 1)", 0],
+        'threshold_energy':
+        [PyTango.DevLong,
+         "Initial detector threshold energy (eV)", 0],
         'tolerate_lost_packets':
         [PyTango.DevBoolean,
          "Initial tolerance to lost packets", True],
@@ -536,6 +557,10 @@ class SlsDetectorClass(PyTango.DeviceClass):
           PyTango.READ_WRITE]],
         'clock_div':
         [[PyTango.DevString,
+          PyTango.SCALAR,
+          PyTango.READ_WRITE]],
+        'fixed_clock_div':
+        [[PyTango.DevBoolean,
           PyTango.SCALAR,
           PyTango.READ_WRITE]],
         'parallel_mode':

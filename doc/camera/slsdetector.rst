@@ -13,6 +13,10 @@ Properties
 Property name			Mandatory	Default value	Description
 =============================== =============== =============== ==============================================================
 config_fname			Yes		-		Path to the SlsDetector config file
+high_voltage			No		0		Initial detector high voltage (V)
+								(set to 150 if already tested)
+fixed_clock_div			No		0		Initial detector fixed-clock-div
+threshold_energy		No		0		Initial detector threshold energy (eV)
 tolerate_lost_packets		No		True		Initial tolerance to lost packets
 netdev_groups			No		[]		List of network device groups, each group is a list of 
 								comma-separated interface names: ["ethX,ethY", "ethZ,..."]
@@ -42,12 +46,14 @@ pixel_depth			rw	DevString		The image pixel bit-depth:
 								 - **32**
 raw_mode			rw	DevBoolean		Publish image as given by the Receivers (no SW reconstruction)
 threshold_energy		rw	DevLong			The energy (in eV) the pixel discriminator thresholds (Vcmp & Trim bits) is set at
+high_voltage			rw	DevShort		The detector high voltage (in V)
 all_trim_bits			rw	DevVarLongArray		Array with the pixel trimming value [0-63] for each half-module, if all the pixels in the half-module have the same trimming value, -1 otherwise
 clock_div			rw      DevString               The readout clock divider:
 								 - **FULL_SPEED**
 								 - **HALF_SPEED**
 								 - **QUARTER_SPEED**
 								 - **SUPER_SLOW_SPEED**
+fixed_clock_div			rw	DevBoolean		If active, will try to keep the same clock_div when changing pixel_depth
 readout_flags			rw	DevString		The flags affecting the readout mode (Parallel|NonParallel|Safe + StoreInRAM|Continous):
 								 - **PARALLEL + STORE_IN_RAM**
 								 - **PARALLEL + CONTINUOUS**
