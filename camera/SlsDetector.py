@@ -587,6 +587,10 @@ class SlsDetectorClass(PyTango.DeviceClass):
         [[PyTango.DevBoolean,
           PyTango.SCALAR,
           PyTango.READ_WRITE]],
+        'skip_frame_freq':
+        [[PyTango.DevLong,
+          PyTango.SCALAR,
+          PyTango.READ_WRITE]],
         }
 
     def __init__(self,name) :
