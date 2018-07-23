@@ -262,7 +262,12 @@ class LimaTacoCCDs(PyTango.Device_4Impl, object):
             return PyTango.DevState.OFF
         elif acq_status == Core.AcqRunning:
             img_counters = ct_status.ImageCounters
-            last_acq_frame = img_counters.LastCounterReady
+            extOp = control.externalOperation()
+            link_task_act, sink_task_act = extOp.isTaskActive()
+            if sink_task_act:
+                last_acq_frame = img_counters.LastCounterReady
+            else:
+                last_acq_frame = img_counters.LastImageReady
             ready = ((self.__mult_trig_nb_frames is not None) and
                      (last_acq_frame == self.__mult_trig_last_frame + 1))
             if ready:
