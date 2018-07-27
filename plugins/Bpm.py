@@ -32,15 +32,11 @@ from Lima import Core
 from Lima.Server.plugins.Utils import BasePostProcess
 #pixmaptools
 import os
-try:
-    from bliss.data.routines.pixmaptools import qt4 as pixmaptools
-except ImportError:
-    os.environ["QUB_SUBPATH"]="qt4"
-    from Qub.CTools import pixmaptools #for 16-bits to 8-bits conversionimport time
+
 import Image
 import cStringIO
 import base64
-
+import math
 
 
 def grouper(n, iterable, padvalue=None):
@@ -73,16 +69,12 @@ class BpmDeviceServer(BasePostProcess):
         self._BVDataTask = None
         self.bkg_substraction_handler = None        
 #######PALETTE INIT
-        color_palette =  pixmaptools.LUT.Palette(pixmaptools.LUT.Palette.TEMP)
-        greyscale_palette = pixmaptools.LUT.Palette(pixmaptools.LUT.Palette.GREYSCALE)
-        a = numpy.fromstring(color_palette.getPaletteData(), dtype=numpy.uint8)
-        a.shape = (65536, 4)
-        # BGR<=>RGB conversion
-        r = numpy.array(a.T[2])
-        b = numpy.array(a.T[0])
-        a.T[0]=r; a.T[2]=b
-        color_palette.setPaletteData(a)
-        self.palette = { pixmaptools.LUT.Palette.TEMP: color_palette, pixmaptools.LUT.Palette.GREYSCALE: greyscale_palette }
+
+
+
+        self.palette = self.init_palette()
+        
+
 #######
         BasePostProcess.__init__(self,cl,name)
         self.init_device()
@@ -121,6 +113,32 @@ class BpmDeviceServer(BasePostProcess):
 
 
         PyTango.Device_4Impl.set_state(self,state)
+
+    def init_palette(self):
+        greyscale_palette = numpy.zeros((65536,3), dtype=numpy.uint8)
+        greyscale_palette[:,0]=numpy.linspace(0,255,65536)
+        greyscale_palette[:,1]=numpy.linspace(0,255,65536)
+        greyscale_palette[:,2]=numpy.linspace(0,255,65536)
+
+
+        color_palette = numpy.zeros((65536,3), dtype=numpy.uint8)
+        color_palette[:65536/4:,2]=255
+        color_palette[:65536/4:,2]=numpy.linspace(0,255,65536/4)
+        color_palette[65536/4:65536/2,2]=numpy.linspace(255,0,65536/4)
+        color_palette[65536/4:65536/2,1]=255
+        color_palette[65536/2:65536-65536/4,0]=numpy.linspace(0,255,65536/4)
+        color_palette[65536/2:65536-65536/4,1]=255
+        color_palette[65536-65536/4:65536,0]=255
+        color_palette[65536-65536/4:65536,1]=numpy.linspace(255,0,65536/4)
+
+        return { "grey":greyscale_palette, "color":color_palette}
+
+
+
+
+
+
+
 
 #------------------------------------------------------------------
 #    Read buffersize attribute
@@ -342,7 +360,6 @@ class BpmDeviceServer(BasePostProcess):
 
 
     def read_bvdata(self,attr):
- 
         self.bvdata = None
         self.bvdata_format = None
         self.bvdata, self.bvdata_format = construct_bvdata(self)
@@ -452,7 +469,7 @@ class BVDataTask(Core.Processlib.SinkTaskBase):
                         break
                     task._data = None
                     task._stat = None
-                
+
                 bvdata, bvdata_format = construct_bvdata(self._task._bpm_device)
                 self._task._bpm_device.push_change_event("bvdata", bvdata_format, bvdata)
                 
@@ -488,28 +505,64 @@ def construct_bvdata(bpm):
     roi_size = lima_roi.getSize()
     height, width = image.buffer.shape
     jpegFile = cStringIO.StringIO()
-    if bpm.lut_method=="LINEAR":
-        lut_method = pixmaptools.LUT.LINEAR
-    else:
-        lut_method = pixmaptools.LUT.LOG
-    if bpm.color_map==True:
-        color_map = pixmaptools.LUT.Palette.TEMP
-    else:
-        color_map = pixmaptools.LUT.Palette.GREYSCALE
-
+    
     if bpm.autoscale:
-        img_buffer = pixmaptools.LUT.transform_autoscale(image.buffer, bpm.palette[color_map], lut_method)[0]
+        min_val = image.buffer.min()
+        max_val = image.buffer.max()
     else:
-        img_buffer = pixmaptools.LUT.transform(image.buffer, bpm.palette[color_map], lut_method, 0, 4*4096)[0]
-    img_buffer.shape = (height, width, 4)
-    I = Image.fromarray(img_buffer, "RGBX").convert("RGB")
+        image_type = _control_ref().image().getImageType()
+        print image_type
+        min_val=0
+        if image_type==0: #Bpp8
+            max_val=256
+        elif image_type==2: #Bpp10
+            max_val=1024
+        elif image_type==4: #Bpp12
+            max_val=4096
+        elif image_type==6: #Bpp14
+            max_val=16384
+        elif image_type==8: #Bpp16
+            max_val=65536
+        elif image_type==16: #Bpp24
+            max_val=16777216
+        elif image_type==10: #Bpp32 why??
+            max_val=4294967296
+
+        #elif image_type=='Bpp32s':
+
+    if bpm.lut_method=="LOG":
+        if min_val!=0:
+            min_val=int(math.log10(min_val))
+        max_val=int(math.log10(max_val))
+    print min_val, max_val
+
+    A = int(65536.0 / (max_val - min_val))
+    B = int((65536.0 * min_val) / (max_val-min_val))
+    if bpm.lut_method=="LOG":
+        if A!=0:
+            A = int(math.log10(A))
+        if B!=0:
+            B = int(math.log10(B))
+    print A, B
+    scale_image = image.buffer.clip(min_val, max_val)
+    if A>0:
+        scale_image *= A
+    scale_image += B
+
+    if bpm.color_map==True:
+        img_buffer=bpm.palette["color"].take(scale_image, axis=0)
+    else:
+        img_buffer = bpm.palette["grey"].take(scale_image, axis=0)
+
+
+    I = Image.fromarray(img_buffer, "RGB")
     I.save(jpegFile, "jpeg", quality=95)
     raw_jpeg_data = jpegFile.getvalue()
     image_jpeg = base64.b64encode(raw_jpeg_data)
     profil_x = str(last_proj_x.tolist())
     profil_y = str(last_proj_y.tolist())
     bvdata_format='dldddliiiidd%ds%ds%ds' %(len(profil_x),len(profil_y),len(image_jpeg))
-    print "SENT : ", last_acq_time, " FRAMENUMBER : ", image.frameNumber
+    print "SENT : ", last_acq_time, " FRAMENUMBER : ", image.frameNumber, "length profiles : ", len(profil_x), len(profil_y)
     bvdata = struct.pack(
                 bvdata_format,
                 last_acq_time,
