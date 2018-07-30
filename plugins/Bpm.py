@@ -457,6 +457,7 @@ class BVDataTask(Core.Processlib.SinkTaskBase):
         def __init__(self, task):
             threading.Thread.__init__(self)
             self._task = task
+            self.timestamp = time.time()
         def run(self):
             task = self._task
             while task._stop is False:
@@ -470,8 +471,11 @@ class BVDataTask(Core.Processlib.SinkTaskBase):
                     task._data = None
                     task._stat = None
 
-                bvdata, bvdata_format = construct_bvdata(self._task._bpm_device)
-                self._task._bpm_device.push_change_event("bvdata", bvdata_format, bvdata)
+                dt = time.time() - self.timestamp
+                if dt>0.1:
+                    bvdata, bvdata_format = construct_bvdata(self._task._bpm_device)
+                    self._task._bpm_device.push_change_event("bvdata", bvdata_format, bvdata)
+                    self.timestamp=time.time()
                 
                 
             
@@ -498,6 +502,8 @@ class BVDataTask(Core.Processlib.SinkTaskBase):
             
 
 def construct_bvdata(bpm):
+    timestamp=time.time()
+
     image = _control_ref().ReadImage()
     last_acq_time, last_x, last_y, last_intensity, last_fwhm_x, last_fwhm_y, last_max_intensity, last_proj_x, last_proj_y = bpm.get_bpm_result(image.frameNumber, image.timestamp) 
     lima_roi = _control_ref().image().getRoi()
@@ -505,13 +511,11 @@ def construct_bvdata(bpm):
     roi_size = lima_roi.getSize()
     height, width = image.buffer.shape
     jpegFile = cStringIO.StringIO()
-    
     if bpm.autoscale:
         min_val = image.buffer.min()
         max_val = image.buffer.max()
     else:
         image_type = _control_ref().image().getImageType()
-        print image_type
         min_val=0
         if image_type==0: #Bpp8
             max_val=256
@@ -525,20 +529,20 @@ def construct_bvdata(bpm):
             max_val=65536
         elif image_type==16: #Bpp24
             max_val=16777216
-        elif image_type==10: #Bpp32 why??
+        elif image_type==10: #Bpp32
             max_val=4294967296
-
     scale_image = image.buffer.clip(min_val, max_val)
-
-    if bpm.lut_method=="LOG":
-        if min_val!=0:
-            min_val=math.log10(min_val)
-        else:
-            min_val=1E-6
-        max_val=math.log10(max_val)
-
-    A = int(65536.0 / (max_val - min_val))
-    B = int((65536.0 * min_val) / (max_val-min_val))
+    if(min_val!=max_val):
+        if bpm.lut_method=="LOG":
+            if min_val!=0:
+                min_val=math.log10(min_val)
+            else:
+                min_val=1E-6
+            max_val=math.log10(max_val)
+        A = int(65536.0 / (max_val - min_val))
+        B = int((65536.0 * min_val) / (max_val-min_val))
+    else:
+        A=1;B=0
 
     if bpm.lut_method=="LOG":
         scale_image[:] = numpy.log10(scale_image) * A + B
@@ -549,7 +553,6 @@ def construct_bvdata(bpm):
         img_buffer=bpm.palette["color"].take(scale_image, axis=0)
     else:
         img_buffer = bpm.palette["grey"].take(scale_image, axis=0)
-
     I = Image.fromarray(img_buffer, "RGB")
     I.save(jpegFile, "jpeg", quality=95)
     raw_jpeg_data = jpegFile.getvalue()
@@ -557,7 +560,6 @@ def construct_bvdata(bpm):
     profil_x = str(last_proj_x.tolist())
     profil_y = str(last_proj_y.tolist())
     bvdata_format='dldddliiiidd%ds%ds%ds' %(len(profil_x),len(profil_y),len(image_jpeg))
-    print "SENT : ", last_acq_time, " FRAMENUMBER : ", image.frameNumber, "length profiles : ", len(profil_x), len(profil_y)
     bvdata = struct.pack(
                 bvdata_format,
                 last_acq_time,
@@ -576,6 +578,7 @@ def construct_bvdata(bpm):
                 profil_y,
                 image_jpeg)
     return bvdata, bvdata_format
+
 
 
 
