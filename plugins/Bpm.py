@@ -528,32 +528,27 @@ def construct_bvdata(bpm):
         elif image_type==10: #Bpp32 why??
             max_val=4294967296
 
-        #elif image_type=='Bpp32s':
+    scale_image = image.buffer.clip(min_val, max_val)
 
     if bpm.lut_method=="LOG":
         if min_val!=0:
-            min_val=int(math.log10(min_val))
-        max_val=int(math.log10(max_val))
-    print min_val, max_val
+            min_val=math.log10(min_val)
+        else:
+            min_val=1E-6
+        max_val=math.log10(max_val)
 
     A = int(65536.0 / (max_val - min_val))
     B = int((65536.0 * min_val) / (max_val-min_val))
-    if bpm.lut_method=="LOG":
-        if A!=0:
-            A = int(math.log10(A))
-        if B!=0:
-            B = int(math.log10(B))
-    print A, B
-    scale_image = image.buffer.clip(min_val, max_val)
-    if A>0:
-        scale_image *= A
-    scale_image += B
 
+    if bpm.lut_method=="LOG":
+        scale_image[:] = numpy.log10(scale_image) * A + B
+    else:
+        scale_image *= A
+        scale_image += B
     if bpm.color_map==True:
         img_buffer=bpm.palette["color"].take(scale_image, axis=0)
     else:
         img_buffer = bpm.palette["grey"].take(scale_image, axis=0)
-
 
     I = Image.fromarray(img_buffer, "RGB")
     I.save(jpegFile, "jpeg", quality=95)
@@ -581,7 +576,6 @@ def construct_bvdata(bpm):
                 profil_y,
                 image_jpeg)
     return bvdata, bvdata_format
-
 
 
 
