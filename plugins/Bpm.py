@@ -539,8 +539,8 @@ def construct_bvdata(bpm):
             else:
                 min_val=1E-6
             max_val=math.log10(max_val)
-        A = int(65536.0 / (max_val - min_val))
-        B = int((65536.0 * min_val) / (max_val-min_val))
+        A = int(65535.0 / (max_val - min_val))
+        B = int(-(65535.0 * min_val) / (max_val-min_val))
     else:
         A=1;B=0
 
