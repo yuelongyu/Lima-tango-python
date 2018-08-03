@@ -13,14 +13,12 @@ The newest thing is the creation of a DevEncoded attribut (bvdata) which can be 
 Properties
 ----------
 
-+--------------------+----+-------------------+-----------------------------------------------------------------------------------------------+
-|Propertie name		 | RW | Type              |		Description                                                                               |
-+--------------------+----+-------------------+-----------------------------------------------------------------------------------------------+
-|calibration         | RW | DevVarDoubleArray |  Contains the calibration in X and Y ([X,Y]), not affecting the image taken,                  |
-|                    |    |                   |  just the way it is display.                                                                  |
-+--------------------+----+-------------------+-----------------------------------------------------------------------------------------------+
-|beammark            | RW | DevVarLongArray   |  Contains coordonates (X,Y) in pixels of a beam mark set by the user.                         |
-+--------------------+----+-------------------+-----------------------------------------------------------------------------------------------+
+====================    ====== ====================  ================================================================================================================
+Propertie name          RW     Type                  Description                                                                               
+====================    ====== ====================  ================================================================================================================
+calibration             RW     DevVarDoubleArray     Contains the calibration in X and Y ([X,Y]), not affecting the image taken, just the way it is display.                                                                  |
+beammark                RW     DevVarLongArray       Contains coordonates (X,Y) in pixels of a beam mark set by the user.
+====================    ====== ====================  ================================================================================================================
 
 
 Attributes
@@ -57,20 +55,22 @@ beammark                RW  DevLong         Attribute version of the beammark pr
 Commands
 ----------
 
-====================    ========== ==========     ================================================================================================================
-Commands name		    Arg.IN      Arg.OUT			Description
-====================    ========== ==========     ================================================================================================================
-Start                   DevVoid     DevVoid         Start Bpm device.
-Stop                    DevVoid     DevVoid         Stop Bpm device.
-getResults              DevLong     DevVarDoubleArray   take a number as parameter and return an array containing (framenb,x,y) values, starting to the
-                                                    frame number ask until there is no more image.
-GetPixelIntensity       DevVarLongArray DevLong     Return the intensity of pixel (x,y) passed as parameters
-HasBackground           DevVoid     DevBoolean      Is there a background already in place ?
-TakeBackground          DevVoid     DevVoid         Take the current image and set it as Background, using the Core.BACKGROUNDSUBSTRACTION module.
-ResetBackground         DevVoid     DevVoid         Reset the Background.
-====================    ========== ==========     ================================================================================================================
+====================    ==================== ====================     ================================================================================================================
+Commands name		    Arg.IN               Arg.OUT			      Description
+====================    ==================== ====================     ================================================================================================================
+Start                   DevVoid              DevVoid                  Start Bpm device.
+Stop                    DevVoid              DevVoid                  Stop Bpm device.
+getResults              DevLong              DevVarDoubleArray        Take a number as parameter and return an array containing (framenb,x,y) values, starting to the
+                                                                      frame number ask until there is no more image.
+GetPixelIntensity       DevVarLongArray      DevLong                  Return the intensity of pixel (x,y) passed as parameters
+HasBackground           DevVoid              DevBoolean               Is there a background already in place ?
+TakeBackground          DevVoid              DevVoid                  Take the current image and set it as Background, using the Core.BACKGROUNDSUBSTRACTION module.
+ResetBackground         DevVoid              DevVoid                  Reset the Background.
+====================    ==================== ====================     ================================================================================================================
 
-NOTE : This plugin is suppose to replace old BeamViewer but there is only the Bpm functionnality for the moment.
-       Some other plugins will be create in the futur.
-       For the moment this plugin is mainly use in the bpm web application. (https://gitlab.esrf.fr/limagroup/bpm-web)
+NOTE
+----------
+This plugin is suppose to replace old BeamViewer but there is only the Bpm functionnality for the moment.
+Some other plugins will be create in the futur.
+For the moment this plugin is mainly use in the bpm web application. (https://gitlab.esrf.fr/limagroup/bpm-web)
                                 
