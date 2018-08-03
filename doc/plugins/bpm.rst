@@ -41,10 +41,10 @@ autoscale               RW  DevBoolean      Activate autoscale transformation on
 lut_method              RW  DevString       Method used in the transformation of image. can be "LOG" or "LINEAR".
 color_map               RW  DevBoolean      Image in black and white(color_map=false), or use a color map to display colors based on intensity.
 bvdata                  RO  DevEncoded      Attribute regrouping the image (jpeg format) and numerous information on it, such as timestamp,
-                                                number of the frame, x, y, txy, ...
-                                                Everything is pack throught struck module and is either send in a Tango event or directly read.
-                                                WARNING : You need to have the decode function in order to read (can be found in the webserver
-                                                          Bpm, currently here : https://gitlab.esrf.fr/limagroup/bpm-web )
+                                            number of the frame, x, y, txy, ...
+                                            Everything is pack throught struck module and is either send in a Tango event or directly read.
+                                            WARNING : You need to have the decode function in order to read (can be found in the webserver
+                                            Bpm, currently here : https://gitlab.esrf.fr/limagroup/bpm-web )
 calibration             RW  DevDouble       Attribute version of the calibration property.
 beammark                RW  DevLong         Attribute version of the beammark property.
 ====================    === ==========     ================================================================================================================
