@@ -22,32 +22,32 @@ beammark                RW     DevVarLongArray       Contains coordonates (X,Y) 
 Attributes
 ----------
 
-====================    === ==========     ================================================================================================================
-Attribute name		    RW	Type			Description
-====================    === ==========     ================================================================================================================
-buffersize              RW  DevLong         Size of the buffer where a certain amount of images will be store before re-writing on the first one.
-txy                     RO  DevDouble       Intensity of the pixel with the coordinates (x,y) pass as argument.
-x                       RO  DevDouble       coordinate on the x axis of the beam return by the BPM task. If the algorithm couldn't find a X value then it 
-                                            is set at -1.
-y                       RO  DevDouble       Same as x but for Y axis.
-automaticaoi            RW  DevBoolean      true or false for the AOI mode.
-intensity               RO  DevDouble       Intensity of the area around beam.
-max_intensity           RO  DevDouble       Maximum intensity on the image.
-proj_x                  RO  DevLong         Array containing sum of all pixel´s intensity on axis x
-proj_y                  RO  DevLong         Same as proj_x but on y axis.
-fwhm_x                  RO  DevDouble       Full width at half of maximum on the profil X.
-fwhm_y                  RO  DevDouble       same as fwhm_x but on y axis profil.
-autoscale               RW  DevBoolean      Activate autoscale transformation on the image. (use min and max intensity on it in order to scale).
-lut_method              RW  DevString       Method used in the transformation of image. can be "LOG" or "LINEAR".
-color_map               RW  DevBoolean      Image in black and white(color_map=false), or use a color map to display colors based on intensity.
-bvdata                  RO  DevEncoded      Attribute regrouping the image (jpeg format) and numerous information on it, such as timestamp,
-                                            number of the frame, x, y, txy, ...
-                                            Everything is pack throught struck module and is either send in a Tango event or directly read.
-                                            WARNING : You need to have the decode function in order to read (can be found in the webserver
-                                            Bpm, currently here : https://gitlab.esrf.fr/limagroup/bpm-web )
-calibration             RW  DevDouble       Attribute version of the calibration property.
-beammark                RW  DevLong         Attribute version of the beammark property.
-====================    === ==========     ================================================================================================================
+====================   ====== ==========     ================================================================================================================
+Attribute name		   RW	  Type			 Description
+====================   ====== ==========     ================================================================================================================
+buffersize             RW     DevLong         Size of the buffer where a certain amount of images will be store before re-writing on the first one.
+txy                    RO     DevDouble       Intensity of the pixel with the coordinates (x,y) pass as argument.
+x                      RO     DevDouble       coordinate on the x axis of the beam return by the BPM task. If the algorithm couldn't find a X value then it 
+                                              is set at -1.
+y                      RO     DevDouble       Same as x but for Y axis.
+automaticaoi           RW     DevBoolean      true or false for the AOI mode.
+intensity              RO     DevDouble       Intensity of the area around beam.
+max_intensity          RO     DevDouble       Maximum intensity on the image.
+proj_x                 RO     DevLong         Array containing sum of all pixel´s intensity on axis x
+proj_y                 RO     DevLong         Same as proj_x but on y axis.
+fwhm_x                 RO     DevDouble       Full width at half of maximum on the profil X.
+fwhm_y                 RO     DevDouble       same as fwhm_x but on y axis profil.
+autoscale              RW     DevBoolean      Activate autoscale transformation on the image. (use min and max intensity on it in order to scale).
+lut_method             RW     DevString       Method used in the transformation of image. can be "LOG" or "LINEAR".
+color_map              RW     DevBoolean      Image in black and white(color_map=false), or use a color map to display colors based on intensity.
+bvdata                 RO     DevEncoded      Attribute regrouping the image (jpeg format) and numerous information on it, such as timestamp,
+                                              number of the frame, x, y, txy, ...
+                                              Everything is pack throught struck module and is either send in a Tango event or directly read.
+                                              WARNING : You need to have the decode function in order to read (can be found in the webserver
+                                              Bpm, currently here : https://gitlab.esrf.fr/limagroup/bpm-web )
+calibration            RW     DevDouble       Attribute version of the calibration property.
+beammark               RW     DevLong         Attribute version of the beammark property.
+====================   ====== ==========     ================================================================================================================
 
 
 Commands
