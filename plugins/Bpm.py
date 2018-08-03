@@ -502,14 +502,11 @@ class BVDataTask(Core.Processlib.SinkTaskBase):
             
 
 def construct_bvdata(bpm):
-    timestamp=time.time()
-
     image = _control_ref().ReadImage()
     last_acq_time, last_x, last_y, last_intensity, last_fwhm_x, last_fwhm_y, last_max_intensity, last_proj_x, last_proj_y = bpm.get_bpm_result(image.frameNumber, image.timestamp) 
     lima_roi = _control_ref().image().getRoi()
     roi_top_left = lima_roi.getTopLeft()
     roi_size = lima_roi.getSize()
-    height, width = image.buffer.shape
     jpegFile = cStringIO.StringIO()
     if bpm.autoscale:
         min_val = image.buffer.min()
@@ -531,6 +528,12 @@ def construct_bvdata(bpm):
             max_val=16777216
         elif image_type==10: #Bpp32
             max_val=4294967296
+    if bpm.lut_method=="LOG":
+        if min_val==0:
+            min_val=1
+        if max_val==0:
+            max_val=1
+
     scale_image = image.buffer.clip(min_val, max_val)
     if(min_val!=max_val):
         if bpm.lut_method=="LOG":
