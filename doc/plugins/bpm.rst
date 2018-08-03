@@ -3,11 +3,9 @@ Bpm
 
 This is the new Bpm device, it replaces "BeamViewer" which was use to do a lot of different tasks.
 This one is only use for Bpm purpose.
-It takes images and calculate beam position using the Core.BPM module. Can also push Tango event containing modified image and several statistics and informations(listed above).
+It takes images and calculate beam position using the Core.BPM module. Can also push Tango event containing modified image and several statistics and informations(listed above) in a DevEncoded attribut name bvdata.
 
 Bpm plugin is launched through **LimaCCDs camera_name** script.
-
-The newest thing is the creation of a DevEncoded attribut (bvdata) which can be use through Tango events in order to display images.
 
 
 Properties
@@ -37,8 +35,8 @@ intensity               RO  DevDouble       Intensity of the area around beam.
 max_intensity           RO  DevDouble       Maximum intensity on the image.
 proj_x                  RO  DevLong         Array containing sum of all pixel´s intensity on axis x
 proj_y                  RO  DevLong         Same as proj_x but on y axis.
-fwhm_x                  RO  DevDouble       je sais plus
-fwhm_y                  RO  DevDouble       same as fwhm_x but on y axis.
+fwhm_x                  RO  DevDouble       Full width at half of maximum on the profil X.
+fwhm_y                  RO  DevDouble       same as fwhm_x but on y axis profil.
 autoscale               RW  DevBoolean      Activate autoscale transformation on the image. (use min and max intensity on it in order to scale).
 lut_method              RW  DevString       Method used in the transformation of image. can be "LOG" or "LINEAR".
 color_map               RW  DevBoolean      Image in black and white(color_map=false), or use a color map to display colors based on intensity.
@@ -72,5 +70,5 @@ NOTE
 ----------
 This plugin is suppose to replace old BeamViewer but there is only the Bpm functionnality for the moment.
 Some other plugins will be create in the futur.
-For the moment this plugin is mainly use in the bpm web application. (https://gitlab.esrf.fr/limagroup/bpm-web)
+For the moment this plugin is mainly use in the bpm webserver application. (https://gitlab.esrf.fr/limagroup/bpm-web)
                                 
