@@ -12,6 +12,7 @@ Properties
 ====================    ====== ====================  ================================================================================================================
 Propertie name          RW     Type                  Description                                                                               
 ====================    ====== ====================  ================================================================================================================
+enable_tango_event      RW     DevBoolean            if set to false, Bpm won't push bvdata or other attributs through Tango.
 calibration             RW     DevVarDoubleArray     Contains the calibration in X and Y ([X,Y]), value in unit/pixel.                                                                  |
 beammark                RW     DevVarLongArray       Contains coordonates (X,Y) in pixels of a beam mark set by the user.
 ====================    ====== ====================  ================================================================================================================
