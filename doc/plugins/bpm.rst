@@ -1,11 +1,9 @@
 Bpm
 =======================
 
-This is the new Bpm device, it replaces "BeamViewer" which was use to do a lot of different tasks.
-This one is only use for Bpm purpose.
-It takes images and calculate beam position using the Core.BPM module. Can also push Tango event containing modified image and several statistics and informations(listed above) in a DevEncoded attribut name bvdata.
-
-Bpm plugin is launched through **LimaCCDs camera_name** script.
+This is the BPM (Beam Position Monitoring) device. It aims to detect a X-ray beam spot and returns statistics (x,y positions, FWHM, ...). 
+It takes images and calculate beam position using the builtin task BPM of the processlib library. 
+Can also push Tango event containing jpeg view of the image and several statistics and information (listed bellow) in a DevEncoded attribute name bvdata.
 
 
 Properties
@@ -14,7 +12,7 @@ Properties
 ====================    ====== ====================  ================================================================================================================
 Propertie name          RW     Type                  Description                                                                               
 ====================    ====== ====================  ================================================================================================================
-calibration             RW     DevVarDoubleArray     Contains the calibration in X and Y ([X,Y]), not affecting the image taken, just the way it is display.                                                                  |
+calibration             RW     DevVarDoubleArray     Contains the calibration in X and Y ([X,Y]), value in unit/pixel.                                                                  |
 beammark                RW     DevVarLongArray       Contains coordonates (X,Y) in pixels of a beam mark set by the user.
 ====================    ====== ====================  ================================================================================================================
 
@@ -26,11 +24,11 @@ Attributes
 Attribute name		   RW	  Type			 Description
 ====================   ====== ==========     ================================================================================================================
 buffersize             RW     DevLong         Size of the buffer where a certain amount of images will be store before re-writing on the first one.
-txy                    RO     DevDouble       Intensity of the pixel with the coordinates (x,y) pass as argument.
 x                      RO     DevDouble       coordinate on the x axis of the beam return by the BPM task. If the algorithm couldn't find a X value then it 
                                               is set at -1.
 y                      RO     DevDouble       Same as x but for Y axis.
-automaticaoi           RW     DevBoolean      true or false for the AOI mode.
+txy                    RO     DevDouble       Return an array [timestamp,x,y] of the last acquisition.
+automatic_aoi          RW     DevBoolean      true or false for the AOI mode.
 intensity              RO     DevDouble       Intensity of the area around beam.
 max_intensity          RO     DevDouble       Maximum intensity on the image.
 proj_x                 RO     DevLong         Array containing sum of all pixel´s intensity on axis x

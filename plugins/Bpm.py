@@ -83,10 +83,10 @@ class BpmDeviceServer(BasePostProcess):
     def init_device(self):
         print "In ", self.get_name(), "::init_device()"
         self.get_device_properties(self.get_device_class())
-
-        for attr in ("intensity", "proj_x", "proj_y",
-                     "fwhm_x", "fwhm_y", "txy", "x", "y", "bvdata"):
-            self.set_change_event(attr, True, False)
+        if self.enable_tango_event:
+            for attr in ("intensity", "proj_x", "proj_y",
+                        "fwhm_x", "fwhm_y", "txy", "x", "y", "bvdata"):
+                self.set_change_event(attr, True, False)
 
 
     def set_state(self,state) :
@@ -97,7 +97,8 @@ class BpmDeviceServer(BasePostProcess):
                 self._BVDataTask = None
                 ctControl = _control_ref()
                 extOpt = ctControl.externalOperation()
-                extOpt.delOp(self.BVDATA_TASK_NAME)
+                if self.enable_tango_event:
+                    extOpt.delOp(self.BVDATA_TASK_NAME)
                 extOpt.delOp(self.BPM_TASK_NAME)
         elif(state == PyTango.DevState.ON) :
             if not self._bpmManager:
@@ -106,10 +107,11 @@ class BpmDeviceServer(BasePostProcess):
                 self._softOp = extOpt.addOp(Core.BPM,self.BPM_TASK_NAME,
                                                     self._runLevel+1)
                 self._bpmManager = self._softOp.getManager()
-                self._BVDataTask = BVDataTask(self._bpmManager,self)
-                handler = extOpt.addOp(Core.USER_SINK_TASK,
-                                       self.BVDATA_TASK_NAME,self._runLevel+2)
-                handler.setSinkTask(self._BVDataTask)
+                if self.enable_tango_event:
+                    self._BVDataTask = BVDataTask(self._bpmManager,self)
+                    handler = extOpt.addOp(Core.USER_SINK_TASK,
+                                        self.BVDATA_TASK_NAME,self._runLevel+2)
+                    handler.setSinkTask(self._BVDataTask)
 
 
         PyTango.Device_4Impl.set_state(self,state)
@@ -252,9 +254,9 @@ class BpmDeviceServer(BasePostProcess):
             y *= self.calibration[1]
             intensity = self.validate_number(result.beam_intensity)
             fwhm_x = self.validate_number(result.beam_fwhm_x, fallback_value=0)
-            fwhm_x = self.calibration[0]
+            fwhm_x *= self.calibration[0]
             fwhm_y = self.validate_number(result.beam_fwhm_y, fallback_value=0)
-            fwhm_y = self.calibration[1]
+            fwhm_y *= self.calibration[1]
             max_intensity = self.validate_number(result.max_pixel_value, fallback_value=0)
         try:
             profile_x = result.profile_x.buffer.astype(numpy.int)
@@ -381,6 +383,10 @@ class BpmDeviceServerClass(PyTango.DeviceClass):
 
     #	 Device Properties
     device_property_list = {
+        "enable_tango_event":
+        [PyTango.DevBoolean,
+        "Enable or disable the push event on bvdata attribute",
+        True],
         "calibration":
         [PyTango.DevVarDoubleArray,
         "Array containing calibX and calibY",
@@ -428,8 +434,8 @@ class BpmDeviceServerClass(PyTango.DeviceClass):
         'automaticaoi': [[PyTango.DevBoolean, PyTango.SCALAR, PyTango.READ_WRITE ]],
         'intensity': [[PyTango.DevDouble, PyTango.SCALAR, PyTango.READ ]],
         'max_intensity': [[PyTango.DevDouble, PyTango.SCALAR, PyTango.READ]],
-        'proj_x': [[PyTango.DevLong, PyTango.SPECTRUM, PyTango.READ, 2048 ]],
-        'proj_y': [[PyTango.DevLong, PyTango.SPECTRUM, PyTango.READ, 2048 ]],
+        'proj_x': [[PyTango.DevLong, PyTango.SPECTRUM, PyTango.READ, 4096 ]],
+        'proj_y': [[PyTango.DevLong, PyTango.SPECTRUM, PyTango.READ, 4096 ]],
         'fwhm_x': [[PyTango.DevDouble, PyTango.SCALAR, PyTango.READ]],
         'fwhm_y': [[PyTango.DevDouble, PyTango.SCALAR, PyTango.READ]],
         'autoscale': [[PyTango.DevBoolean, PyTango.SCALAR, PyTango.READ_WRITE ]],
@@ -472,7 +478,7 @@ class BVDataTask(Core.Processlib.SinkTaskBase):
                     task._stat = None
 
                 dt = time.time() - self.timestamp
-                if dt>0.1:
+                if dt>0.04:
                     bvdata, bvdata_format = construct_bvdata(self._task._bpm_device)
                     self._task._bpm_device.push_change_event("bvdata", bvdata_format, bvdata)
                     self.timestamp=time.time()
