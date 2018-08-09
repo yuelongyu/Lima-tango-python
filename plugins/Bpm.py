@@ -125,7 +125,7 @@ class BpmDeviceServer(BasePostProcess):
 
         color_palette = numpy.zeros((65536,3), dtype=numpy.uint8)
         color_palette[:65536/4:,2]=255
-        color_palette[:65536/4:,2]=numpy.linspace(0,255,65536/4)
+        color_palette[:65536/4:,1]=numpy.linspace(0,255,65536/4)
         color_palette[65536/4:65536/2,2]=numpy.linspace(255,0,65536/4)
         color_palette[65536/4:65536/2,1]=255
         color_palette[65536/2:65536-65536/4,0]=numpy.linspace(0,255,65536/4)
@@ -533,7 +533,10 @@ def construct_bvdata(bpm):
         elif image_type==16: #Bpp24
             max_val=16777216
         elif image_type==10: #Bpp32
-            max_val=4294967296
+            max_val=4294967296-1 
+            #numpy uint32 stops at 4294967295.
+            #if you clip with max_val=4294967296
+            #numpy.clip() will return 0 everywhere
     if bpm.lut_method=="LOG":
         if min_val==0:
             min_val=1
@@ -559,7 +562,7 @@ def construct_bvdata(bpm):
         scale_image *= A
         scale_image += B
     if bpm.color_map==True:
-        img_buffer=bpm.palette["color"].take(scale_image, axis=0)
+        img_buffer = bpm.palette["color"].take(scale_image, axis=0)
     else:
         img_buffer = bpm.palette["grey"].take(scale_image, axis=0)
     I = Image.fromarray(img_buffer, "RGB")
