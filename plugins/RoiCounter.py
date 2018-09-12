@@ -61,7 +61,7 @@ class RoiCounterDeviceServer(BasePostProcess) :
 
             class _RoiConfigSave(Core.CtConfig.ModuleTypeCallback) :
                 def __init__(self,cnt):
-                    Core.CtConfig.ModuleTypeCallback.__init__(self,"RoiCounters")
+                    Core.CtConfig.ModuleTypeCallback.__init__(self,b"RoiCounters")
                     self.__cnt = weakref.ref(cnt)
                 def store(self) :
                     cnt = self.__cnt()
