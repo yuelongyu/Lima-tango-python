@@ -412,7 +412,7 @@ class LimaTacoCCDs(PyTango.Device_4Impl, object):
         if release:
             release()
         if da_len != frame_size:
-            raise Core.Exception ( ('Client expects %d bytes, frame has %d' % 
+            raise Core.Exception( ('Client expects %d bytes, frame has %d' %
                                    (frame_size, da_len)) )
         return ('DATA_ARRAY',  self._concat_data_cache)
     
@@ -964,7 +964,7 @@ class LimaTacoCCDs(PyTango.Device_4Impl, object):
         elif triggerMode == Core.ExtTrigReadout:
             returnValue = 4
         else:
-            raise Core.Exception( 'Invalid trigger mode: %s' % triggerMode)
+            raise Core.Exception('Invalid trigger mode: %s' % triggerMode)
         return returnValue
 #------------------------------------------------------------------
 #    DevReadValues command:
@@ -1118,7 +1118,7 @@ class LimaTacoCCDs(PyTango.Device_4Impl, object):
     def DevCcdSetMultTrigNbFrames(self, nb_frames):
         deb.Param('Setting mult-trig nb_frames: %d' % nb_frames)
         if nb_frames < 1:
-            raise Core.Exception, 'Invalid nb_frames=%d' % nb_frames
+            raise Core.Exception('Invalid nb_frames=%d' % nb_frames)
         self.__mult_trig_nb_frames = nb_frames
 
 #------------------------------------------------------------------
@@ -1171,7 +1171,7 @@ class LimaTacoCCDs(PyTango.Device_4Impl, object):
 #------------------------------------------------------------------
     @Core.DEB_MEMBER_FUNCT
     def dummy(self, *args) :
-        raise Core.Exception( 'Taco command not supported for this camera')
+        raise Core.Exception('Taco command not supported for this camera')
 
 #==================================================================
 #

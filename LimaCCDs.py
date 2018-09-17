@@ -2487,8 +2487,8 @@ def declare_camera_n_commun_to_tango_world(util) :
                 specificClass,specificDevice = func()
                 util.add_TgClass(specificClass,specificDevice,specificDevice.__name__)
     if warningFlag and verboseLevel < 4:
-        print ("For more pulgins dependency  information start server with -v4")
-        
+        print ("For more plugins dependency information start server with -v4")
+
 def export_default_plugins() :
     #Post processing tango export
     util = PyTango.Util.instance()
