@@ -33,8 +33,17 @@ from Lima.Server.plugins.Utils import BasePostProcess
 #pixmaptools
 import os
 
-import Image
-import cStringIO
+# PIL an StringIO, py2 vs. py3 
+try:
+    import Image
+except ImportError:
+    from PIL import Image
+
+try:
+    from cString import StringIO
+except ImportError:
+    from io import BytesIO as StringIO
+    
 import base64
 import math
 
@@ -81,7 +90,7 @@ class BpmDeviceServer(BasePostProcess):
 
 
     def init_device(self):
-        print "In ", self.get_name(), "::init_device()"
+        print ("In ", self.get_name(), "::init_device()")
         self.get_device_properties(self.get_device_class())
         if self.enable_tango_event:
             for attr in ("intensity", "proj_x", "proj_y",
@@ -332,7 +341,7 @@ class BpmDeviceServer(BasePostProcess):
         if data == "LINEAR" or data == "LOG":
             self.lut_method=data
         else:
-            print "wrong lut method, 'LINEAR' or 'LOG'" #maybe error message
+            print ("wrong lut method, 'LINEAR' or 'LOG'") #maybe error message
     
     def read_color_map(self,attr):
         attr.set_value(self.color_map)
@@ -513,7 +522,7 @@ def construct_bvdata(bpm):
     lima_roi = _control_ref().image().getRoi()
     roi_top_left = lima_roi.getTopLeft()
     roi_size = lima_roi.getSize()
-    jpegFile = cStringIO.StringIO()
+    jpegFile = StringIO()
     if bpm.autoscale:
         min_val = image.buffer.min()
         max_val = image.buffer.max()
@@ -569,8 +578,8 @@ def construct_bvdata(bpm):
     I.save(jpegFile, "jpeg", quality=95)
     raw_jpeg_data = jpegFile.getvalue()
     image_jpeg = base64.b64encode(raw_jpeg_data)
-    profil_x = str(last_proj_x.tolist())
-    profil_y = str(last_proj_y.tolist())
+    profil_x = str(last_proj_x.tolist()).encode()
+    profil_y = str(last_proj_y.tolist()).encode()
     bvdata_format='dldddliiiidd%ds%ds%ds' %(len(profil_x),len(profil_y),len(image_jpeg))
     bvdata = struct.pack(
                 bvdata_format,
