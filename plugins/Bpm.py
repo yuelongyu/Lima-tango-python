@@ -133,14 +133,14 @@ class BpmDeviceServer(BasePostProcess):
 
 
         color_palette = numpy.zeros((65536,3), dtype=numpy.uint8)
-        color_palette[:65536/4:,2]=255
-        color_palette[:65536/4:,1]=numpy.linspace(0,255,65536/4)
-        color_palette[65536/4:65536/2,2]=numpy.linspace(255,0,65536/4)
-        color_palette[65536/4:65536/2,1]=255
-        color_palette[65536/2:65536-65536/4,0]=numpy.linspace(0,255,65536/4)
-        color_palette[65536/2:65536-65536/4,1]=255
-        color_palette[65536-65536/4:65536,0]=255
-        color_palette[65536-65536/4:65536,1]=numpy.linspace(255,0,65536/4)
+        color_palette[:65536//4:,2]=255
+        color_palette[:65536//4:,1]=numpy.linspace(0,255,65536//4)
+        color_palette[65536//4:65536//2,2]=numpy.linspace(255,0,65536//4)
+        color_palette[65536//4:65536//2,1]=255
+        color_palette[65536//2:65536-65536//4,0]=numpy.linspace(0,255,65536//4)
+        color_palette[65536//2:65536-65536//4,1]=255
+        color_palette[65536-65536//4:65536,0]=255
+        color_palette[65536-65536//4:65536,1]=numpy.linspace(255,0,65536//4)
 
         return { "grey":greyscale_palette, "color":color_palette}
 
