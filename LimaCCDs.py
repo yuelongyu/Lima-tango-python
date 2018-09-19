@@ -2654,7 +2654,6 @@ def main() :
             except: pass
 
     pytango_ver = PyTango.__version_info__[:3]
-    py_ver_3 = sys.version_info[0] == 3
 
     try:
         py = PyTango.Util(sys.argv)
@@ -2670,7 +2669,7 @@ def main() :
 
         # create ct control
         control = _get_control()
-        if not py_ver_3 and pytango_ver >= (8,1,7) and control is not None:
+        if pytango_ver >= (8,1,7) and control is not None:
             master_dev_name = get_lima_device_name()
             beamline_name, _, camera_name = master_dev_name.split('/')
             name_template = "{0}/{{type}}/{1}".format(beamline_name, camera_name)

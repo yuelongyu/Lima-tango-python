@@ -384,7 +384,7 @@ def to_tango_object(ct, name_id):
             return setattr(self.__dict__["__ct"], name, value)
 
         def __dir__(self):
-            return dir(self.__dict__["__ct"]) + keys
+            return dir(self.__dict__["__ct"]) + list(keys)
 
         def __reduce__(self):
             import PyTango.client
