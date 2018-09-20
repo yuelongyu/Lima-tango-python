@@ -15,6 +15,7 @@ requirements:
   run:
     - python {{ python }}
     - pytango
+    - pillow # Required by the Bpm plugin
 
 about:
   home: https://github.com/esrf-bliss/Lima
