@@ -1,20 +1,20 @@
 Bpm
 =======================
 
-This is the BPM (Beam Position Monitoring) device. It aims to detect a X-ray beam spot and returns statistics (x,y positions, FWHM, ...). 
-It takes images and calculate beam position using the builtin task BPM of the processlib library. 
-Can also push Tango event containing jpeg view of the image and several statistics and information (listed bellow) in a DevEncoded attribute name bvdata.
+This is the BPM (Beam Position Monitoring) device. It aims to detect an X-ray beam spot and returns statistics (x,y positions, FWHM, ...).
+It takes images and calculates the beam position using the builtin task BPM of the processlib library.
+It can also push Tango event containing jpeg view of the image and several statistics and information (listed bellow) in a DevEncoded attribute name bvdata.
 
 
 Properties
 ----------
 
 ====================    ====== ====================  ================================================================================================================
-Propertie name          RW     Type                  Description                                                                               
+Propertie name          RW     Type                  Description
 ====================    ====== ====================  ================================================================================================================
-enable_tango_event      RW     DevBoolean            if set to false, Bpm won't push bvdata or other attributs through Tango.
+enable_tango_event      RW     DevBoolean            if set to false, Bpm won't push bvdata or other attributes through Tango.
 calibration             RW     DevVarDoubleArray     Contains the calibration in X and Y ([X,Y]), value in unit/pixel.                                                                  |
-beammark                RW     DevVarLongArray       Contains coordonates (X,Y) in pixels of a beam mark set by the user.
+beammark                RW     DevVarLongArray       Contains coordinates (X,Y) in pixels of a beam mark set by the user.
 ====================    ====== ====================  ================================================================================================================
 
 
@@ -25,7 +25,7 @@ Attributes
 Attribute name		   RW	  Type			 Description
 ====================   ====== ==========     ================================================================================================================
 buffersize             RW     DevLong         Size of the buffer where a certain amount of images will be store before re-writing on the first one.
-x                      RO     DevDouble       coordinate on the x axis of the beam return by the BPM task. If the algorithm couldn't find a X value then it 
+x                      RO     DevDouble       coordinate on the x axis of the beam return by the BPM task. If the algorithm couldn't find a X value then it
                                               is set at -1.
 y                      RO     DevDouble       Same as x but for Y axis.
 txy                    RO     DevDouble       Return an array [timestamp,x,y] of the last acquisition.
@@ -67,7 +67,6 @@ ResetBackground         DevVoid              DevVoid                  Reset the 
 
 NOTE
 ----------
-This plugin is suppose to replace old BeamViewer but there is only the Bpm functionnality for the moment.
-Some other plugins will be create in the futur.
-For the moment this plugin is mainly use in the bpm webserver application. (https://gitlab.esrf.fr/limagroup/bpm-web)
-                                
+This plugin is supposed to replace the old BeamViewer plugin but with limited functionalities for the moment.
+Some other plugins will be created in the future.
+This plugin is mainly used in conjunction with the `bpm webserver application <https://gitlab.esrf.fr/limagroup/bpm-web>`_

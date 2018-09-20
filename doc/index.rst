@@ -5,14 +5,14 @@ This is the python Tango devices server by the ESRF team.
 
 This server provides a main device for the standard camera control, a camera specific device for the camera configuration and a set of "plugin" devices for extra operations or just to provide some specific API for clients.
 
-Thanks to the Lima framework,  the control can be achieved through a common server and a set of software operations (Mask,Flatfield,Background,RoiCounter,PeakFinder...) on image as well. The configuration of the detector is done by  the specific detector device. 
+Thanks to the Lima framework,  the control can be achieved through a common server and a set of software operations (Mask,Flatfield,Background,RoiCounter,PeakFinder...) on image as well. The configuration of the detector is done by  the specific detector device.
 At ESRF we decided to develop the Tango devices only in python language which implies that all the detector C++ interfaces have been wrapped in python.
 
 Main device: LimaCCDs
 ----------------------
 
-**LimaCCDs** is the generic device and it provides a unique interface to control any supported cameras. One can find below the 
-commands, the attributes and the properties. 
+**LimaCCDs** is the generic device and it provides a unique interface to control any supported cameras. One can find below the
+commands, the attributes and the properties.
 
 To run a LimaCCDs server you will need at least to configure the **LimaCameraType** property. This property is used by  the LimaCCDs server to create
 the proper camera device. Pleas refer a specific camera (e.g Basler) device chapter for further information.
@@ -31,7 +31,7 @@ IntrumentName		   No		   ""			  The instrument name, e.g ESRF-ID02 (**\***)
 LimaCameraType		   Yes             N/A                    The camera type: e.g. Maxipix
 MaxVideoFPS		   No		   30			  Maximum value for frame-per-second
 NbProcessingThread         No              1                      The max number of thread for processing.
-                                                                  Can be used to improve the performance 
+                                                                  Can be used to improve the performance
                                                                   when more than 1 task (plugin device) is activated
 TangoEvent		   No              False		  Activate Tango Event for counters and new images
 UserDetectorName	   No		   ""			  A user detector identifier, e.g frelon-saxs, (**\***)
@@ -98,7 +98,7 @@ Commands
 +----------------------------+-------------------------------------------+-------------------------------------+-----------------------------------------------------------------------------------------------------+
 |configStore                 |DevVarStringArray:config name,module1,     |DevVoid                              |Store (im memory) a current config with name and for the listed modules (e.g. **Acquisition**,       |
 |                            |module2, ... , modulen                     |                                     |**Image**, **RoiCounters**, **Saving** ...).                                                         |
-|                            |                                           |                                     |See the *config_available_name* and *config_available_module* attributes for full list.              | 
+|                            |                                           |                                     |See the *config_available_name* and *config_available_module* attributes for full list.              |
 +----------------------------+-------------------------------------------+-------------------------------------+-----------------------------------------------------------------------------------------------------+
 |configApply                 |DevString: config name                     |DevVoid                              |Apply the named config                                                                               |
 +----------------------------+-------------------------------------------+-------------------------------------+-----------------------------------------------------------------------------------------------------+
@@ -119,7 +119,7 @@ You will here a long list of attributes, this reflects the richness of the LIMA 
 modules which correspond to specific functions. A function module is identified by an attribute name prefix (excepted for informationnal attributes),
 for instance the **Acquisition** module attributes  are always named **acq_<attr-name>**. The available modules are :
 
- * General Information 
+ * General Information
  * Status  (prefix *last_* and *ready_*)
  * Acquisition (prefix *acq_* for most of them sorry)
  * Accumulation (prefix *acc_*)
@@ -131,10 +131,10 @@ for instance the **Acquisition** module attributes  are always named **acq_<attr
  * Shared Memory (prefix *shared_memory_*)
  * Configuration (prefix *config_*)
  * Buffer (prefix *buffer_*)
- * Plugin (prefix *plugin_*) 
+ * Plugin (prefix *plugin_*)
 
 Many attributes are of type DevString and they have a fixed list of possible values. you can get the list by calling the special command
-**getAttrStringValueList**. Because a camera cannot support some attribute values , the command getAttrStringValueList will give you the 
+**getAttrStringValueList**. Because a camera cannot support some attribute values , the command getAttrStringValueList will give you the
 the value list for the camera. For instance the attribute *video_mode* supports up to 14 different video formats, but a camera can only supports
 few of them.
 
@@ -143,14 +143,14 @@ few of them.
 Attribute name		    RW	    Type		    Description
 =========================== ======= ======================= =======================================================================================
 \                           \       **GENERAL INFORMATION** \
-lima_type		    ro	    DevString		    LImA camera type: 
+lima_type		    ro	    DevString		    LImA camera type:
 							    Maxipix,Pilatus,Frelon,Pco, Basler ...
 camera_type                 ro      DevString		    Like lima_type but in upper-case  !!
 camera_pixelsize            ro      DevDouble[x,y]          The camera pixel size in x and y dimension
 camera_model		    ro	    DevString		    Camera model return by the detector layer:.e.g. 5x1- TPX1
 \                           \       \                       \
 \                           \       **STATUS**              \
-last_base_image_ready       ro      DevLong                 The last base (before treatment) ready 
+last_base_image_ready       ro      DevLong                 The last base (before treatment) ready
 last_image_ready	    ro	    DevLong		    The last acquired image number, ready for reading
 last_image_saved	    ro	    DevLong		    The last saved image number
 last_image_acquired         ro      DevLong                 The last acquired image number
@@ -168,24 +168,24 @@ acq_status_fault_error	    ro	    DevString		    In case of Fault state, return 
 acq_mode		    rw	    DevString		    Acquisition mode:
 							     - **Single**, default mode one frame per image
 							     - **Concatenation**, frames are concatenated in image
-							     - **Accumulation**, powerful mode to avoid saturation 
+							     - **Accumulation**, powerful mode to avoid saturation
 							       of the pixel, the exposure is shared
 							       by multiple frames, see acc\_ attributes for more
 
 acq_nb_frames		    rw	    DevLong	            Number of frames to be acquired, Default is 1 frame
 acq_trigger_mode	    rw	    DevString		    Trigger mode:
-							     - **Internal_trigger**, the software trigger, 
+							     - **Internal_trigger**, the software trigger,
 							       start the acquisition immediately after an acqStart() call,
 							       all the acq_nb_frames are acquired in an sequence.
-							     - **External_trigger**, wait for an external trigger signal 
-							       to start the an acquisition for the acq_nb_frames number 
+							     - **External_trigger**, wait for an external trigger signal
+							       to start the an acquisition for the acq_nb_frames number
 							       of frames.
-							     - **External_trigger_multi**, as the previous mode except 
-							       that each frames need a new trigger input 
+							     - **External_trigger_multi**, as the previous mode except
+							       that each frames need a new trigger input
 							       (e.g. for 4 frames 4 pulses are waiting for)
-							     - **Internal_trigger_multi**, as for internal_trigger except 
+							     - **Internal_trigger_multi**, as for internal_trigger except
 							       that for each frame the startAcq() has to called once.
-							     - **External_gate**, wait for a gate signal for each frame, 
+							     - **External_gate**, wait for a gate signal for each frame,
 							       the gate period is the exposure time.
 							     - **External_start_stop**
 
@@ -242,7 +242,7 @@ saving_overwrite_policy	    rw	    DevString		    In case of existing files an o
 							     - **Abort**, if the file exists the saving is aborted
 							     - **Overwrite**, if the file exists it is overwritten
 							     - **Append**, if the file exists the image is append
-							       to the file 
+							       to the file
 
 saving_frame_per_file	    rw	    DevLong		    Number of frames saved in each file
 saving_common_header	    rw	    DevString[]		    Common header with multiple entries
@@ -252,7 +252,7 @@ saving_header_delimiter     rw	    DevString[]		    The header delimiters, [0] =
 saving_max_writing_task     rw      DevShort                Set the max. tasks for saving file, default is 1
 saving_statistics           ro	    DevDouble[]		    Return stats: saving speed, compression ratio,
                                                             compression speed and incoming speed (speed in byte/s)
-saving_statistics_history   rw	    DevLong		    Set size of history for stats calculation, default is 16 frames					 
+saving_statistics_history   rw	    DevLong		    Set size of history for stats calculation, default is 16 frames
 \                           \       \                       \
 \                           \       **IMAGE**               \
 image_type		    ro	    DevString		    Return the current image data type, bit per pixel signed or unsigned:
@@ -285,7 +285,7 @@ shutter_manual_state        rw      DevString               To open/close manual
 \                           \       \                       \
 \                           \       **DEBUG**               \
 debug_module_possible       ro      DevString[]             Return the list of possible debug modules
-debug_modules		    rw	    DevString[]		    Set the debug module level of LImA:		
+debug_modules		    rw	    DevString[]		    Set the debug module level of LImA:
 							     - "None"
 							     - "Common"
 							     - "Hardware"
@@ -299,7 +299,7 @@ debug_modules		    rw	    DevString[]		    Set the debug module level of LImA:
 							     - "Test"
 							     - "Application"
 debug_types_possible        ro      DevString[]             Return the list of the possible debug types
-debug_types		    rw	    DevString[]		    Set the debug type level of LImA: 
+debug_types		    rw	    DevString[]		    Set the debug type level of LImA:
 							     - "Fatal"
 							     - "Error"
 							     - "Warning"
@@ -336,19 +336,19 @@ video_mode                  rw      DevString               The video mode is th
 							    using the command **getAttrStringValueList**
 video_roi                   rw      DevLong[4]              A ROI on the video image (independent of the image_roi attribute)
 video_bin                   rw      DevULong[2]             A Binning on the video image (independt of the image_bin attribute)
-video_last_image            rw      DevEncoded              The last video image, in DevEncoded "**VIDEO_IMAGE**" format, and using 
+video_last_image            rw      DevEncoded              The last video image, in DevEncoded "**VIDEO_IMAGE**" format, and using
                                                             the video_mode set, see the DevEncoded definition :ref:`video_image_encoded`
 video_source                rw      DevString               The source for video image, BASE_IMAGE (raw image) or LAST_IMAGE (after soft operation)
-                                                            Only valid with monochrome or scientific cameras							 
-                                                         
+                                                            Only valid with monochrome or scientific cameras
+
 video_last_image_counter    rw      DevLong64               The image counter
 \                           \       \                       \
 \                           \       **SHARED MEMORY**       \
-shared_memory_names         rw      DevString[2]            Firstname and surname of the SPS typed shared memory (default is LimaCCDs,<camera_type>)                      
+shared_memory_names         rw      DevString[2]            Firstname and surname of the SPS typed shared memory (default is LimaCCDs,<camera_type>)
 shared_memory_active        rw                              Activate or not the shared memory. The shared memory is for image display
 \                           \       \                       \
 \                           \       **CONFIG**              \
-config_available_module     ro      DevString[]             List of possible config modules, 
+config_available_module     ro      DevString[]             List of possible config modules,
 config_available_name       ro      DevString[]             List of existing config names
 \                           \       **BUFFER**              \
 buffer_max_memory	    rw	    DevShort		    The maximum among of memory in percent of the available RAM
@@ -433,7 +433,7 @@ with  **big-endian** byte order  and no alignment::
 
 Camera devices
 --------------------
-Each camera has a configuration device with its own property/attribute/command lists. 
+Each camera has a configuration device with its own property/attribute/command lists.
 The camera configuration device is supposed to give you access to the "private" parameters
 of the detector that LIMA does not need but you may want to set. For instance some detectors
 provides a temperature control with set-points and/or start/stop commands for a auxillary cooling
@@ -479,9 +479,9 @@ Plugin devices: software operation and extra interfaces
 User-defined software plugins can be used to execute arbitrary image-based operations. An entry point in the control layer completely exports the ProcessLib functionality, allowing an external code to be called on every frame. The software operation can be implemented in C++ or Python.
 
 The software operations on image are embedded into individual Tango devices and are available in the **plugins/** directory. They are automatically exported
-by the LimaCCDs server. 
+by the LimaCCDs server.
 
-The software operations are of two types, *Sink* or *Link* : 
+The software operations are of two types, *Sink* or *Link* :
  * **Link** operation is supposed to modify the frame data, so it gets the frame data as input parameter and it will return a "corrected" image (e.g. Mask/Flatfield/BackgroundSubstraction).
  * **Sink** operation  is taken the frame data as input parameter to apply some software operation in order to return new data like statistics, peak positions, alarm on saturation ... etc.
 
@@ -496,7 +496,7 @@ Today there are about  8 standard plugin devices:
 * Mask:                    link operation to mask pixels. Very useful if some pixel are not working properly and if you want to set then to a fix value or to zero.
 * PeakFinder:              thanks to Teresa Numez from DESY, a sink operation which can detect diffraction peaks.
 * Roi2Spectrum:            sink operation to apply ROI spectrum on the frames. You can define more than one spectra with ROI coordinates and by specifying in which direction you need to bin the values, vertical or horizontal.
-* RoiCounter:              sink operation to get calculating statistics on image regions. 
+* RoiCounter:              sink operation to get calculating statistics on image regions.
 
 
 * LimaTacoCCD: extra interface for TACO clients, it only provides commands (TACO does not have attribute !), it is still used at ESRF for SPEC.
@@ -509,6 +509,7 @@ If you need to implement your own plugin device we can provide you some example 
   :maxdepth: 1
 
   plugins/backgroundsubstraction
+  plugins/bpm
   plugins/flatfield
   plugins/mask
   plugins/peakfinder
