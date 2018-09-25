@@ -45,6 +45,7 @@ import PyTango
 from collections import OrderedDict
 from functools import partial
 from itertools import chain
+from multiprocessing import Process
 
 from Lima import Core
 from Lima import SlsDetector as SlsDetectorHw
@@ -465,6 +466,9 @@ class SlsDetectorClass(PyTango.DeviceClass):
         'config_fname':
         [PyTango.DevString,
          "Path to the SlsDetector config file",[]],
+        'full_config_fname':
+        [PyTango.DevString,
+         "In case of partial configuration, path to the full config file",[]],
         'high_voltage':
         [PyTango.DevShort,
          "Initial detector high voltage (V) "
@@ -611,7 +615,18 @@ def get_control(config_fname, **keys) :
     global _SlsDetectorCam, _SlsDetectorHwInter, _SlsDetectorEiger
     global _SlsDetectorCorrection, _SlsDetectorControl
     if _SlsDetectorControl is None:
+        full_config_fname = keys.pop('full_config_fname', None)
+        if full_config_fname:
+            p = Process(target=setup_partial_config,
+                        args=(config_fname, full_config_fname))
+            p.start()
+            p.join()
+
         _SlsDetectorCam = SlsDetectorHw.Camera(config_fname)
+        for i, n in enumerate(_SlsDetectorCam.getHostnameList()):
+            print('Enabling: %s (%d)' % (n, i))
+            _SlsDetectorCam.putCmd('activate 1', i)
+
         _SlsDetectorHwInter = SlsDetectorHw.Interface(_SlsDetectorCam)
         if _SlsDetectorCam.getType() == SlsDetectorHw.EigerDet:
             _SlsDetectorEiger = SlsDetectorHw.Eiger(_SlsDetectorCam)
@@ -627,3 +642,32 @@ def get_control(config_fname, **keys) :
 
 def get_tango_specific_class_n_device():
     return SlsDetectorClass, SlsDetector
+
+
+#----------------------------------------------------------------------------
+# Deactivate modules in partial config
+#----------------------------------------------------------------------------
+
+def setup_partial_config(config_fname, full_config_fname):
+    import re
+
+    cam = SlsDetectorHw.Camera(full_config_fname)
+    full_hostname_list = cam.getHostnameList()
+    print('Full config: %s' % ','.join(full_hostname_list))
+    host_re_str = '([A-Za-z0-9]+)+?'
+    host_re_obj = re.compile(host_re_str)
+    re_obj = re.compile('^[ \\t]*hostname[ \\t]+(%s[^# ]+)' % host_re_str)
+    partial_hostname_list = []
+    with open(config_fname) as f:
+        for l in f:
+            m = re_obj.match(l)
+            if m:
+                s = m.groups()[0]
+                partial_hostname_list = host_re_obj.findall(s)
+                break
+    print('Partial config: %s' % ','.join(partial_hostname_list))
+    for i, n in enumerate(full_hostname_list):
+        if n not in partial_hostname_list:
+            print('Disabling: %s (%d)' % (n, i))
+            cam.putCmd('activate 0', i)
+    print('Partial config: Done!')
