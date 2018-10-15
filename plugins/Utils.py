@@ -21,12 +21,9 @@
 ############################################################################
 import PyTango
 
-try:
-    import EdfFile
-except ImportError:
-    EdfFile = None
     
 from Lima import Core
+from Lima.Server import EdfFile
 
 def getDataFromFile(filepath,index = 0) :
     try:

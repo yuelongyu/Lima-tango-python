@@ -73,10 +73,7 @@ from Lima.Server import camera
 if len(sys.argv) >1: instance_name=sys.argv[1]
 else: instance_name = ''
 
-try:
-    import EdfFile
-except ImportError:
-    EdfFile = None
+from Lima.Server import EdfFile
     
 TacoSpecificDict = {}
 TacoSpecificName = []
