@@ -49,6 +49,7 @@ import PyTango
 import AttrHelper
 from Lima import Core
 from Lima import Merlin as MerlinAcq
+from Lima.Server import AttrHelper
 
 
 class Merlin (PyTango.Device_4Impl):
@@ -123,45 +124,45 @@ class Merlin (PyTango.Device_4Impl):
     @Core.DEB_MEMBER_FUNCT
     def read_chargeSumming(self, attr):
         mode = _MerlinCamera.getChargeSumming()
-        attr.set_value(AttrHelper._getDictKey(self.__Switch, mode))
+        attr.set_value(AttrHelper.getDictKey(self.__Switch, mode))
 
     @Core.DEB_MEMBER_FUNCT
     def write_chargeSumming(self, attr):
         data = attr.get_write_value()
-        mode = AttrHelper._getDictValue(self.__Switch, data)
+        mode = AttrHelper.getDictValue(self.__Switch, data)
         _MerlinCamera.setChargeSumming(mode)
 
     @Core.DEB_MEMBER_FUNCT
     def read_colourMode(self, attr):
         mode = _MerlinCamera.getColourMode()
-        attr.set_value(AttrHelper._getDictKey(self.__ColourMode, mode))
+        attr.set_value(AttrHelper.getDictKey(self.__ColourMode, mode))
 
     @Core.DEB_MEMBER_FUNCT
     def write_colourMode(self, attr):
         data = attr.get_write_value()
-        mode = AttrHelper._getDictValue(self.__ColourMode, data)
+        mode = AttrHelper.getDictValue(self.__ColourMode, data)
         _MerlinCamera.setColourMode(mode)
 
     @Core.DEB_MEMBER_FUNCT
     def read_continuousRW(self, attr):
         mode = _MerlinCamera.getContinuousRW()
-        attr.set_value(AttrHelper._getDictKey(self.__Switch, mode))
+        attr.set_value(AttrHelper.getDictKey(self.__Switch, mode))
 
     @Core.DEB_MEMBER_FUNCT
     def write_continuousRW(self, attr):
         data = attr.get_write_value()
-        mode = AttrHelper._getDictValue(self.__Switch, data)
+        mode = AttrHelper.getDictValue(self.__Switch, data)
         _MerlinCamera.setContinuousRW(mode)
 
     @Core.DEB_MEMBER_FUNCT
     def read_counter(self, attr):
         counter = _MerlinCamera.getEnableCounters()
-        attr.set_value(AttrHelper._getDictKey(self.__Counter, counter))
+        attr.set_value(AttrHelper.getDictKey(self.__Counter, counter))
 
     @Core.DEB_MEMBER_FUNCT
     def write_counter(self, attr):
         data = attr.get_write_value()
-        counter = AttrHelper._getDictValue(self.__Counter, data)
+        counter = AttrHelper.getDictValue(self.__Counter, data)
         _MerlinCamera.setEnableCounters(counter)
 
     @Core.DEB_MEMBER_FUNCT
@@ -178,12 +179,12 @@ class Merlin (PyTango.Device_4Impl):
     @Core.DEB_MEMBER_FUNCT
     def read_gain(self, attr):
         gain = _MerlinCamera.getGain()
-        attr.set_value(AttrHelper._getDictKey(self.__GainSetting, gain))
+        attr.set_value(AttrHelper.getDictKey(self.__GainSetting, gain))
 
     @Core.DEB_MEMBER_FUNCT
     def write_gain(self, attr):
         data = attr.get_write_value()
-        gain = AttrHelper._getDictValue(self.__GainSetting, data)
+        gain = AttrHelper.getDictValue(self.__GainSetting, data)
         _MerlinCamera.setGain(gain)
 
     @Core.DEB_MEMBER_FUNCT
@@ -283,67 +284,68 @@ class Merlin (PyTango.Device_4Impl):
     @Core.DEB_MEMBER_FUNCT
     def read_triggerStartType(self, attr):
         trig = _MerlinCamera.getTriggerStartType()
-        attr.set_value(AttrHelper._getDictKey(self.__Trigger, trig))
+        attr.set_value(AttrHelper.getDictKey(self.__Trigger, trig))
 
     @Core.DEB_MEMBER_FUNCT
     def write_triggerStartType(self, attr):
         data = attr.get_write_value()
-        trig = AttrHelper._getDictValue(self.__Trigger, data)
+        trig = AttrHelper.getDictValue(self.__Trigger, data)
         _MerlinCamera.setTriggerStartType(trig)
 
     @Core.DEB_MEMBER_FUNCT
     def read_triggerStopType(self, attr):
         trig = _MerlinCamera.getTriggerStopType()
-        attr.set_value(AttrHelper._getDictKey(self.__Trigger, trig))
+        attr.set_value(AttrHelper.getDictKey(self.__Trigger, trig))
 
     @Core.DEB_MEMBER_FUNCT
     def write_triggerStopType(self, attr):
         data = attr.get_write_value()
-        trig = AttrHelper._getDictValue(self.__Trigger, data)
+        trig = AttrHelper.getDictValue(self.__Trigger, data)
         _MerlinCamera.setTriggerStopType(trig)
 
     @Core.DEB_MEMBER_FUNCT
     def read_triggerOutTTL(self, attr):
         trigout = _MerlinCamera.getTriggerOutTTL()
-        attr.set_value(AttrHelper._getDictKey(self.__TriggerOutput, trigout))
+        attr.set_value(AttrHelper.getDictKey(self.__TriggerOutput, trigout))
 
     @Core.DEB_MEMBER_FUNCT
     def write_triggerOutTTL(self, attr):
         data = attr.get_write_value()
-        trigout = AttrHelper._getDictValue(self.__TriggerOutput, data)
+        trigout = AttrHelper.getDictValue(self.__TriggerOutput, data)
         _MerlinCamera.setTriggerOutTTL(trigout)
 
     @Core.DEB_MEMBER_FUNCT
     def read_triggerOutLVDS(self, attr):
         trigout = _MerlinCamera.getTriggerOutLVDS()
-        attr.set_value(AttrHelper._getDictKey(self.__TriggerOutput, trigout))
+        attr.set_value(AttrHelper.getDictKey(self.__TriggerOutput, trigout))
 
     @Core.DEB_MEMBER_FUNCT
     def write_triggerOutLVDS(self, attr):
         data = attr.get_write_value()
-        trigout = AttrHelper._getDictValue(self.__TriggerOutput, data)
+        trigout = AttrHelper.getDictValue(self.__TriggerOutput, data)
         _MerlinCamera.setTriggerOutLVDS(trigout)
 
     @Core.DEB_MEMBER_FUNCT
     def read_triggerOutTTLInvert(self, attr):
         trigout = _MerlinCamera.getTriggerOutTTLInvert()
-        attr.set_value(AttrHelper._getDictKey(self.__TriggerLevel, trigout))
+        attr.set_value(AttrHelper.getDictKey(self.__TriggerLevel, trigout))
 
     @Core.DEB_MEMBER_FUNCT
     def write_triggerOutTTLInvert(self, attr):
         data = attr.get_write_value()
-        trigout = AttrHelper._getDictValue(self.__TriggerLevel, data)
+        trigout = AttrHelper.getDictValue(self.__TriggerLevel, data)
         _MerlinCamera.setTriggerOutTTLInvert(trigout)
 
     @Core.DEB_MEMBER_FUNCT
     def read_triggerOutLVDSInvert(self, attr):
         trigout = _MerlinCamera.getTriggerOutLVDSInvert()
-        attr.set_value(AttrHelper._getDictKey(self.__TriggerLevel, trigout))
+        attr.set_value(AttrHelper.getDictKey(self.__TriggerLevel, trigout))
 
     @Core.DEB_MEMBER_FUNCT
     def write_triggerOutLVDSInvert(self, attr):
         data = attr.get_write_value()
-        trigout = AttrHelper._getDictValue(self.__TriggerLevel, data)
+        trigout = AttrHelper.getDictValue(self.__TriggerLevel, data)
+
         _MerlinCamera.setTriggerOutLVDSInvert(trigout)
 
     @Core.DEB_MEMBER_FUNCT
@@ -367,12 +369,12 @@ class Merlin (PyTango.Device_4Impl):
     @Core.DEB_MEMBER_FUNCT
     def read_triggerUseDelay(self, attr):
         mode = _MerlinCamera.getTriggerUseDelay()
-        attr.set_value(AttrHelper._getDictKey(self.__Switch, mode))
+        attr.set_value(AttrHelper.getDictKey(self.__Switch, mode))
 
     @Core.DEB_MEMBER_FUNCT
     def write_triggerUseDelay(self, attr):
         data = attr.get_write_value()
-        mode = AttrHelper._getDictValue(self.__Switch, data)
+        mode = AttrHelper.getDictValue(self.__Switch, data)
         _MerlinCamera.setTriggerUseDelay(mode)
 
     @Core.DEB_MEMBER_FUNCT
@@ -396,23 +398,23 @@ class Merlin (PyTango.Device_4Impl):
     @Core.DEB_MEMBER_FUNCT
     def read_fileEnable(self, attr):
         mode = _MerlinCamera.getFileEnable()
-        attr.set_value(AttrHelper._getDictKey(self.__Switch, mode))
+        attr.set_value(AttrHelper.getDictKey(self.__Switch, mode))
 
     @Core.DEB_MEMBER_FUNCT
     def write_fileEnable(self, attr):
         data = attr.get_write_value()
-        mode = AttrHelper._getDictValue(self.__Switch, data)
+        mode = AttrHelper.getDictValue(self.__Switch, data)
         _MerlinCamera.setFileEnable(mode)
 
     @Core.DEB_MEMBER_FUNCT
     def read_fillMode(self, attr):
         mode = _MerlinCamera.getFillMode()
-        attr.set_value(AttrHelper._getDictKey(self.__FillMode, mode))
+        attr.set_value(AttrHelper.getDictKey(self.__FillMode, mode))
 
     @Core.DEB_MEMBER_FUNCT
     def write_fillMode(self, attr):
         data = attr.get_write_value()
-        mode = AttrHelper._getDictValue(self.__FillMode, data)
+        mode = AttrHelper.getDictValue(self.__FillMode, data)
         _MerlinCamera.setFillMode(mode)
 
     def read_acqRunning(self, attr):
@@ -431,7 +433,7 @@ class MerlinClass(PyTango.DeviceClass):
 
     #    Class Properties
     class_property_list = {
-        }
+    }
 
     #    Device Properties
     device_property_list = {
@@ -463,7 +465,7 @@ class MerlinClass(PyTango.DeviceClass):
             [PyTango.DevBoolean,
              "Simulate the Merlin commands.",
              [False]],
-        }
+    }
 
     #    Command definitions
     cmd_list = {
@@ -483,25 +485,25 @@ class MerlinClass(PyTango.DeviceClass):
               PyTango.SCALAR,
               PyTango.READ_WRITE],
              {
-              'label': 'Charge Summming mode',
-              'unit': 'ON/OFF',
-             }],
+                'label': 'Charge Summming mode',
+                'unit': 'ON/OFF',
+            }],
         'colourMode':
             [[PyTango.DevString,
               PyTango.SCALAR,
               PyTango.READ_WRITE],
              {
-              'label': 'Colour mode',
-              'unit': 'MONOCHROME/COLOUR',
-             }],
+                'label': 'Colour mode',
+                'unit': 'MONOCHROME/COLOUR',
+            }],
         'continuousRW':
             [[PyTango.DevString,
               PyTango.SCALAR,
               PyTango.READ_WRITE],
              {
-              'label': 'Continuous Collection',
-              'unit': 'ON/OFF',
-             }],
+                'label': 'Continuous Collection',
+                'unit': 'ON/OFF',
+            }],
         'counter':
             [[PyTango.DevString,
               PyTango.SCALAR,
@@ -523,232 +525,232 @@ class MerlinClass(PyTango.DeviceClass):
               PyTango.SCALAR,
               PyTango.READ_WRITE],
              {
-              'label': 'Gain Settings',
-              'unit': 'SHGM/HGM/LGM/SLGM',
-             }],
+                'label': 'Gain Settings',
+                'unit': 'SHGM/HGM/LGM/SLGM',
+            }],
         'operatingEnergy':
             [[PyTango.DevFloat,
               PyTango.SCALAR,
               PyTango.READ_WRITE],
              {
-              'label': 'Energy',
-              'unit': 'keV',
-              'min_value': '0',
-              'max_value': '999.99',
-             }],
+                'label': 'Energy',
+                'unit': 'keV',
+                'min_value': '0',
+                'max_value': '999.99',
+            }],
         'temperature':
             [[PyTango.DevFloat,
               PyTango.SCALAR,
               PyTango.READ],
              {
-              'label': 'Temperature',
-              'unit': 'degrees C',
-             }],
+                'label': 'Temperature',
+                'unit': 'degrees C',
+            }],
         'threshold0':
             [[PyTango.DevFloat,
               PyTango.SCALAR,
               PyTango.READ_WRITE],
              {
-              'label': 'Threshold 0',
-              'unit': 'keV',
-              'min_value': '0',
-              'max_value': '999.99',
-             }],
+                'label': 'Threshold 0',
+                'unit': 'keV',
+                'min_value': '0',
+                'max_value': '999.99',
+            }],
         'threshold1':
             [[PyTango.DevFloat,
               PyTango.SCALAR,
               PyTango.READ_WRITE],
              {
-              'label': 'Threshold 1',
-              'unit': 'keV',
-              'min_value': '0',
-              'max_value': '999.99',
-             }],
+                'label': 'Threshold 1',
+                'unit': 'keV',
+                'min_value': '0',
+                'max_value': '999.99',
+            }],
         'threshold2':
             [[PyTango.DevFloat,
               PyTango.SCALAR,
               PyTango.READ_WRITE],
              {
-              'label': 'Threshold 2',
-              'unit': 'keV',
-              'min_value': '0',
-              'max_value': '999.99',
-             }],
+                'label': 'Threshold 2',
+                'unit': 'keV',
+                'min_value': '0',
+                'max_value': '999.99',
+            }],
         'threshold3':
             [[PyTango.DevFloat,
               PyTango.SCALAR,
               PyTango.READ_WRITE],
              {
-              'label': 'Threshold 3',
-              'unit': 'keV',
-              'min_value': '0',
-              'max_value': '999.99',
-             }],
+                'label': 'Threshold 3',
+                'unit': 'keV',
+                'min_value': '0',
+                'max_value': '999.99',
+            }],
         'threshold4':
             [[PyTango.DevFloat,
               PyTango.SCALAR,
               PyTango.READ_WRITE],
              {
-              'label': 'Threshold 4',
-              'unit': 'keV',
-              'min_value': '0',
-              'max_value': '999.99',
-             }],
+                'label': 'Threshold 4',
+                'unit': 'keV',
+                'min_value': '0',
+                'max_value': '999.99',
+            }],
         'threshold5':
             [[PyTango.DevFloat,
               PyTango.SCALAR,
               PyTango.READ_WRITE],
              {
-              'label': 'Threshold 5',
-              'unit': 'keV',
-              'min_value': '0',
-              'max_value': '999.99',
-             }],
+                'label': 'Threshold 5',
+                'unit': 'keV',
+                'min_value': '0',
+                'max_value': '999.99',
+            }],
         'threshold6':
             [[PyTango.DevFloat,
               PyTango.SCALAR,
               PyTango.READ_WRITE],
              {
-              'label': 'Threshold 6',
-              'unit': 'keV',
-              'min_value': '0',
-              'max_value': '999.99',
-             }],
+                'label': 'Threshold 6',
+                'unit': 'keV',
+                'min_value': '0',
+                'max_value': '999.99',
+            }],
         'threshold7':
             [[PyTango.DevFloat,
               PyTango.SCALAR,
               PyTango.READ_WRITE],
              {
-              'label': 'Threshold 7',
-              'unit': 'keV',
-              'min_value': '0',
-              'max_value': '999.99',
-             }],
+                'label': 'Threshold 7',
+                'unit': 'keV',
+                'min_value': '0',
+                'max_value': '999.99',
+            }],
         'framesPerTrigger':
             [[PyTango.DevLong64,
               PyTango.SCALAR,
               PyTango.READ_WRITE],
              {
-              'label': 'Number of frames per trigger',
-              'unit': ' ',
-             }],
+                'label': 'Number of frames per trigger',
+                'unit': ' ',
+            }],
         'triggerStartType':
             [[PyTango.DevString,
               PyTango.SCALAR,
               PyTango.READ_WRITE],
              {
-              'label': 'Trigger start mode',
-              'unit': 'INTERNAL/RISING_EDGE_TTL/FALLING_EDGE_TTL/RISING_EDGE_LVDS/FALLING_EDGE_LVDS/SOFT',
-             }],
+                'label': 'Trigger start mode',
+                'unit': 'INTERNAL/RISING_EDGE_TTL/FALLING_EDGE_TTL/RISING_EDGE_LVDS/FALLING_EDGE_LVDS/SOFT',
+            }],
         'triggerStopType':
             [[PyTango.DevString,
               PyTango.SCALAR,
               PyTango.READ_WRITE],
              {
-              'label': 'Trigger stop mode',
-              'unit': 'INTERNAL/RISING_EDGE_TTL/FALLING_EDGE_TTL/RISING_EDGE_LVDS/FALLING_EDGE_LVDS/SOFT',
-             }],
+                'label': 'Trigger stop mode',
+                'unit': 'INTERNAL/RISING_EDGE_TTL/FALLING_EDGE_TTL/RISING_EDGE_LVDS/FALLING_EDGE_LVDS/SOFT',
+            }],
         'triggerOutTTL':
             [[PyTango.DevString,
               PyTango.SCALAR,
               PyTango.READ_WRITE],
              {
-              'label': 'TTL Trigger stop mode',
-              'unit': 'TTL/LVDS/TTL_DELAYED/LVDS_DELAYED/FOLLOW_SHUTTER/'
-                      'ONE_PER_ACQ_BURST/SHUTTER_AND_SENSOR_READ/OUTPUT_BUSY',
-             }],
+                'label': 'TTL Trigger stop mode',
+                'unit': 'TTL/LVDS/TTL_DELAYED/LVDS_DELAYED/FOLLOW_SHUTTER/'
+                'ONE_PER_ACQ_BURST/SHUTTER_AND_SENSOR_READ/OUTPUT_BUSY',
+            }],
         'triggerOutLVDS':
             [[PyTango.DevString,
               PyTango.SCALAR,
               PyTango.READ_WRITE],
              {
-              'label': 'LVDS Trigger stop mode',
-              'unit': 'TTL/LVDS/TTL_DELAYED/LVDS_DELAYED/FOLLOW_SHUTTER/'
-                      'ONE_PER_ACQ_BURST/SHUTTER_AND_SENSOR_READ/OUTPUT_BUSY',
-             }],
+                'label': 'LVDS Trigger stop mode',
+                'unit': 'TTL/LVDS/TTL_DELAYED/LVDS_DELAYED/FOLLOW_SHUTTER/'
+                'ONE_PER_ACQ_BURST/SHUTTER_AND_SENSOR_READ/OUTPUT_BUSY',
+            }],
         'triggerOutTTLInvert':
             [[PyTango.DevString,
               PyTango.SCALAR,
               PyTango.READ_WRITE],
              {
-              'label': 'TTL Trigger invert mode',
-              'unit': 'NORMAL/INVERTED',
-             }],
+                'label': 'TTL Trigger invert mode',
+                'unit': 'NORMAL/INVERTED',
+            }],
         'triggerOutLVDSInvert':
             [[PyTango.DevString,
               PyTango.SCALAR,
               PyTango.READ_WRITE],
              {
-              'label': 'LVDS Trigger invert mode',
-              'unit': 'NORMAL/INVERTED',
-             }],
+                'label': 'LVDS Trigger invert mode',
+                'unit': 'NORMAL/INVERTED',
+            }],
         'triggerInTTLDelay':
             [[PyTango.DevLong64,
               PyTango.SCALAR,
               PyTango.READ_WRITE],
              {
-              'label': 'TTL Trigger delay',
-              'unit': 'ns',
-              'min_value': '0',
-              'max_value': '68719476720',
-             }],
+                'label': 'TTL Trigger delay',
+                'unit': 'ns',
+                'min_value': '0',
+                'max_value': '68719476720',
+            }],
         'triggerInLVDSDelay':
             [[PyTango.DevLong64,
               PyTango.SCALAR,
               PyTango.READ_WRITE],
              {
-              'label': 'LVDS Trigger delay',
-              'unit': 'ns',
-              'min_value': '0',
-              'max_value': '68719476720',
-             }],
+                'label': 'LVDS Trigger delay',
+                'unit': 'ns',
+                'min_value': '0',
+                'max_value': '68719476720',
+            }],
         'triggerUseDelay':
             [[PyTango.DevString,
               PyTango.SCALAR,
               PyTango.READ_WRITE],
              {
-              'label': 'Use Trigger delay',
-              'unit': 'ON/OFF',
-             }],
+                'label': 'Use Trigger delay',
+                'unit': 'ON/OFF',
+            }],
         'fileDirectory':
             [[PyTango.DevString,
               PyTango.SCALAR,
               PyTango.READ_WRITE],
              {
-              'label': 'Directory name if saving on Merlin PC',
-             }],
+                'label': 'Directory name if saving on Merlin PC',
+            }],
         'fileName':
             [[PyTango.DevString,
               PyTango.SCALAR,
               PyTango.READ_WRITE],
              {
-              'label': 'Filename if saving on Merlin PC',
-             }],
+                'label': 'Filename if saving on Merlin PC',
+            }],
         'fileEnable':
             [[PyTango.DevString,
               PyTango.SCALAR,
               PyTango.READ_WRITE],
              {
-              'label': 'Enable file saving to Merlin PC',
-              'unit': 'ON/OFF',
-             }],
+                'label': 'Enable file saving to Merlin PC',
+                'unit': 'ON/OFF',
+            }],
         'fillMode':
             [[PyTango.DevString,
               PyTango.SCALAR,
               PyTango.READ_WRITE],
              {
-              'label': 'Set the Fillmode for inter-chip gap',
-              'unit': 'NoFill/InsertZero/Distribute/Interpolate',
-             }],
+                'label': 'Set the Fillmode for inter-chip gap',
+                'unit': 'NoFill/InsertZero/Distribute/Interpolate',
+            }],
         'acqRunning':
             [[PyTango.DevBoolean,
               PyTango.SCALAR,
               PyTango.READ],
              {
-              'label': 'Acquisition active',
-              'unit': ' ',
-             }]
-        }
+                'label': 'Acquisition active',
+                'unit': ' ',
+            }]
+    }
 
     def __init__(self, name):
         PyTango.DeviceClass.__init__(self, name)
@@ -761,6 +763,7 @@ class MerlinClass(PyTango.DeviceClass):
 # ------------------------------------------------------------------
 
 
+
 _MerlinCamera = None
 _MerlinInterface = None
 
@@ -771,12 +774,12 @@ def get_control(HostName="", CmdPort=6431, DataPort=6432, ImageWidth=512,
     global _MerlinInterface
 #    Core.DebParams.setTypeFlags(Core.DebParams.AllFlags)
     if _MerlinInterface is None:
-        print 'Starting and configuring the Merlin camera ...'
+        print ('Starting and configuring the Merlin camera ...')
         _MerlinCamera = MerlinAcq.Camera(HostName, int(CmdPort), int(DataPort), int(ImageWidth),
                                          int(ImageHeight), int(Chips), bool(Simulate))
         _MerlinInterface = MerlinAcq.Interface(_MerlinCamera)
-        print 'Merlin Camera (%s:%s) is started' % (_MerlinCamera.getDetectorType(),
-                                                    _MerlinCamera.getDetectorModel())
+        print ('Merlin Camera (%s:%s) is started' % (_MerlinCamera.getDetectorType(),
+                                                    _MerlinCamera.getDetectorModel()))
     return Core.CtControl(_MerlinInterface)
 
 

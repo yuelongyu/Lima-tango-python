@@ -168,17 +168,19 @@ class LimaTacoCCDs(PyTango.Device_4Impl, object):
     def __init__(self,cl, name):
         PyTango.Device_4Impl.__init__(self,cl,name)
         self.init_device()
-	try: 
-	    self.__bpm_mgr  = processlib.Tasks.BpmManager()
-	    self.__bpm_task = processlib.Tasks.BpmTask(self.__bpm_mgr)
-	except AttributeError:
-	    self.__bpm_mgr = None
-	    self.__bpm_task = None
-	self.__key_header_delimiter = '='
-	self.__entry_header_delimiter = '\n'
+        try: 
+            self.__bpm_mgr  = processlib.Tasks.BpmManager()
+            self.__bpm_task = processlib.Tasks.BpmTask(self.__bpm_mgr)
+        except AttributeError:
+            self.__bpm_mgr = None
+            self.__bpm_task = None
+        self.__key_header_delimiter = '='
+        self.__entry_header_delimiter = '\n'
         self.__image_number_header_delimiter = ';'
 
         self.__last_exp_time= None
+        self.__mult_trig_nb_frames = None
+        self.__mult_trig_last_frame = -1
 
 #------------------------------------------------------------------
 #    Device destructor
@@ -241,7 +243,7 @@ class LimaTacoCCDs(PyTango.Device_4Impl, object):
             msg = msg[:end] + '>'
             if self.AutoResetCtStatus:
                 control.resetStatus(True)
-            raise Core.Exception, msg
+            raise Core.Exception(msg)
         deb.Return('TACO state: 0x%08x (%d)' % (taco_state, taco_state))
         return taco_state
 
@@ -259,7 +261,13 @@ class LimaTacoCCDs(PyTango.Device_4Impl, object):
         if acq_status == Core.AcqReady:
             return PyTango.DevState.OFF
         elif acq_status == Core.AcqRunning:
-            return PyTango.DevState.ON
+            img_counters = ct_status.ImageCounters
+            last_acq_frame = img_counters.LastCounterReady
+            ready = ((self.__mult_trig_nb_frames is not None) and
+                     (last_acq_frame == self.__mult_trig_last_frame + 1))
+            if ready:
+                self.__mult_trig_last_frame = last_acq_frame
+            return PyTango.DevState.OFF if ready else PyTango.DevState.ON
         else:
             return PyTango.DevState.FAULT
 
@@ -271,8 +279,23 @@ class LimaTacoCCDs(PyTango.Device_4Impl, object):
     @Core.DEB_MEMBER_FUNCT
     def DevCcdStart(self):
         control = _control_ref()
-        control.prepareAcq()
-        control.startAcq()
+        prepare, start = True, True
+        is_mult_trig = self.__mult_trig_nb_frames is not None
+        if is_mult_trig:
+            acq = control.acquisition()
+            ct_status = control.getStatus()
+            acq_status = ct_status.AcquisitionStatus
+            prepare = (acq_status != Core.AcqRunning)
+            trig_mode = acq.getTriggerMode()
+            start = prepare or (trig_mode == Core.IntTrigMult)
+            
+        if prepare:
+            if is_mult_trig:
+                acq.setAcqNbFrames(self.__mult_trig_nb_frames)
+            control.prepareAcq()
+            self.__mult_trig_last_frame = -1
+        if start:
+            control.startAcq()
 
 
 #------------------------------------------------------------------
@@ -295,18 +318,20 @@ class LimaTacoCCDs(PyTango.Device_4Impl, object):
     @Core.DEB_MEMBER_FUNCT
     def DevCcdRead(self, frame_data):
         frame_nb, frame_size = frame_data
+        if self.__mult_trig_nb_frames is not None and frame_nb == 0:
+            frame_nb = self.__mult_trig_last_frame
         deb.Param('frame_nb=%s, frame_size=%s' % (frame_nb, frame_size))
         control = _control_ref()
         data = control.ReadImage(int(frame_nb))
         self._data_cache = numpy.array(data.buffer.ravel())
-	self._data_cache.dtype = numpy.uint8
+        self._data_cache.dtype = numpy.uint8
         release = getattr(data, 'releaseBuffer', None)
         if release:
             release()
         if self._data_cache.shape[0] != frame_size:
-            raise Core.Exception, ('Client expects %d bytes, frame has %d' % 
-                                   (frame_size, self._data_cache.shape[0]))
-	return self._data_cache
+            raise Core.Exception( ('Client expects %d bytes, frame has %d' % 
+                                   (frame_size, self._data_cache.shape[0])) )
+        return self._data_cache
 
 #------------------------------------------------------------------
 #    DevCcdReadAll command:
@@ -379,7 +404,7 @@ class LimaTacoCCDs(PyTango.Device_4Impl, object):
         if len(data_header) != header_len:
             msg = ('Invalid DevEncoded DATA_ARRAY len: %d (expected %d)' %
                    (len(data_header), header_len))
-            raise Core.Exception, msg
+            raise Core.Exception(msg)
         concat_frames = control.ReadImage(0, nb_frames)
         self._concat_data_cache = data_header + concat_frames.buffer.tostring()
         da_len = len(self._concat_data_cache) - header_len
@@ -387,8 +412,8 @@ class LimaTacoCCDs(PyTango.Device_4Impl, object):
         if release:
             release()
         if da_len != frame_size:
-            raise Core.Exception, ('Client expects %d bytes, frame has %d' % 
-                                   (frame_size, da_len))
+            raise Core.Exception ( ('Client expects %d bytes, frame has %d' % 
+                                   (frame_size, da_len)) )
         return ('DATA_ARRAY',  self._concat_data_cache)
     
 
@@ -410,7 +435,7 @@ class LimaTacoCCDs(PyTango.Device_4Impl, object):
 #------------------------------------------------------------------
     @Core.DEB_MEMBER_FUNCT
     def DevCcdWrite(self):
-	self.DevCcdWriteFile(-1)
+        self.DevCcdWriteFile(-1)
 
 #------------------------------------------------------------------
 #    DevCcdSetExposure command:
@@ -431,7 +456,7 @@ class LimaTacoCCDs(PyTango.Device_4Impl, object):
         elif exp_time > 0 and trig_mode == Core.ExtGate:
             acq.setTriggerMode(Core.ExtTrigSingle)
         if exp_time > 0. :
-	    acq.setAcqExpoTime(exp_time)
+            acq.setAcqExpoTime(exp_time)
 
         self.__last_exp_time= exp_time
 
@@ -522,11 +547,21 @@ class LimaTacoCCDs(PyTango.Device_4Impl, object):
             pars.fileFormat = Core.CtSaving.CBFFormat
         elif pars.suffix.lower()[-3:] == '.h5':
             pars.fileFormat = Core.CtSaving.HDF5
+        elif pars.suffix.lower()[-5:] == '.h5gz':
+            pars.fileFormat = Core.CtSaving.HDF5GZ
+        elif pars.suffix.lower()[-5:] == '.h5bs':
+            pars.fileFormat = Core.CtSaving.HDF5BS
         elif pars.suffix.lower()[-5:] == '.hdf5':
             pars.fileFormat = Core.CtSaving.HDF5
+        elif pars.suffix.lower()[-7:] == '.hdf5gz':
+            pars.fileFormat = Core.CtSaving.HDF5GZ
+        elif pars.suffix.lower()[-7:] == '.hdf5bs':
+            pars.fileFormat = Core.CtSaving.HDF5BS
         elif pars.suffix.lower()[-5:] == '.tiff':
             pars.fileFormat = Core.CtSaving.TIFFFormat
         elif pars.suffix.lower()[-8:] == '.edf.lz4':
+            pars.fileFormat = Core.CtSaving.EDFLZ4
+        elif pars.suffix.lower()[-7:] == '.edflz4':
             pars.fileFormat = Core.CtSaving.EDFLZ4
         else:
             pars.fileFormat = Core.CtSaving.RAW
@@ -548,7 +583,7 @@ class LimaTacoCCDs(PyTango.Device_4Impl, object):
         index_format = '%04d'
         arr = [pars.directory, pars.prefix, pars.suffix, pars.nextNumber,
                index_format, over_str]
-        par_arr = map(str, arr)
+        par_arr = list(map(str, arr))
         deb.Return('File pars: %s' % par_arr)
         return par_arr
 
@@ -570,9 +605,9 @@ class LimaTacoCCDs(PyTango.Device_4Impl, object):
             if not key:
                 continue
             try:
-	        val = '='.join(token[1:]).strip()
-	    except ValueError:
-		continue
+                val = '='.join(token[1:]).strip()
+            except ValueError:
+                continue
             if val.endswith(';'):
                 val = val[:-1]
             header_map[key] = val
@@ -616,9 +651,9 @@ class LimaTacoCCDs(PyTango.Device_4Impl, object):
 
     @Core.DEB_MEMBER_FUNCT
     def DevCcdHeaderDelimiter(self,delimiter) :
-	deb.Param('Setting file header delimiter: %s' % delimiter)
-	self.__key_header_delimiter = delimiter[0]
-	self.__entry_header_delimiter = delimiter[1]
+        deb.Param('Setting file header delimiter: %s' % delimiter)
+        self.__key_header_delimiter = delimiter[0]
+        self.__entry_header_delimiter = delimiter[1]
         if len(delimiter) > 2:
             self.__image_number_header_delimiter = delimiter[2]
 
@@ -717,7 +752,7 @@ class LimaTacoCCDs(PyTango.Device_4Impl, object):
 
     @Core.DEB_MEMBER_FUNCT
     def setAutosave(self, autosave_act,auto_header):
-	control = _control_ref()
+        control = _control_ref()
         saving = control.saving()
         deb.Param('Setting autosave active: %s' % autosave_act)
         if autosave_act:
@@ -728,7 +763,7 @@ class LimaTacoCCDs(PyTango.Device_4Impl, object):
 
     @Core.DEB_MEMBER_FUNCT
     def getAutosave(self):
-	control = _control_ref()
+        control = _control_ref()
         saving = control.saving()
         saving_mode = saving.getSavingMode()
         auto_header = saving_mode == Core.CtSaving.AutoHeader
@@ -739,21 +774,21 @@ class LimaTacoCCDs(PyTango.Device_4Impl, object):
     @Core.DEB_MEMBER_FUNCT
     def setLiveDisplay(self, livedisplay_act):
         deb.Param('Setting live display active: %s' % livedisplay_act)
-	control = _control_ref()
-	try:
-	    display = control.display()
-	except AttributeError:
-	    return
-	display.setActive(livedisplay_act)
+        control = _control_ref()
+        try:
+            display = control.display()
+        except AttributeError:
+            return
+        display.setActive(livedisplay_act)
 
     @Core.DEB_MEMBER_FUNCT
     def getLiveDisplay(self):
-	control = _control_ref()
-	try:
-	    display = control.display()
-	    livedisplay_act = display.isActive()
-	except AttributeError:
-	    livedisplay_act = False
+        control = _control_ref()
+        try:
+            display = control.display()
+            livedisplay_act = display.isActive()
+        except AttributeError:
+            livedisplay_act = False
         deb.Return('Getting live display active: %s' % livedisplay_act)
         return livedisplay_act
 
@@ -770,14 +805,14 @@ class LimaTacoCCDs(PyTango.Device_4Impl, object):
         else:
             err_msg = ('Invalid acq. mode: stripe_concat=%s, frame_accum=%s' %
                        (stripe_concat, frame_accum))
-            raise Core.Exception,err_msg
-	control = _control_ref()
+            raise Core.Exception(err_msg)
+        control = _control_ref()
         acq = control.acquisition()
         acq.setAcqMode(acq_mode)
         
     @Core.DEB_MEMBER_FUNCT
     def getAcqMode(self):
-	control = _control_ref()
+        control = _control_ref()
         acq = control.acquisition()
         acq_mode = acq.getAcqMode()
         stripe_concat = (acq_mode == Core.Concatenation)
@@ -795,6 +830,8 @@ class LimaTacoCCDs(PyTango.Device_4Impl, object):
 #------------------------------------------------------------------
     @Core.DEB_MEMBER_FUNCT
     def DevCcdWriteFile(self, frame_nb):
+        if self.__mult_trig_nb_frames is not None and frame_nb == 0:
+            frame_nb = self.__mult_trig_last_frame
         synchronous = not self.ManualAsynchronousWrite
         control = _control_ref()
         saving = control.saving()
@@ -810,9 +847,9 @@ class LimaTacoCCDs(PyTango.Device_4Impl, object):
 #------------------------------------------------------------------
     @Core.DEB_MEMBER_FUNCT
     def DevCcdWriteAll(self):
-	control = _control_ref()
-	acq = control.acquisition()
-	nbConcat = acq.getConcatNbFrames()
+        control = _control_ref()
+        acq = control.acquisition()
+        nbConcat = acq.getConcatNbFrames()
 
         saving = control.saving()
         saving.writeFrame(0,nbConcat)
@@ -851,6 +888,10 @@ class LimaTacoCCDs(PyTango.Device_4Impl, object):
 #------------------------------------------------------------------
     @Core.DEB_MEMBER_FUNCT
     def DevCcdSetFrames(self, nb_frames):
+        is_mult_trig = self.__mult_trig_nb_frames is not None
+        if is_mult_trig and (nb_frames == 1):
+            return
+
         control = _control_ref()
         acquisition = control.acquisition()
         acquisition.setAcqNbFrames(nb_frames)
@@ -893,11 +934,11 @@ class LimaTacoCCDs(PyTango.Device_4Impl, object):
         elif argin == 2:
             triggerMode = Core.ExtTrigMult
         elif argin == 3:
-	    triggerMode = Core.ExtStartStop
-	elif argin == 4:
-	    triggerMode = Core.ExtTrigReadout
+            triggerMode = Core.ExtStartStop
+        elif argin == 4:
+            triggerMode = Core.ExtTrigReadout
         else:
-            raise Core.Exception,'Invalid ext. trig: %s' % argin
+            raise Core.Exception('Invalid ext. trig: %s' % argin)
 
         acquisition.setTriggerMode(triggerMode)
         
@@ -918,12 +959,12 @@ class LimaTacoCCDs(PyTango.Device_4Impl, object):
             returnValue = 1
         elif triggerMode == Core.ExtTrigMult:
             returnValue = 2
-	elif triggerMode == Core.ExtStartStop:
-	    returnValue = 3
-	elif triggerMode == Core.ExtTrigReadout:
-	    returnValue = 4
+        elif triggerMode == Core.ExtStartStop:
+            returnValue = 3
+        elif triggerMode == Core.ExtTrigReadout:
+            returnValue = 4
         else:
-            raise Core.Exception, 'Invalid trigger mode: %s' % triggerMode
+            raise Core.Exception( 'Invalid trigger mode: %s' % triggerMode)
         return returnValue
 #------------------------------------------------------------------
 #    DevReadValues command:
@@ -941,7 +982,7 @@ class LimaTacoCCDs(PyTango.Device_4Impl, object):
             release()
         bpm_pars = self.__bpm_mgr.getResult(1)
         if bpm_pars.errorCode != self.__bpm_mgr.OK:
-            raise Core.Exception,'Error calculating beam params: %d' % bpm_pars.errorCode
+            raise Core.Exception('Error calculating beam params: %d' % bpm_pars.errorCode)
 
         nr_spots = 1
         auto_cal = -1
@@ -1014,7 +1055,7 @@ class LimaTacoCCDs(PyTango.Device_4Impl, object):
 #    DevCcdGetCurrent command:
 #
 #    Description: Get the current acquired frame number
-#    argout: DevVarDoubleArray    
+#    argout: DevLong
 #------------------------------------------------------------------
     @Core.DEB_MEMBER_FUNCT
     def DevCcdGetCurrent(self):
@@ -1035,7 +1076,7 @@ class LimaTacoCCDs(PyTango.Device_4Impl, object):
 #    DevSetDebugFlags command:
 #
 #    Description: Get the current acquired frame number
-#    argout: DevVarDoubleArray    
+#    argin: DevULong
 #------------------------------------------------------------------
     @Core.DEB_MEMBER_FUNCT
     def DevSetDebugFlags(self, deb_flags):
@@ -1052,7 +1093,7 @@ class LimaTacoCCDs(PyTango.Device_4Impl, object):
 #    DevGetDebugFlags command:
 #
 #    Description: Get the current acquired frame number
-#    argout: DevVarDoubleArray    
+#    argout: DevULong
 #------------------------------------------------------------------
     @Core.DEB_MEMBER_FUNCT
     def DevGetDebugFlags(self):
@@ -1066,6 +1107,47 @@ class LimaTacoCCDs(PyTango.Device_4Impl, object):
         deb.Return('Getting debug flags: 0x%08x' % deb_flags)
         return deb_flags
 
+
+#------------------------------------------------------------------
+#    DevCcdSetMultTrigNbFrames command:
+#
+#    Description: Set the current nb. of frames in mult-trig mode
+#    argin: DevULong
+#------------------------------------------------------------------
+    @Core.DEB_MEMBER_FUNCT
+    def DevCcdSetMultTrigNbFrames(self, nb_frames):
+        deb.Param('Setting mult-trig nb_frames: %d' % nb_frames)
+        if nb_frames < 1:
+            raise Core.Exception, 'Invalid nb_frames=%d' % nb_frames
+        self.__mult_trig_nb_frames = nb_frames
+
+#------------------------------------------------------------------
+#    DevCcdGetMultTrigNbFrames command:
+#
+#    Description: Get the current acquired frame number
+#    argout: DevULong
+#------------------------------------------------------------------
+    @Core.DEB_MEMBER_FUNCT
+    def DevCcdGetMultTrigNbFrames(self):
+        nb_frames = self.__mult_trig_nb_frames
+        if nb_frames is None:
+            nb_frames = 0
+        deb.Return('Getting mult-trig nb_frames: %d' % nb_frames)
+        return nb_frames
+
+#------------------------------------------------------------------
+#    DevCcdResetMultTrigNbFrames command:
+#
+#    Description: Reset the mult-trig mode - go to standard
+#------------------------------------------------------------------
+    @Core.DEB_MEMBER_FUNCT
+    def DevCcdResetMultTrigNbFrames(self):
+        deb.Param('Resetting mult-trig nb_frames')
+        if self.__mult_trig_nb_frames is not None:
+            control = _control_ref()
+            acq = control.acquisition()
+            acq.setAcqNbFrames(1)
+            self.__mult_trig_nb_frames = None
 
 #------------------------------------------------------------------
 #    DevGetCurrent command:
@@ -1089,7 +1171,7 @@ class LimaTacoCCDs(PyTango.Device_4Impl, object):
 #------------------------------------------------------------------
     @Core.DEB_MEMBER_FUNCT
     def dummy(self, *args) :
-        raise Core.Exception, 'Taco command not supported for this camera'
+        raise Core.Exception( 'Taco command not supported for this camera')
 
 #==================================================================
 #
@@ -1215,6 +1297,15 @@ class LimaTacoCCDsClass(PyTango.DeviceClass):
         'DevCcdGetCurrent':
             [[PyTango.DevVoid, ""],
             [PyTango.DevLong, ""]],
+        'DevCcdGetMultTrigNbFrames':
+            [[PyTango.DevVoid, ""],
+            [PyTango.DevULong, ""]],
+        'DevCcdSetMultTrigNbFrames':
+            [[PyTango.DevULong, ""],
+            [PyTango.DevVoid, ""]],
+        'DevCcdResetMultTrigNbFrames':
+            [[PyTango.DevVoid, ""],
+            [PyTango.DevVoid, ""]],
         'DevGetDebugFlags':
             [[PyTango.DevVoid, ""],
             [PyTango.DevULong, ""]],

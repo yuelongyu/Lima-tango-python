@@ -48,6 +48,7 @@ import PyTango
 import sys
 
 from Lima import Core
+from Lima.Server import AttrHelper
 
 #==================================================================
 #   Pilatus Class Description:
@@ -76,7 +77,7 @@ class Pilatus(PyTango.Device_4Impl):
                                 'HIGH' : 3,
                                 'ULTRA HIGH' : 4}
 
-	self.__CamStatus = {'ERROR' : 0,
+        self.__CamStatus = {'ERROR' : 0,
                             'DISCONNECTED' : 1,
                             'STANDBY' : 2,
                             'SETTING_ENERGY' :3,
@@ -123,12 +124,17 @@ class Pilatus(PyTango.Device_4Impl):
 #------------------------------------------------------------------
     @Core.DEB_MEMBER_FUNCT
     def getAttrStringValueList(self, attr_name):
-        valueList = []
-        dict_name = '_' + self.__class__.__name__ + '__' + ''.join([x.title() for x in attr_name.split('_')])
-        d = getattr(self,dict_name,None)
-        if d:
-            valueList = d.keys()
-        return valueList
+        return AttrHelper.get_attr_string_value_list(self, attr_name)
+
+#------------------------------------------------------------------
+#    resetHighVoltage command:
+#
+#    Description: resets high voltage
+#    argin: sleep time (s) (-1 to not sleep)
+#------------------------------------------------------------------
+    @Core.DEB_MEMBER_FUNCT
+    def resetHighVoltage(self, sleep_time):
+        _PilatusCamera.resetHighVoltage(sleep_time)
 
 #==================================================================
 #
@@ -144,7 +150,7 @@ class Pilatus(PyTango.Device_4Impl):
         if gain is None:
             gain = "not set"
         else:
-            gain = _getDictKey(self.__ThresholdGain,gain)
+            gain = AttrHelper.getDictKey(self.__ThresholdGain,gain)
         attr.set_value(gain)
 
 #------------------------------------------------------------------
@@ -152,7 +158,7 @@ class Pilatus(PyTango.Device_4Impl):
 #------------------------------------------------------------------
     def write_threshold_gain(self, attr):
         data = attr.get_write_value()
-        gain = _getDictValue(self.__ThresholdGain,data)
+        gain = AttrHelper.getDictValue(self.__ThresholdGain,data)
         threshold = _PilatusCamera.threshold()
         _PilatusCamera.setThresholdGain(threshold,gain)
 
@@ -222,7 +228,7 @@ class Pilatus(PyTango.Device_4Impl):
 #------------------------------------------------------------------
     def read_fill_mode(self, attr):
         gapfill = _PilatusCamera.gapfill()
-        gapfill = _getDictKey(self.__FillMode,gapfill)
+        gapfill = AttrHelper.getDictKey(self.__FillMode,gapfill)
         attr.set_value(gapfill)
 
 #------------------------------------------------------------------
@@ -230,7 +236,7 @@ class Pilatus(PyTango.Device_4Impl):
 #------------------------------------------------------------------
     def write_fill_mode(self, attr):
         data = attr.get_write_value()
-        gapfill = _getDictValue(self.__FillMode,data)
+        gapfill = AttrHelper.getDictValue(self.__FillMode,data)
         _PilatusCamera.setGapfill(gapfill)
 
 #------------------------------------------------------------------
@@ -238,7 +244,7 @@ class Pilatus(PyTango.Device_4Impl):
 #------------------------------------------------------------------
     def read_cam_state(self, attr):
         status = _PilatusCamera.status()
-        status = _getDictKey(self.__CamStatus, status)
+        status = AttrHelper.getDictKey(self.__CamStatus, status)
         attr.set_value(status)
 
 #------------------------------------------------------------------
@@ -249,7 +255,7 @@ class Pilatus(PyTango.Device_4Impl):
             image = _CtControl.image()
             hw_image = image.getHard()
             roi = hw_image.getRealRoi()
-            rmode = _getDictKey(self.__ReadoutRoi, roi)
+            rmode = AttrHelper.getDictKey(self.__ReadoutRoi, roi)
             attr.set_value(rmode)
         else:
             attr.set_value('UNKNOWN')
@@ -261,7 +267,7 @@ class Pilatus(PyTango.Device_4Impl):
         if _PilatusCamera.hasRoiCapability():
             data = attr.get_write_value()
             image = _CtControl.image()
-            roi = _getDictValue(self.__ReadoutRoi, data)
+            roi = AttrHelper.getDictValue(self.__ReadoutRoi, data)
             image.setRoi(roi)
 
 #==================================================================
@@ -303,6 +309,9 @@ class PilatusClass(PyTango.DeviceClass):
         'sendCamserverCmd':
         [[PyTango.DevString, "Camserver command to send"],
          [PyTango.DevVoid, "None"]],
+        'resetHighVoltage':
+        [[PyTango.DevLong, "sleep_time (s)"],
+         [PyTango.DevVoid, ""]],
         }
 
     #    Attribute definitions
@@ -347,20 +356,6 @@ class PilatusClass(PyTango.DeviceClass):
     def __init__(self, name):
         PyTango.DeviceClass.__init__(self, name)
         self.set_type(name)
-
-def _getDictKey(dict, value):
-    try:
-        ind = dict.values().index(value)                            
-    except ValueError:
-        return None
-    return dict.keys()[ind]
-
-def _getDictValue(dict, key):
-    try:
-        value = dict[key.upper()]
-    except KeyError:
-        return None
-    return value
 
 #----------------------------------------------------------------------------
 # Plugins

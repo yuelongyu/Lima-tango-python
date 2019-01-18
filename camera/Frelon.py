@@ -43,7 +43,7 @@ import time, string
 import PyTango
 from Lima import Core
 from Lima import Frelon as FrelonAcq
-from AttrHelper import get_attr_4u, get_attr_string_value_list
+from Lima.Server import AttrHelper
 
 class Frelon(PyTango.Device_4Impl):
 
@@ -59,7 +59,7 @@ class Frelon(PyTango.Device_4Impl):
         self.__ImageMode = {'FRAME TRANSFER': FrelonAcq.FTM,
                             'FULL FRAME': FrelonAcq.FFM}
 
-        self.__RoiMode = {'NONE' : FrelonAcq.None,
+        self.__RoiMode = {'NONE' : 0,
                           'SLOW' : FrelonAcq.Slow,
                           'FAST' : FrelonAcq.Fast,
                           'KINETIC' : FrelonAcq.Kinetic}
@@ -100,14 +100,14 @@ class Frelon(PyTango.Device_4Impl):
     def init_device(self):
         self.set_state(PyTango.DevState.ON)
         self.get_device_properties(self.get_device_class())
-	self.ResetLinkWaitTime = 5	
+        self.ResetLinkWaitTime = 5	
 
     @Core.DEB_MEMBER_FUNCT
     def getAttrStringValueList(self, attr_name):
-        return get_attr_string_value_list(self, attr_name)
+        return AttrHelper.get_attr_string_value_list(self, attr_name)
 
     def __getattr__(self,name) :
-        return get_attr_4u(self, name, _FrelonAcq)
+        return AttrHelper.get_attr_4u(self, name, _FrelonAcq)
 
     @Core.DEB_MEMBER_FUNCT
     def execSerialCommand(self, command_string) :
@@ -116,7 +116,7 @@ class Frelon(PyTango.Device_4Impl):
     @Core.DEB_MEMBER_FUNCT
     def resetLink(self) :
         _FrelonAcq.getEspiaDev().resetLink()
-	time.sleep(self.ResetLinkWaitTime)
+        time.sleep(self.ResetLinkWaitTime)
 
     ## @brief read the espia board id
     #
@@ -148,6 +148,9 @@ class Frelon(PyTango.Device_4Impl):
         transfer_time = cam.getTransferTime()
         attr.set_value(transfer_time)
 
+    def read_camera_serial(self,attr):
+        serial = _FrelonAcq.m_cam.getModel().getSerialNb()
+        attr.set_value("%d" % serial)
 
 class FrelonClass(PyTango.DeviceClass):
 
@@ -210,6 +213,10 @@ class FrelonClass(PyTango.DeviceClass):
           PyTango.READ]],
         'transfer_time' :
         [[PyTango.DevFloat,
+          PyTango.SCALAR,
+          PyTango.READ]],
+        'camera_serial' :
+        [[PyTango.DevString,
           PyTango.SCALAR,
           PyTango.READ]],
         }
@@ -330,7 +337,7 @@ class FrelonTacoProxy:
         elif kinetics == 3:
             ftm = FrelonAcq.FTM
         else:
-            raise Core.Exception, 'Invalid profile value: %s' % kinetics
+            raise Core.Exception('Invalid profile value: %s' % kinetics)
         _FrelonAcq.setFrameTransferMode(ftm)
         
     @Core.DEB_MEMBER_FUNCT
@@ -367,7 +374,7 @@ class FrelonTacoProxy:
         if kin_win_size % bin.getY() != 0:
             msg = 'Invalid kinetics window size (%d): ' % kin_win_size + \
                   'must be multiple of vert. bin (%d)' % bin.getY()
-            raise Core.Exception, msg
+            raise Core.Exception(msg)
 
         roi = _FrelonAcq.getRoi()
         roi = roi.getUnbinned(bin)
@@ -417,7 +424,7 @@ _FrelonAcq = None
 def get_control(espia_dev_nb = 0,**keys) :
     global _FrelonAcq
     if _FrelonAcq is None:
-	_FrelonAcq = FrelonAcq.FrelonAcq(int(espia_dev_nb))
+       _FrelonAcq = FrelonAcq.FrelonAcq(int(espia_dev_nb))
     return _FrelonAcq.getGlobalControl() 
 
 def get_tango_specific_class_n_device():

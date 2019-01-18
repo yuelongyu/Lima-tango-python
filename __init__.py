@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 ############################################################################
 # This file is part of LImA, a Library for Image Acquisition
 #
@@ -20,8 +19,18 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, see <http://www.gnu.org/licenses/>.
-#############################################################################
+############################################################################
+__all__ = []
+def _init_module() :
+    import os
+    for root,dirs,files in os.walk(__path__[0]) :
+        for file_name in files :
+            if file_name.startswith('__') : continue
+            base,ext = os.path.splitext(file_name)
+            if ext == '.py' :
+                subdir = root[len(__path__[0]) + 1:]
+                if subdir:
+                    base = '%s.%s' % (subdir,base)
+                __all__.append(base)
+_init_module()
 
-from Lima.Server.LimaCCDs import main
-
-main()
