@@ -49,8 +49,7 @@ import PyTango
 import pdb
 from Lima import Core
 from Lima import Pco as PcoAcq
-#from LimaCCDs import CallableReadEnum,CallableWriteEnum
-from AttrHelper import get_attr_4u, get_attr_string_value_list,_getDictKey, _getDictValue
+from Lima.Server import AttrHelper
 
 VERSION_ATT ="20171128"
 
@@ -136,7 +135,7 @@ class Pco(PyTango.Device_4Impl):
 #
 #==================================================================
     def __getattr__(self,name) :
-        return get_attr_4u(self, name, _PcoCam)
+        return AttrHelper.get_attr_4u(self, name, _PcoCam)
 
     def read_versionAtt(self,attr) :
         attr.set_value(VERSION_ATT)
@@ -148,7 +147,7 @@ class Pco(PyTango.Device_4Impl):
 #==================================================================
     @Core.DEB_MEMBER_FUNCT
     def getAttrStringValueList(self, attr_name):
-        return get_attr_string_value_list(self, attr_name)
+        return AttrHelper.get_attr_string_value_list(self, attr_name)
 
     @Core.DEB_MEMBER_FUNCT
     def talk(self, argin):
@@ -666,16 +665,16 @@ def get_control(debug_control = "0",
         # <class 'PyTango._PyTango.StdStringVector'>
         paramsIn = "".join("%s;" % (x,) for x in params)
 
-    print "============= Properties ============="
-    print "         keys:", keys
-    print "       params:", params
-    print "     paramsIn:", paramsIn
-    print "%s [%s] [0x%x]" % ("debug_control:", debug_control, debControl)
-    print "%s [%s] [0x%x]" % (" debug_module:", debug_module, debModule)
-    print "%s [%s] [0x%x]" % (" debug_format:", debug_format, debFormat)
-    print "%s [%s] [0x%x]" % ("   debug_type:", debug_type, debType)
-    print "%s [%s] [0x%x]" % ("   mem_factor:", mem_factor, memFactor)
-    print "======================================"
+    print ("============= Properties =============")
+    print ("         keys:", keys)
+    print ("       params:", params)
+    print ("     paramsIn:", paramsIn)
+    print ("%s [%s] [0x%x]" % ("debug_control:", debug_control, debControl))
+    print ("%s [%s] [0x%x]" % (" debug_module:", debug_module, debModule))
+    print ("%s [%s] [0x%x]" % (" debug_format:", debug_format, debFormat))
+    print ("%s [%s] [0x%x]" % ("   debug_type:", debug_type, debType))
+    print ("%s [%s] [0x%x]" % ("   mem_factor:", mem_factor, memFactor))
+    print ("======================================")
 
     if debControl:
         Core.DebParams.setModuleFlags(debModule)
@@ -695,10 +694,10 @@ def get_control(debug_control = "0",
         #_PcoControl.buffer().setMaxMemory(memFactor)
         #memFactor1 = _PcoControl.buffer().getMaxMemory()
 
-    print "================================================="
-    #print "%s org[%d] req[%d] now[%d]" % ("   mem_factor:", memFactor0, memFactor, memFactor1)
-    print "%s org[%d]" % ("   mem_factor:", memFactor0)
-    print "================================================="
+    print ("=================================================")
+    #print ("%s org[%d] req[%d] now[%d]" % ("   mem_factor:", memFactor0, memFactor, memFactor1))
+    print ("%s org[%d]" % ("   mem_factor:", memFactor0))
+    print ("=================================================")
 
 
     return _PcoControl
@@ -717,7 +716,7 @@ def get_tango_specific_class_n_device():
 #   because the cam, interface destructors are NOT called (?)
 #==================================================================================
 def close_interface():
-    print "... close_interface()"
+    print ("... close_interface()")
     _PcoInterface.reset(RESET_CLOSE_INTERFACE)
 
 

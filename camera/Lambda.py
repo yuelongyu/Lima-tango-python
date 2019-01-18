@@ -114,8 +114,8 @@ def get_control(config_path = "",**keys) :
     global _LambdaCam
     global _LambdaInterface
     if _LambdaCam is None:
-	_LambdaCam = LambdaAcq.Camera(config_path)
-	_LambdaInterface = LambdaAcq.Interface(_LambdaCam)
+        _LambdaCam = LambdaAcq.Camera(config_path)
+        _LambdaInterface = LambdaAcq.Interface(_LambdaCam)
     return Core.CtControl(_LambdaInterface)
 
 def get_tango_specific_class_n_device():

@@ -46,8 +46,7 @@ from Lima import Core
 from Lima import Pixirad as PixiradModule
 # import some useful helpers to create direct mapping between tango attributes
 # and Lima APIs.
-from AttrHelper import get_attr_4u, get_attr_string_value_list
-#import AttrHelper
+from Lima.Server import AttrHelper
 
 class Pixirad(PyTango.Device_4Impl):
     Core.DEB_CLASS(Core.DebModApplication, 'LimaCCDs')
@@ -109,22 +108,20 @@ class Pixirad(PyTango.Device_4Impl):
                              'COLMODE_4COL'  : PixiradModule.Camera.COLMODE_4COL};
 
 
-	self.__SyncOutFunction = {'SHUTTER' : PixiradModule.Camera.SHUTTER,\
-				  'RODONE'  : PixiradModule.Camera.RODONE,\
-				  'READ'    : PixiradModule.Camera.READ};
-	
-	self.__TrsfMode = {'UNMOD' : PixiradModule.Camera.UNMOD,\
-				  'UNMODH'  : PixiradModule.Camera.UNMODH,\
-				  'MOD'    : PixiradModule.Camera.MOD};
-	
-	self.__HybridMode = {'CDTE' : PixiradModule.Camera.CDTE,\
-				  'GAAS'  : PixiradModule.Camera.GAAS};
-	  
-	self.__Polarity = { 'POS' : PixiradModule.Camera.POS,\
-			    'NEG' : PixiradModule.Camera.NEG};
-			    
-			    
-			    
+        self.__SyncOutFunction = {'SHUTTER' : PixiradModule.Camera.SHUTTER,
+                                  'RODONE'  : PixiradModule.Camera.RODONE,
+                                  'READ'    : PixiradModule.Camera.READ};
+
+        self.__TrsfMode = {'UNMOD' : PixiradModule.Camera.UNMOD,
+                           'UNMODH'  : PixiradModule.Camera.UNMODH,
+                           'MOD'    : PixiradModule.Camera.MOD};
+
+        self.__HybridMode = {'CDTE' : PixiradModule.Camera.CDTE,
+                             'GAAS'  : PixiradModule.Camera.GAAS};
+
+        self.__Polarity = { 'POS' : PixiradModule.Camera.POS,
+                            'NEG' : PixiradModule.Camera.NEG};
+
 	#__Attribute2FunctionBase		????    
 	  
         self.init_device()
@@ -156,16 +153,16 @@ class Pixirad(PyTango.Device_4Impl):
 ### Call directly set/get 
     def __getattr__(self,name) :      
         try:  
-	  return get_attr_4u(self, name, _PixiradInterface)
+            return AttrHelper.get_attr_4u(self, name, _PixiradInterface)
         except:
-	  return get_attr_4u(self, name, _PixiradCamera)
-        
+            return AttrHelper.get_attr_4u(self, name, _PixiradCamera)
+
         
 
 ############## COMMANDS ###################
     @Core.DEB_MEMBER_FUNCT
     def getAttrStringValueList(self, attr_name):
-            return get_attr_string_value_list(self, attr_name)
+            return AttrHelper.get_attr_string_value_list(self, attr_name)
 
 class PixiradClass(PyTango.DeviceClass):
 

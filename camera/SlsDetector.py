@@ -47,9 +47,9 @@ from functools import partial
 
 from Lima import Core
 from Lima import SlsDetector as SlsDetectorHw
-from AttrHelper import get_attr_4u, get_attr_string_value_list
+from Lima.Server.AttrHelper import get_attr_4u, get_attr_string_value_list
 
-def ConstListAttr(nl, vl=None, Defs=SlsDetectorHw.Defs):
+def ConstListAttr(nl, vl=None, namespc=SlsDetectorHw.Defs):
     def g(x):
         n = ''
         was_cap = True
@@ -61,7 +61,7 @@ def ConstListAttr(nl, vl=None, Defs=SlsDetectorHw.Defs):
         return n
 
     if vl is None:
-        vl = [getattr(Defs, n) for n in nl]
+        vl = [getattr(namespc, n) for n in nl]
     return OrderedDict([(g(n), v) for n, v in zip(nl, vl)])
 
 
@@ -75,6 +75,9 @@ class SlsDetector(PyTango.Device_4Impl):
 #------------------------------------------------------------------
 
     MilliVoltSuffix = '_mv'
+
+    ModelAttrs = ['parallel_mode', 'clock_div', 'high_voltage', 
+                  'threshold_energy']
 
     def __init__(self,*args) :
         PyTango.Device_4Impl.__init__(self,*args)
@@ -107,7 +110,8 @@ class SlsDetector(PyTango.Device_4Impl):
         self.netdev_groups = [g.split(',') for g in self.netdev_groups]
         aff_array = self.pixel_depth_cpu_affinity_map
         if aff_array:
-            aff_array = np.fromstring(','.join(aff_array), sep=',')
+            flat_array = ','.join(aff_array).split(',')
+            aff_array = np.array(map(partial(int, base=0), flat_array))
             aff_map = self.getPixelDepthCPUAffinityMapFromArray(aff_array)
             self.cam.setPixelDepthCPUAffinityMap(aff_map)
 
@@ -115,13 +119,14 @@ class SlsDetector(PyTango.Device_4Impl):
         nl = ['FullSpeed', 'HalfSpeed', 'QuarterSpeed', 'SuperSlowSpeed']
         self.__ClockDiv = ConstListAttr(nl)
 
-        vl, nl = self.cam.getValidReadoutFlags()
-        self.__ReadoutFlags = ConstListAttr(nl, vl)
+        nl = ['Parallel', 'NonParallel', 'Safe']
+        self.__ParallelMode = ConstListAttr(nl, namespc=SlsDetectorHw.Eiger)
 
         nl = ['PixelDepth4', 'PixelDepth8', 'PixelDepth16', 'PixelDepth32']
         bdl = map(lambda x: getattr(SlsDetectorHw, x), nl)
         self.__PixelDepth = OrderedDict([(str(bd), int(bd)) for bd in bdl])
 
+    @Core.DEB_MEMBER_FUNCT
     def init_dac_adc_attr(self):
         nb_modules = self.cam.getNbDetSubModules()
         name_list, idx_list, milli_volt_list = self.model.getDACInfo()
@@ -171,7 +176,11 @@ class SlsDetector(PyTango.Device_4Impl):
             if stats_tok[1] in ['do_hist']:
                 stats_name = '_'.join(stats_tok)
                 return get_attr_4u(self, stats_name, SlsDetectorHw.SimpleStat)
-        return get_attr_4u(self, name, self.cam)
+        obj = self.cam
+        for attr in self.ModelAttrs:
+            if attr in name:
+                obj = self.model
+        return get_attr_4u(self, name, obj)
 
     @Core.DEB_MEMBER_FUNCT
     def read_config_fname(self, attr):
@@ -230,14 +239,14 @@ class SlsDetector(PyTango.Device_4Impl):
 
     @Core.DEB_MEMBER_FUNCT
     def read_all_trim_bits(self, attr):
-        val_list = self.cam.getAllTrimBitsList()
+        val_list = self.model.getAllTrimBitsList()
         deb.Return("val_list=%s" % val_list)
         attr.set_value(val_list)
 
     @Core.DEB_MEMBER_FUNCT
     def write_all_trim_bits(self, attr):
         for i, val in self.get_write_mod_idx_val_list(attr):
-            self.cam.setAllTrimBits(i, val)
+            self.model.setAllTrimBits(i, val)
 
     @Core.DEB_MEMBER_FUNCT
     def get_write_mod_idx_val_list(self, attr):
@@ -478,11 +487,15 @@ class SlsDetectorClass(PyTango.DeviceClass):
         [[PyTango.DevLong,
           PyTango.SPECTRUM,
           PyTango.READ_WRITE, 64]],
+        'high_voltage':
+        [[PyTango.DevLong,
+          PyTango.SCALAR,
+          PyTango.READ_WRITE]],
         'clock_div':
         [[PyTango.DevString,
           PyTango.SCALAR,
           PyTango.READ_WRITE]],
-        'readout_flags':
+        'parallel_mode':
         [[PyTango.DevString,
           PyTango.SCALAR,
           PyTango.READ_WRITE]],
@@ -526,7 +539,7 @@ def get_control(config_fname, **keys) :
     global _SlsDetectorCam, _SlsDetectorHwInter, _SlsDetectorEiger
     global _SlsDetectorCorrection, _SlsDetectorControl
     if _SlsDetectorControl is None:
-	_SlsDetectorCam = SlsDetectorHw.Camera(config_fname)
+        _SlsDetectorCam = SlsDetectorHw.Camera(config_fname)
         _SlsDetectorHwInter = SlsDetectorHw.Interface(_SlsDetectorCam)
         if _SlsDetectorCam.getType() == SlsDetectorHw.EigerDet:
             _SlsDetectorEiger = SlsDetectorHw.Eiger(_SlsDetectorCam)
