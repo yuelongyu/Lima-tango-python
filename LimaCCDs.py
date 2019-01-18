@@ -1375,7 +1375,7 @@ class LimaCCDs(PyTango.Device_4Impl) :
     def read_saving_format(self,attr) :
         saving = self.__control.saving()
         attr.set_value(saving.getFormatAsString(self.__SavingStream))
- 
+
     @Core.DEB_MEMBER_FUNCT
     def write_saving_format(self,attr) :
         data = attr.get_write_value()
@@ -1393,13 +1393,13 @@ class LimaCCDs(PyTango.Device_4Impl) :
     @Core.DEB_MEMBER_FUNCT
     def read_saving_overwrite_policy(self, attr) :
         saving = self.__control.saving()
-        attr.set_value(saving.getOverwritePolicy(self.__SavingStream))
+        attr.set_value(getDictKey(self.__SavingOverwritePolicy, saving.getOverwritePolicy(self.__SavingStream))
 
     @Core.DEB_MEMBER_FUNCT
     def write_saving_overwrite_policy(self, attr) :
         data = attr.get_write_value()
         saving = self.__control.saving()
-        value = _getDictValue(self.__SavingOverwritePolicy,data.upper())
+        value = getDictValue(self.__SavingOverwritePolicy,data.upper())
         if value is None:
             PyTango.Except.throw_exception('WrongData',\
                                            'Wrong value %s: %s'%('saving_overwrite_policy',data.upper()),\
