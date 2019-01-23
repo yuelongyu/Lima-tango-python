@@ -734,7 +734,9 @@ class LimaTacoCCDs(PyTango.Device_4Impl, object):
         frame_accum = (mode & self.FrameAccum)
         self.setAcqMode(stripe_concat, frame_accum)
         live_display = (mode & self.LiveDisplay) != 0
-        self.setLiveDisplay(live_display)
+        if live_display:
+            deb.Warning('Warning: SPS live display is no longer supported '
+                        'and will be ignored')
         auto_save = (mode & self.AutoSave) != 0
         auto_header = (mode & self.AutoHeader) != 0
         self.setAutosave(auto_save,auto_header)
@@ -753,8 +755,6 @@ class LimaTacoCCDs(PyTango.Device_4Impl, object):
             mode |= self.StripeConcat
         if frame_accum:
             mode |= self.FrameAccum
-        if self.getLiveDisplay():
-            mode |= self.LiveDisplay
         autosave_act, auto_header = self.getAutosave()
         if autosave_act:
             mode |= self.AutoSave
@@ -783,27 +783,6 @@ class LimaTacoCCDs(PyTango.Device_4Impl, object):
         autosave_act = auto_header or (saving_mode == Core.CtSaving.AutoFrame)
         deb.Return('Getting autosave active: %s' % autosave_act)
         return autosave_act, auto_header
-
-    @Core.DEB_MEMBER_FUNCT
-    def setLiveDisplay(self, livedisplay_act):
-        deb.Param('Setting live display active: %s' % livedisplay_act)
-        control = _control_ref()
-        try:
-            display = control.display()
-        except AttributeError:
-            return
-        display.setActive(livedisplay_act)
-
-    @Core.DEB_MEMBER_FUNCT
-    def getLiveDisplay(self):
-        control = _control_ref()
-        try:
-            display = control.display()
-            livedisplay_act = display.isActive()
-        except AttributeError:
-            livedisplay_act = False
-        deb.Return('Getting live display active: %s' % livedisplay_act)
-        return livedisplay_act
 
     @Core.DEB_MEMBER_FUNCT
     def setAcqMode(self, stripe_concat, frame_accum):
