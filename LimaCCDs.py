@@ -1390,7 +1390,7 @@ class LimaCCDs(PyTango.Device_4Impl) :
     @Core.DEB_MEMBER_FUNCT
     def read_saving_overwrite_policy(self, attr) :
         saving = self.__control.saving()
-        attr.set_value(getDictKey(self.__SavingOverwritePolicy, saving.getOverwritePolicy(self.__SavingStream))
+        attr.set_value(getDictKey(self.__SavingOverwritePolicy, saving.getOverwritePolicy(self.__SavingStream)))
 
     @Core.DEB_MEMBER_FUNCT
     def write_saving_overwrite_policy(self, attr) :
